@@ -48,13 +48,15 @@ exports.handler = async (event) => {
             return { statusCode: 200, headers, body: JSON.stringify([]) };
         }
 
-        const users = rows.slice(1)
-            .map(row => row[0])
-            .filter(id => id)
-            .map(id => ({
-                id: id,
-                displayName: id.replace(/_/g, ' ')
+        // ---- JAVÍTOTT RÉSZ ----
+        const users = rows.slice(1)      // Kihagyjuk a fejlécet
+            .map(row => row[0])          // Megfogjuk az A oszlop értékét (pl. "AVAR Szilveszter")
+            .filter(name => name)        // Kihagyjuk az üres sorokat
+            .map(name => ({
+                id: name,                // Az id legyen maga a név
+                displayName: name        // A megjelenítendő név is legyen maga a név
             }));
+        // ---- JAVÍTÁS VÉGE ----
 
         return {
             statusCode: 200,
