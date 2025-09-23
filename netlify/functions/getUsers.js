@@ -2,7 +2,7 @@ const { google } = require('googleapis');
 
 // --- Konfiguráció ---
 const CREDENTIALS = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-const SHEET_ID = process.process.env.GOOGLE_SHEET_ID;
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SHEET_NAME = process.env.GOOGLE_SHEET_NAME_USERS;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
