@@ -1,0 +1,9 @@
+{
+  "name": "pmg-oralap-backend",
+  "version": "1.0.0",
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "google-auth-library": "^9.0.0",
+    "googleapis": "^126.0.1"
+  }
+}
