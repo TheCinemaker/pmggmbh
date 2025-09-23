@@ -1,59 +1,110 @@
-// --- BEÁLLÍTÁSOK ---
-// Itt add meg az összes dolgozót.
-// id: Ékezet- és szóközmentes azonosító. PONTOSAN egyezzen meg a Drive mappa nevével!
-// displayName: A szép, olvasható név, amit a felhasználó lát.
-const employeeData = [
-    { id: "AVAR_Szilveszter", displayName: "AVAR Szilveszter" },
-    { id: "BARCIK_Grzegorz_Jan", displayName: "BARCIK Grzegorz Jan" },
-    { id: "BIZEK_Tomasz", displayName: "BIZEK Tomasz" },
-    { id: "BOROS_Mark", displayName: "BOROS Mark" },
-    { id: "BOTOS_Peter", displayName: "BOTOS Peter" },
-    { id: "CSIZMAZIA_Kornel", displayName: "CSIZMAZIA Kornel" },
-    { id: "EGEI_Laszlo_Attila", displayName: "EGEI Laszlo Attila" },
-    { id: "FABIAN_Daniel", displayName: "FABIAN Daniel" },
-    { id: "GEROLY_Alex", displayName: "GERÖLY Alex" },
-    { id: "GEROLY_Erik", displayName: "GERÖLY Erik" },
-    { id: "GUTJAHR_David", displayName: "GUTJAHR Dávid" },
-    { id: "GYORKEI_Lajos", displayName: "GYÖRKEI Lajos" },
-    { id: "HORVATH_Mark", displayName: "HORVATH Mark" },
-    { id: "KAMRADEK_Bogdan_Jozef", displayName: "KAMRADEK Bogdan Jozef" },
-    { id: "KESJAR_Mihaly", displayName: "KESJAR Mihaly" },
-    { id: "KESZTHELYI_Kristof", displayName: "KESZTHELYI Kristof" },
-    { id: "KOROS_Attila", displayName: "KOROS Attila" },
-    { id: "KOTAI_Balasz", displayName: "KOTAI Balasz" },
-    { id: "MOLNAR_Kristof", displayName: "MOLNAR Kristof" },
-    { id: "ODOR_Roland", displayName: "ODOR Roland" },
-    { id: "ROZSAHEGYI_Gabor", displayName: "RÓZSAHEGYI Gábor" },
-    { id: "SMIALKOWSKI_Szymon", displayName: "SMIALKOWSKI Szymon" },
-    { id: "SOVANY_Zoltan", displayName: "SOVANY Zoltan" },
-    { id: "TRUPPER_Balint", displayName: "TRUPPER Balint" },
-    { id: "VIGH_Janos", displayName: "VIGH Janos" }
-];
-// --- BEÁLLÍTÁSOK VÉGE ---
+// --- DOM Elemek ---
+const loginSection = document.getElementById('loginSection');
+const uploadSection = document.getElementById('uploadSection');
+const loginForm = document.getElementById('loginForm');
+const uploadForm = document.getElementById('uploadForm');
+const loginEmployeeSelect = document.getElementById('loginEmployeeName');
+const pinCodeInput = document.getElementById('pinCode');
+const loginButton = document.getElementById('loginButton');
+const logoutButton = document.getElementById('logoutButton');
+const loginStatus = document.getElementById('loginStatus');
+const uploadStatus = document.getElementById('uploadStatus');
+const welcomeMessage = document.getElementById('welcomeMessage');
 
-const form = document.getElementById('uploadForm');
-const employeeSelect = document.getElementById('employeeName');
-const submitButton = document.getElementById('submitButton');
-const statusMessage = document.getElementById('statusMessage');
+// --- Állapotkezelés ---
+let currentUser = null;
 
-// Legördülő lista feltöltése a szép nevekkel, de a háttérben a tiszta ID-val
-employeeData.sort((a, b) => a.displayName.localeCompare(b.displayName)); // ABC sorrendbe teszi
-employeeData.forEach(employee => {
-    const option = document.createElement('option');
-    option.value = employee.id; // Az érték a tiszta ID lesz!
-    option.textContent = employee.displayName; // De a felhasználó a szép nevet látja!
-    employeeSelect.appendChild(option);
-});
+// --- Funkciók ---
 
-form.addEventListener('submit', async (event) => {
+// Megjeleníti a megfelelő képernyőt (login vagy upload)
+function showScreen(screenName) {
+    loginSection.classList.add('hidden');
+    uploadSection.classList.add('hidden');
+    if (screenName === 'login') {
+        loginSection.classList.remove('hidden');
+    } else if (screenName === 'upload') {
+        uploadSection.classList.remove('hidden');
+    }
+}
+
+// Felhasználói lista lekérése és a legördülő feltöltése
+async function populateEmployeeList() {
+    try {
+        const response = await fetch('/.netlify/functions/getUsers');
+        if (!response.ok) throw new Error('Nem sikerült betölteni a felhasználókat.');
+        const users = await response.json();
+        
+        users.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.displayName;
+            loginEmployeeSelect.appendChild(option);
+        });
+    } catch (error) {
+        loginStatus.className = 'status error';
+        loginStatus.textContent = `Hiba: ${error.message}`;
+    }
+}
+
+// Bejelentkezés kezelése
+async function handleLogin(event) {
     event.preventDefault();
+    loginButton.disabled = true;
+    loginButton.textContent = 'Belépés...';
+    loginStatus.textContent = '';
+
+    const userId = loginEmployeeSelect.value;
+    const pin = pinCodeInput.value;
+
+    if (!userId || !pin) {
+        loginStatus.className = 'status error';
+        loginStatus.textContent = 'Kérlek, válassz nevet és adj meg PIN kódot.';
+        loginButton.disabled = false;
+        loginButton.textContent = 'Belépés';
+        return;
+    }
+
+    try {
+        const response = await fetch('/.netlify/functions/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, pin }),
+        });
+        const result = await response.json();
+        
+        if (!response.ok) throw new Error(result.message);
+        
+        currentUser = {
+            id: userId,
+            displayName: result.displayName,
+        };
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
+        showScreen('upload');
+        loginForm.reset();
+
+    } catch (error) {
+        loginStatus.className = 'status error';
+        loginStatus.textContent = `Hiba: ${error.message}`;
+    } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = 'Belépés';
+    }
+}
+
+// Feltöltés kezelése
+async function handleUpload(event) {
+    event.preventDefault();
+    const submitButton = document.getElementById('submitButton');
     submitButton.disabled = true;
     submitButton.textContent = 'Feltöltés folyamatban...';
-    statusMessage.textContent = '';
-    statusMessage.className = 'status';
+    uploadStatus.textContent = '';
+    uploadStatus.className = 'status';
 
     const formData = new FormData();
-    formData.append('employeeName', document.getElementById('employeeName').value);
+    formData.append('employeeName', currentUser.id); // A bejelentkezett felhasználó ID-ját küldjük!
     formData.append('weekRange', document.getElementById('weekRange').value);
     formData.append('file', document.getElementById('fileInput').files[0]);
 
@@ -62,21 +113,44 @@ form.addEventListener('submit', async (event) => {
             method: 'POST',
             body: formData,
         });
-
         const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        
+        uploadStatus.className = 'status success';
+        uploadStatus.textContent = 'Sikeres feltöltés!';
+        uploadForm.reset();
 
-        if (response.ok) {
-            statusMessage.textContent = 'Sikeres feltöltés!';
-            statusMessage.classList.add('success');
-            form.reset();
-        } else {
-            throw new Error(result.message || 'Ismeretlen hiba történt.');
-        }
     } catch (error) {
-        statusMessage.textContent = `Hiba: ${error.message}`;
-        statusMessage.classList.add('error');
+        uploadStatus.className = 'status error';
+        uploadStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Feltöltés';
     }
+}
+
+// Kijelentkezés
+function handleLogout() {
+    currentUser = null;
+    sessionStorage.removeItem('currentUser');
+    showScreen('login');
+}
+
+// --- Eseményfigyelők és Inicializálás ---
+
+// Oldal betöltődésekor
+document.addEventListener('DOMContentLoaded', () => {
+    const storedUser = sessionStorage.getItem('currentUser');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
+        showScreen('upload');
+    } else {
+        showScreen('login');
+    }
+    populateEmployeeList();
 });
+
+loginForm.addEventListener('submit', handleLogin);
+uploadForm.addEventListener('submit', handleUpload);
+logoutButton.addEventListener('click', handleLogout);
