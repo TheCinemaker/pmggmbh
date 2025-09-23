@@ -1,10 +1,30 @@
 // --- BEÁLLÍTÁSOK ---
 const employeeList = [
-    "Avar Szilveszter",
-    "Barcik Gergorz Jan",
-    "Bizek Tomasz",
-    "Boros Mark",
-    // ... Ide másold be az összes nevet, pontosan!
+    "AVAR Szilveszter",
+    "BARCIK Grzegorz Jan",
+    "BIZEK Tomasz",
+    "BOROS Mark",
+    "BOTOS Peter",
+    "CSIZMAZIA Kornel",
+    "EGEI Laszlo Attila",
+    "FABIAN Daniel",
+    "GERÖLY Alex",
+    "GERÖLY Erik",
+    "GUTJAHR Dávid",
+    "GYÖRKEI Lajos",
+    "HORVATH Mark",
+    "KAMRADEK Bogdan Jozef",
+    "KESJAR Mihaly",
+    "KESZTHELYI Kristof",
+    "KOROS Attila",
+    "KOTAI Balasz",
+    "MOLNAR Kristof",
+    "ODOR Roland",
+    "ROZSAHEGYI Gábor",
+    "SMIALKOWSKI Szymon",
+    "SOVANY Zoltan",
+    "TRUPPER Balint",
+    "VIGH Janos"
 ];
 // --- BEÁLLÍTÁSOK VÉGE ---
 
