@@ -1,61 +1,79 @@
 const { google } = require('googleapis');
 
-// --- konfiguráció ---
-const client_email = process.env.google_client_email;
-const private_key = process.env.google_private_key.replace(/\\n/g, '\n');
-const sheet_id = process.env.google_sheet_id;
-const sheet_name = process.env.google_sheet_name_users;
-const allowed_origin = process.env.allowed_origin;
-// --- konfiguráció vége ---
+// --- Konfiguráció és Ellenőrzés ---
+const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SHEET_NAME_USERS' ];
+
+function checkEnvVars() {
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    if (missingVars.length > 0) {
+        throw new Error(`Hiányzó környezeti változók: ${missingVars.join(', ')}`);
+    }
+}
+
+try {
+    checkEnvVars();
+} catch (error) {
+    exports.handler = async () => ({
+        statusCode: 500,
+        body: JSON.stringify({ message: error.message }),
+    });
+    return;
+}
+
+const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const SHEET_NAME = process.env.GOOGLE_SHEET_NAME_USERS;
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
+// --- Konfiguráció vége ---
 
 exports.handler = async (event) => {
-    const headers = { 'access-control-allow-origin': allowed_origin, 'access-control-allow-headers': 'content-type' };
-    if (event.httpmethod === 'options') { return { statuscode: 204, headers }; }
+    const headers = { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Access-Control-Allow-Headers': 'Content-Type' };
+    if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {
-        const { userid, pin } = json.parse(event.body);
-        if (!userid || !pin) { throw new error('hiányzó adatok.'); }
+        const { userId, pin } = JSON.parse(event.body);
+        if (!userId || !pin) { throw new Error('Hiányzó adatok.'); }
 
-        const auth = new google.auth.googleauth({
-            credentials: { client_email: client_email, private_key: private_key },
+        const auth = new google.auth.GoogleAuth({
+            credentials: { client_email: CLIENT_EMAIL, private_key: PRIVATE_KEY },
             scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
         });
         const sheets = google.sheets({ version: 'v4', auth });
 
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetid: sheet_id,
-            range: `${sheet_name}!a:b`, // a név_id és pin oszlopokat olvassuk
+            spreadsheetId: SHEET_ID,
+            range: `${SHEET_NAME}!A:B`,
         });
 
         const rows = response.data.values;
-        if (!rows || rows.length === 0) { throw new error('nincsenek felhasználók a táblában.'); }
+        if (!rows || rows.length === 0) { throw new Error('Nincsenek felhasználók a táblában.'); }
 
-        // megkeressük a felhasználót és ellenőrizzük a pin-t
-        const userrow = rows.find(row => row[0] === userid);
+        const userRow = rows.find(row => row[0] === userId);
 
-        if (!userrow) {
-            return { statuscode: 404, headers, body: json.stringify({ message: 'felhasználó nem található.' }) };
+        if (!userRow) {
+            return { statusCode: 404, headers, body: JSON.stringify({ message: 'Felhasználó nem található.' }) };
         }
         
-        const correctpin = userrow[1];
-        if (pin !== correctpin) {
-            return { statuscode: 401, headers, body: json.stringify({ message: 'hibás pin kód.' }) };
+        const correctPin = userRow[1];
+        if (pin !== correctPin) {
+            return { statusCode: 401, headers, body: JSON.stringify({ message: 'Hibás PIN kód.' }) };
         }
 
         return {
-            statuscode: 200,
+            statusCode: 200,
             headers,
-            body: json.stringify({ 
-                success: true, 
-                displayname: userid.replace(/_/g, ' ')
+            body: JSON.stringify({
+                success: true,
+                displayName: userId.replace(/_/g, ' ')
             }),
         };
     } catch (error) {
-        console.error('hiba bejelentkezéskor:', error);
+        console.error('Hiba bejelentkezéskor:', error);
         return {
-            statuscode: 500,
+            statusCode: 500,
             headers,
-            body: json.stringify({ message: error.message || 'szerver oldali hiba történt.' }),
+            body: JSON.stringify({ message: error.message || 'Szerver oldali hiba történt.' }),
         };
     }
 };
