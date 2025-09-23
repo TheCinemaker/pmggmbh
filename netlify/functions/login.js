@@ -60,14 +60,17 @@ exports.handler = async (event) => {
             return { statusCode: 401, headers, body: JSON.stringify({ message: 'Hibás PIN kód.' }) };
         }
 
+        // ---- JAVÍTOTT RÉSZ ----
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
-                displayName: userId.replace(/_/g, ' ')
+                displayName: userId // Egyszerűen csak a userId-t (ami a teljes név) küldjük vissza
             }),
         };
+        // ---- JAVÍTÁS VÉGE ----
+
     } catch (error) {
         console.error('Hiba bejelentkezéskor:', error);
         return {
