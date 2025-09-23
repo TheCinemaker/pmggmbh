@@ -19,6 +19,7 @@ body {
 header {
     text-align: center;
     margin-bottom: 20px;
+    position: relative;
 }
 .logo {
     width: 80px;
@@ -40,12 +41,15 @@ label {
     font-weight: 600;
     color: #555;
 }
-input[type="text"], select, input[type="file"] {
+input, select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+}
+input[type="password"] {
+    -webkit-text-security: disc;
 }
 button {
     width: 100%;
@@ -65,10 +69,26 @@ button:disabled {
 button:hover:not(:disabled) {
     background-color: #0056b3;
 }
+.logout-button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: auto;
+    padding: 5px 10px;
+    font-size: 0.8em;
+    background-color: #6c757d;
+}
+.logout-button:hover {
+    background-color: #5a6268;
+}
 .status {
     margin-top: 20px;
     text-align: center;
     font-weight: 600;
+    min-height: 1.2em;
 }
 .status.success { color: #28a745; }
 .status.error { color: #dc3545; }
+.hidden {
+    display: none;
+}
