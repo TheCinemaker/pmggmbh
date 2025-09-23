@@ -1,10 +1,11 @@
 const { google } = require('googleapis');
 
 // --- Konfiguráció ---
-const CREDENTIALS = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SHEET_NAME = process.env.GOOGLE_SHEET_NAME_USERS;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
+const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+ const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+ const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+ const SHEET_NAME = process.env.GOOGLE_SHEET_NAME_USERS;
+ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
 
 exports.handler = async (event) => {
@@ -15,10 +16,12 @@ exports.handler = async (event) => {
         const { userId, pin } = JSON.parse(event.body);
         if (!userId || !pin) { throw new Error('Hiányzó adatok.'); }
 
-        const auth = new google.auth.GoogleAuth({
-            credentials: { client_email: CREDENTIALS.client_email, private_key: CREDENTIALS.private_key },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-        });
+        try {
+  
+         const auth = new google.auth.GoogleAuth({
+             credentials: { client_email: CLIENT_EMAIL, private_key: PRIVATE_KEY },
+             scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+         });
         const sheets = google.sheets({ version: 'v4', auth });
 
         const response = await sheets.spreadsheets.values.get({
