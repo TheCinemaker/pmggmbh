@@ -43,7 +43,7 @@ exports.handler = async (event) => {
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:C`, // <-- MÓDOSÍTÁS: A:C tartomány olvasása
+            range: `${SHEET_NAME}!A:D`, // Most már az A-tól D oszlopig olvasunk
         });
 
         const rows = response.data.values;
@@ -59,9 +59,11 @@ exports.handler = async (event) => {
             return { statusCode: 401, headers, body: JSON.stringify({ message: 'Hibás PIN kód.' }) };
         }
 
-        // MÓDOSÍTÁS: A felhasználó típusának kiolvasása a C oszlopból.
-        // Ha a C oszlop üres, alapértelmezetten 'óralapos'-nak vesszük a visszamenőleges kompatibilitásért.
+        // Típus kiolvasása a C oszlopból
         const userType = userRow[2] || 'oralapos'; 
+        
+        // Nyelv kiolvasása a D oszlopból
+        const userLang = userRow[3] || 'hu'; // Ha üres, alapértelmezetten magyar
 
         return {
             statusCode: 200,
@@ -69,7 +71,8 @@ exports.handler = async (event) => {
             body: JSON.stringify({
                 success: true,
                 displayName: userId,
-                userType: userType // <-- MÓDOSÍTÁS: Visszaküldjük a típust a frontendnek
+                userType: userType,
+                userLang: userLang // Visszaküldjük a nyelvet is
             }),
         };
     } catch (error) {
