@@ -59,8 +59,10 @@
                             <select id="monthSelect" required></select>
                         </div>
                         <div class="form-group">
-                            <label for="weekRange">Napok (pl. 5-9):</label>
-                            <input type="text" id="weekRange" required pattern="[a-zA-Z0-9-]+" title="Csak betűket, számokat és kötőjelet használj.">
+                            <label for="weekRange">Napok (pl. 5-9 vagy 30):</label> 
+                            <input type="text" id="weekRange" required 
+                                   pattern="^[0-9]+(-[0-9]+)?$" 
+                                       title="Formátum: 5-9 vagy csak egy szám, pl. 30. Más karakter nem engedélyezett.">
                         </div>
                         <div class="form-group">
                             <label for="fileInput">Óralap (kép vagy PDF):</label>
