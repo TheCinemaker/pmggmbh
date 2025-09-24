@@ -3,22 +3,22 @@ const loginSection = document.getElementById('loginSection');
 const uploadSection = document.getElementById('uploadSection');
 const loginForm = document.getElementById('loginForm');
 const uploadForm = document.getElementById('uploadForm');
+const absenceForm = document.getElementById('absenceForm');
 const loginEmployeeSelect = document.getElementById('loginEmployeeName');
 const pinCodeInput = document.getElementById('pinCode');
 const loginButton = document.getElementById('loginButton');
 const logoutButton = document.getElementById('logoutButton');
 const loginStatus = document.getElementById('loginStatus');
 const uploadStatus = document.getElementById('uploadStatus');
+const absenceStatus = document.getElementById('absenceStatus');
 const welcomeMessage = document.getElementById('welcomeMessage');
 const monthSelect = document.getElementById('monthSelect');
-const absenceForm = document.getElementById('absenceForm');
 const absenceMonthSelect = document.getElementById('absenceMonthSelect');
-const absenceStatus = document.getElementById('absenceStatus')
 
 // --- Állapotkezelés ---
 let currentUser = null;
 
-// --- Funkciók ---
+// --- FUNKCIÓK ---
 
 // Megjeleníti a megfelelő képernyőt (login vagy upload)
 function showScreen(screenName) {
@@ -31,7 +31,7 @@ function showScreen(screenName) {
     }
 }
 
-// Felhasználói lista lekérése és a legördülő feltöltése
+// Hónap-listák feltöltése
 async function populateMonthList(userId) {
     const selects = [monthSelect, absenceMonthSelect];
     selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>');
@@ -47,8 +47,7 @@ async function populateMonthList(userId) {
             return;
         }
 
-        // ABC sorrend helyett a hónapok száma szerinti sorrend
-        folders.sort((a, b) => parseInt(a) - parseInt(b));
+        folders.sort((a, b) => parseInt(b) - parseInt(a)); // Legfrissebb hónap legyen elöl
         
         selects.forEach(sel => {
             sel.innerHTML = '';
@@ -63,6 +62,27 @@ async function populateMonthList(userId) {
     } catch (error) {
         uploadStatus.className = 'status error';
         uploadStatus.textContent = `Hiba: ${error.message}`;
+    }
+}
+
+// Felhasználói lista lekérése és a legördülő feltöltése
+async function populateEmployeeList() {
+    try {
+        const response = await fetch('//.netlify/functions/getUsers');
+        if (!response.ok) throw new Error('Nem sikerült betölteni a felhasználókat.');
+        const users = await response.json();
+        
+        users.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.displayName;
+            loginEmployeeSelect.appendChild(option);
+        });
+    } catch (error) {
+        loginStatus.className = 'status error';
+        loginStatus.textContent = `Hiba: ${error.message}`;
     }
 }
 
@@ -94,10 +114,7 @@ async function handleLogin(event) {
         
         if (!response.ok) throw new Error(result.message);
         
-        currentUser = {
-            id: userId,
-            displayName: result.displayName,
-        };
+        currentUser = { id: userId, displayName: result.displayName };
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
         welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
         showScreen('upload');
@@ -113,7 +130,7 @@ async function handleLogin(event) {
     }
 }
 
-// Feltöltés kezelése
+// Óralap feltöltés kezelése
 async function handleUpload(event) {
     event.preventDefault();
     const submitButton = document.getElementById('submitButton');
@@ -123,8 +140,8 @@ async function handleUpload(event) {
     uploadStatus.className = 'status';
 
     const formData = new FormData();
-    formData.append('employeeName', currentUser.id); 
-    formData.append('selectedMonth', document.getElementById('monthSelect').value);
+    formData.append('employeeName', currentUser.id);
+    formData.append('selectedMonth', monthSelect.value);
     formData.append('weekRange', document.getElementById('weekRange').value);
     formData.append('file', document.getElementById('fileInput').files[0]);
 
@@ -149,33 +166,7 @@ async function handleUpload(event) {
     }
 }
 
-async function populateMonthList(userId) {
-    monthSelect.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>';
-    try {
-        const response = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
-        if (!response.ok) throw new Error('Nem sikerült betölteni a hónapokat.');
-        
-        const folders = await response.json();
-        
-        if (folders.length === 0) {
-            monthSelect.innerHTML = '<option value="" disabled selected>Nincsenek mappák ehhez az évhez</option>';
-            return;
-        }
-
-        monthSelect.innerHTML = ''; // Töröljük a "betöltés..." szöveget
-        folders.sort().reverse().forEach(folderName => { // Legfrissebb hónap legyen elöl
-            const option = document.createElement('option');
-            option.value = folderName;
-            option.textContent = folderName;
-            monthSelect.appendChild(option);
-        });
-
-    } catch (error) {
-        uploadStatus.className = 'status error';
-        uploadStatus.textContent = `Hiba: ${error.message}`;
-    }
-}
-
+// Távollét jelentés kezelése
 async function handleAbsenceSubmit(event) {
     event.preventDefault();
     const submitButton = document.getElementById('absenceSubmitButton');
@@ -187,7 +178,7 @@ async function handleAbsenceSubmit(event) {
     const payload = {
         userId: currentUser.id,
         absenceType: document.getElementById('absenceType').value,
-        selectedMonth: document.getElementById('absenceMonthSelect').value,
+        selectedMonth: absenceMonthSelect.value,
         startDate: document.getElementById('startDate').value,
         endDate: document.getElementById('endDate').value,
     };
@@ -221,9 +212,9 @@ function handleLogout() {
     showScreen('login');
 }
 
-// --- Eseményfigyelők és Inicializálás ---
+// --- INICIALIZÁLÁS ---
 
-// Oldal betöltődésekor
+// Oldal betöltődésekor lefutó kód
 document.addEventListener('DOMContentLoaded', () => {
     const storedUser = sessionStorage.getItem('currentUser');
     if (storedUser) {
@@ -234,9 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         showScreen('login');
     }
-    populateEmployeeList();
+    // A felhasználói listát csak akkor töltjük be, ha a login képernyőn vagyunk
+    if (!storedUser) {
+        populateEmployeeList();
+    }
 });
 
+// Eseményfigyelők
 loginForm.addEventListener('submit', handleLogin);
 uploadForm.addEventListener('submit', handleUpload);
 logoutButton.addEventListener('click', handleLogout);
