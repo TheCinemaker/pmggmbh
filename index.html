@@ -10,7 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#343a40">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Óralap">
     <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
@@ -46,23 +46,21 @@
         <div id="uploadSection" class="screen hidden">
             <header class="app-header">
                 <div id="welcomeMessage" class="welcome-text"></div>
-                <button id="logoutButton" class="logout-button" title="Kijelentkezés">
+                <button id="logoutButton" class="logout-button" title="Kijentkezés">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 17v-3H9v-4h7V7l5 5-5 5zM14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
                 </button>
             </header>
             <main class="content">
-                <div class="section">
+                <div id="oralapSection" class="section">
                     <h2 class="section-title">Óralap Feltöltése</h2>
                     <form id="uploadForm" class="app-form">
                         <div class="form-group">
-                            <label for="monthSelect">Feltöltési hónap:</label>
+                            <label for="monthSelect">Cél hónap:</label>
                             <select id="monthSelect" required></select>
                         </div>
                         <div class="form-group">
-                            <label for="weekRange">Napok (pl. 5-9 vagy 30):</label> 
-                            <input type="text" id="weekRange" required 
-                                   pattern="^[0-9]+(-[0-9]+)?$" 
-                                       title="Formátum: 5-9 vagy csak egy szám, pl. 30. Más karakter nem engedélyezett.">
+                            <label for="weekRange">Napok (pl. 5-9 vagy 30):</label>
+                            <input type="text" id="weekRange" required pattern="^[0-9]+(-[0-9]+)?$" title="Formátum: 5-9 vagy csak egy szám, pl. 30. Más karakter nem engedélyezett.">
                         </div>
                         <div class="form-group">
                             <label for="fileInput">Óralap (kép vagy PDF):</label>
@@ -71,18 +69,6 @@
                         <button type="submit" id="submitButton">Feltöltés</button>
                     </form>
                     <div id="uploadStatus" class="status"></div>
-                    <hr class="separator">
-                        <div class="section">
-                        <h2 class="section-title">Feltöltött Fájlok</h2>
-                            <div class="form-group">
-                            <label for="viewMonthSelect">Hónap megtekintése:</label>
-                        <select id="viewMonthSelect"></select>
-                    </div> 
-    <div id="fileListContainer">
-              
-        <!-- A fájlok listája ide kerül majd dinamikusan -->
-    </div>
-</div>
                 </div>
 
                 <hr class="separator">
@@ -98,10 +84,6 @@
                                 <option value="UNBEZAHLT">Fizetés nélküli (Unbezahlt)</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="absenceMonthSelect">Cél hónap:</label>
-                            <select id="absenceMonthSelect" required></select>
-                        </div>
                         <div class="form-group-row">
                             <div class="form-group">
                                 <label for="startDate">Kezdő dátum:</label>
@@ -111,15 +93,27 @@
                                 <label for="endDate">Záró dátum:</label>
                                 <input type="date" id="endDate" required>
                             </div>
-                            <div id="sickProofUploadGroup" class="form-group hidden">
-                                <label for="sickProofFile">Orvosi igazolás feltöltése:</label>
-                                <input type="file" id="sickProofFile" accept="image/*,application/pdf">
-                            </div>
-                            <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
+                        </div>
+                        <div id="sickProofUploadGroup" class="form-group hidden">
+                            <label for="sickProofFile">Orvosi igazolás feltöltése:</label>
+                            <input type="file" id="sickProofFile" accept="image/*,application/pdf">
                         </div>
                         <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
                     </form>
                     <div id="absenceStatus" class="status"></div>
+                </div>
+                
+                <hr class="separator">
+
+                <div class="section">
+                    <h2 class="section-title">Feltöltött Fájlok</h2>
+                    <div class="form-group">
+                        <label for="viewMonthSelect">Hónap megtekintése:</label>
+                        <select id="viewMonthSelect"></select>
+                    </div>
+                    <div id="fileListContainer">
+                        <!-- A fájlok listája ide kerül majd dinamikusan -->
+                    </div>
                 </div>
             </main>
         </div>
