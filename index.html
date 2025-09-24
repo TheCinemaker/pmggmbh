@@ -39,6 +39,38 @@
                 <button id="logoutButton" class="logout-button">Kijelentkezés</button>
             </header>
             <main>
+                <!-- EZT A RÉSZT SZÚRD BE AZ UPLOAD FORM ALÁ -->
+                <hr style="margin: 30px 0;">
+                <h2 style="text-align: center; font-size: 1.2em; color: #555;">Távolmaradás Jelentése</h2>
+                    <form id="absenceForm">
+                        <div class="form-group">
+                            <label for="absenceType">Típus:</label>
+                            <select id="absenceType" required>
+                            <option value="URLAUB">Szabadság (Urlaub)</option>
+                            <option value="KRANK">Betegség (Krank)</option>
+                            <option value="UNBEZAHLT">Fizetés nélküli (Unbezahlt)</option>
+                        </select>
+                        </div>
+                    <div class="form-group">
+                        <label for="absenceMonthSelect">Cél hónap:</label>
+                        <select id="absenceMonthSelect" required>
+                        <option value="" disabled selected>Hónapok betöltése...</option>
+                        </select>
+                    </div>
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="startDate">Kezdő dátum:</label>
+                            <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">Záró dátum:</label>
+                        <input type="date" id="endDate" required>
+                    </div>
+                    </div>
+                <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
+                </form>
+                    <div id="absenceStatus" class="status"></div>
+<!-- EDDIG TART AZ ÚJ RÉSZ -->
                 <form id="uploadForm">
                     <div class="form-group">
                         <label for="monthSelect">Cél hónap:</label>
