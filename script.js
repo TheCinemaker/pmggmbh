@@ -68,7 +68,7 @@ async function populateMonthList(userId) {
 // Felhasználói lista lekérése és a legördülő feltöltése
 async function populateEmployeeList() {
     try {
-        const response = await fetch('//.netlify/functions/getUsers');
+        const response = await fetch('/.netlify/functions/getUsers');
         if (!response.ok) throw new Error('Nem sikerült betölteni a felhasználókat.');
         const users = await response.json();
         
