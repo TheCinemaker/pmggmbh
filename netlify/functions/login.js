@@ -61,7 +61,7 @@ exports.handler = async (event) => {
 
         // MÓDOSÍTÁS: A felhasználó típusának kiolvasása a C oszlopból.
         // Ha a C oszlop üres, alapértelmezetten 'óralapos'-nak vesszük a visszamenőleges kompatibilitásért.
-        const userType = userRow[2] || 'óralapos'; 
+        const userType = userRow[2] || 'oralapos'; 
 
         return {
             statusCode: 200,
