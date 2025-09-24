@@ -11,6 +11,9 @@ const loginStatus = document.getElementById('loginStatus');
 const uploadStatus = document.getElementById('uploadStatus');
 const welcomeMessage = document.getElementById('welcomeMessage');
 const monthSelect = document.getElementById('monthSelect');
+const absenceForm = document.getElementById('absenceForm');
+const absenceMonthSelect = document.getElementById('absenceMonthSelect');
+const absenceStatus = document.getElementById('absenceStatus')
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -29,23 +32,37 @@ function showScreen(screenName) {
 }
 
 // Felhasználói lista lekérése és a legördülő feltöltése
-async function populateEmployeeList() {
+async function populateMonthList(userId) {
+    const selects = [monthSelect, absenceMonthSelect];
+    selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>');
+    
     try {
-        const response = await fetch('/.netlify/functions/getUsers');
-        if (!response.ok) throw new Error('Nem sikerült betölteni a felhasználókat.');
-        const users = await response.json();
+        const response = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
+        if (!response.ok) throw new Error('Nem sikerült betölteni a hónapokat.');
         
-        users.sort((a, b) => a.displayName.localeCompare(b.displayName));
+        const folders = await response.json();
+        
+        if (folders.length === 0) {
+            selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Nincsenek mappák</option>');
+            return;
+        }
 
-        users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.id;
-            option.textContent = user.displayName;
-            loginEmployeeSelect.appendChild(option);
+        // ABC sorrend helyett a hónapok száma szerinti sorrend
+        folders.sort((a, b) => parseInt(a) - parseInt(b));
+        
+        selects.forEach(sel => {
+            sel.innerHTML = '';
+            folders.forEach(folderName => {
+                const option = document.createElement('option');
+                option.value = folderName;
+                option.textContent = folderName;
+                sel.appendChild(option);
+            });
         });
+
     } catch (error) {
-        loginStatus.className = 'status error';
-        loginStatus.textContent = `Hiba: ${error.message}`;
+        uploadStatus.className = 'status error';
+        uploadStatus.textContent = `Hiba: ${error.message}`;
     }
 }
 
@@ -159,6 +176,44 @@ async function populateMonthList(userId) {
     }
 }
 
+async function handleAbsenceSubmit(event) {
+    event.preventDefault();
+    const submitButton = document.getElementById('absenceSubmitButton');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Küldés...';
+    absenceStatus.textContent = '';
+    absenceStatus.className = 'status';
+
+    const payload = {
+        userId: currentUser.id,
+        absenceType: document.getElementById('absenceType').value,
+        selectedMonth: document.getElementById('absenceMonthSelect').value,
+        startDate: document.getElementById('startDate').value,
+        endDate: document.getElementById('endDate').value,
+    };
+
+    try {
+        const response = await fetch('/.netlify/functions/logAbsence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+
+        absenceStatus.className = 'status success';
+        absenceStatus.textContent = result.message;
+        absenceForm.reset();
+
+    } catch (error) {
+        absenceStatus.className = 'status error';
+        absenceStatus.textContent = `Hiba: ${error.message}`;
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Jelentés elküldése';
+    }
+}
+
 // Kijelentkezés
 function handleLogout() {
     currentUser = null;
@@ -185,3 +240,4 @@ document.addEventListener('DOMContentLoaded', () => {
 loginForm.addEventListener('submit', handleLogin);
 uploadForm.addEventListener('submit', handleUpload);
 logoutButton.addEventListener('click', handleLogout);
+absenceForm.addEventListener('submit', handleAbsenceSubmit);
