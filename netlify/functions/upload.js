@@ -2,7 +2,7 @@ const { Dropbox } = require('dropbox');
 const Busboy = require('busboy');
 
 // --- Konfiguráció és Ellenőrzés ---
-const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'DROPBOX_ACCESS_TOKEN' ];
+const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN' ];
 
 function checkEnvVars() {
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -21,7 +21,9 @@ try {
     return;
 }
 
-const DROPBOX_TOKEN = process.env.DROPBOX_ACCESS_TOKEN;
+const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
+const APP_KEY = process.env.DROPBOX_APP_KEY;
+const APP_SECRET = process.env.DROPBOX_APP_SECRET;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
 
@@ -60,12 +62,17 @@ exports.handler = async (event) => {
         const currentMonth = new Date().getMonth() + 1;
         const monthName = new Date().toLocaleString('de-DE', { month: 'long' });
         
-        const fileExtension = file.filename.split('.').pop() || 'jpg';
+        const fileExtension = file.filename.split('.pop() || 'jpg';
         const newFileName = `${weekRange}.${fileExtension}`;
         
         const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${currentMonth}. ${monthName}/${newFileName}`;
-
-        const dbx = new Dropbox({ accessToken: DROPBOX_TOKEN });
+        
+        // A Dropbox objektum létrehozása a Refresh Tokennel
+        const dbx = new Dropbox({
+            refreshToken: REFRESH_TOKEN,
+            clientId: APP_KEY,
+            clientSecret: APP_SECRET,
+        });
         
         await dbx.filesUpload({
             path: dropboxPath,
@@ -79,6 +86,7 @@ exports.handler = async (event) => {
             headers,
             body: JSON.stringify({ message: `Sikeres feltöltés ide: ${dropboxPath}` }),
         };
+
     } catch (error) {
         console.error('Dropbox feltöltési hiba:', error);
         return {
