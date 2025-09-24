@@ -22,21 +22,21 @@
         <div id="loginSection" class="screen">
             <header class="app-header">
                 <img src="/images/pmglogo.jpeg" alt="Cég Logó" class="logo">
-                <h1>Bejelentkezés</h1>
+                <h1 data-translate-key="loginTitle">Bejelentkezés</h1>
             </header>
             <main class="content">
                 <form id="loginForm" class="app-form">
                     <div class="form-group">
-                        <label for="loginEmployeeName">Név:</label>
+                        <label for="loginEmployeeName" data-translate-key="nameLabel">Név:</label>
                         <select id="loginEmployeeName" required>
-                            <option value="" disabled selected>Válassz a listából...</option>
+                            <option value="" disabled selected data-translate-key="selectFromList">Válassz a listából...</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="pinCode">PIN kód:</label>
+                        <label for="pinCode" data-translate-key="pinLabel">PIN kód:</label>
                         <input type="password" id="pinCode" inputmode="numeric" pattern="[0-9]*" required>
                     </div>
-                    <button type="submit" id="loginButton">Belépés</button>
+                    <button type="submit" id="loginButton" data-translate-key="loginButton">Belépés</button>
                 </form>
                 <div id="loginStatus" class="status"></div>
             </main>
@@ -46,27 +46,27 @@
         <div id="uploadSection" class="screen hidden">
             <header class="app-header">
                 <div id="welcomeMessage" class="welcome-text"></div>
-                <button id="logoutButton" class="logout-button" title="Kijentkezés">
+                <button id="logoutButton" class="logout-button" title="Kijelentkezés">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 17v-3H9v-4h7V7l5 5-5 5zM14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
                 </button>
             </header>
             <main class="content">
                 <div id="oralapSection" class="section">
-                    <h2 class="section-title">Óralap Feltöltése</h2>
+                    <h2 class="section-title" data-translate-key="timesheetUploadTitle">Óralap Feltöltése</h2>
                     <form id="uploadForm" class="app-form">
                         <div class="form-group">
-                            <label for="monthSelect">Cél hónap:</label>
+                            <label for="monthSelect" data-translate-key="targetMonthLabel">Cél hónap:</label>
                             <select id="monthSelect" required></select>
                         </div>
                         <div class="form-group">
-                            <label for="weekRange">Napok (pl. 5-9 vagy 30):</label>
+                            <label for="weekRange" data-translate-key="daysLabel">Napok (pl. 5-9 vagy 30):</label>
                             <input type="text" id="weekRange" required pattern="^[0-9]+(-[0-9]+)?$" title="Formátum: 5-9 vagy csak egy szám, pl. 30. Más karakter nem engedélyezett.">
                         </div>
                         <div class="form-group">
-                            <label for="fileInput">Óralap (kép vagy PDF):</label>
+                            <label for="fileInput" data-translate-key="timesheetFileLabel">Óralap (kép vagy PDF):</label>
                             <input type="file" id="fileInput" accept="image/*,application/pdf" required>
                         </div>
-                        <button type="submit" id="submitButton">Feltöltés</button>
+                        <button type="submit" id="submitButton" data-translate-key="uploadButton">Feltöltés</button>
                     </form>
                     <div id="uploadStatus" class="status"></div>
                 </div>
@@ -74,31 +74,31 @@
                 <hr class="separator">
 
                 <div class="section">
-                    <h2 class="section-title">Távolmaradás Jelentése</h2>
+                    <h2 class="section-title" data-translate-key="absenceReportTitle">Távolmaradás Jelentése</h2>
                     <form id="absenceForm" class="app-form">
                         <div class="form-group">
-                            <label for="absenceType">Típus:</label>
+                            <label for="absenceType" data-translate-key="typeLabel">Típus:</label>
                             <select id="absenceType" required>
-                                <option value="URLAUB">Szabadság (Urlaub)</option>
-                                <option value="KRANK">Betegség (Krank)</option>
-                                <option value="UNBEZAHLT">Fizetés nélküli (Unbezahlt)</option>
+                                <option value="URLAUB" data-translate-key="absenceTypeVacation">Szabadság (Urlaub)</option>
+                                <option value="KRANK" data-translate-key="absenceTypeSick">Betegség (Krank)</option>
+                                <option value="UNBEZAHLT" data-translate-key="absenceTypeUnpaid">Fizetés nélküli (Unbezahlt)</option>
                             </select>
                         </div>
                         <div class="form-group-row">
                             <div class="form-group">
-                                <label for="startDate">Kezdő dátum:</label>
+                                <label for="startDate" data-translate-key="startDateLabel">Kezdő dátum:</label>
                                 <input type="date" id="startDate" required>
                             </div>
                             <div class="form-group">
-                                <label for="endDate">Záró dátum:</label>
+                                <label for="endDate" data-translate-key="endDateLabel">Záró dátum:</label>
                                 <input type="date" id="endDate" required>
                             </div>
                         </div>
                         <div id="sickProofUploadGroup" class="form-group hidden">
-                            <label for="sickProofFile">Orvosi igazolás feltöltése:</label>
+                            <label for="sickProofFile" data-translate-key="sickProofLabel">Orvosi igazolás feltöltése:</label>
                             <input type="file" id="sickProofFile" accept="image/*,application/pdf">
                         </div>
-                        <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
+                        <button type="submit" id="absenceSubmitButton" data-translate-key="reportButton">Jelentés elküldése</button>
                     </form>
                     <div id="absenceStatus" class="status"></div>
                 </div>
@@ -106,9 +106,9 @@
                 <hr class="separator">
 
                 <div class="section">
-                    <h2 class="section-title">Feltöltött Fájlok</h2>
+                    <h2 class="section-title" data-translate-key="viewFilesTitle">Feltöltött Fájlok</h2>
                     <div class="form-group">
-                        <label for="viewMonthSelect">Hónap megtekintése:</label>
+                        <label for="viewMonthSelect" data-translate-key="viewMonthLabel">Hónap megtekintése:</label>
                         <select id="viewMonthSelect"></select>
                     </div>
                     <div id="fileListContainer">
