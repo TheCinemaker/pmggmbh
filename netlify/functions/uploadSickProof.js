@@ -1,7 +1,26 @@
 const { Dropbox } = require('dropbox');
 const Busboy = require('busboy');
 
-// --- Konfiguráció ---
+// --- Konfiguráció és Ellenőrzés ---
+const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN' ];
+
+function checkEnvVars() {
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    if (missingVars.length > 0) {
+        throw new Error(`Hiányzó környezeti változók: ${missingVars.join(', ')}`);
+    }
+}
+
+try {
+    checkEnvVars();
+} catch (error) {
+    exports.handler = async () => ({
+        statusCode: 500,
+        body: JSON.stringify({ message: error.message }),
+    });
+    return;
+}
+
 const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
 const APP_KEY = process.env.DROPBOX_APP_KEY;
 const APP_SECRET = process.env.DROPBOX_APP_SECRET;
@@ -34,59 +53,14 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {
-            const { fields, file } = await parseMultipartForm(event);
-            const { employeeName, selectedMonth, weekRange } = fields; // <-- KIBŐVÍTVE
-
-        if (!employeeName || !selectedMonth || !weekRange) { throw new Error('Hiányzó adatok.'); }
-
-            const currentYear = new Date().getFullYear();
-        
-            const sanitizedWeekRange = weekRange.replace(/[^a-zA-Z0-9-]/g, '_');
-            const fileExtension = file.filename.split('.').pop() || 'jpg';
-            const newFileName = `${weekRange}.${fileExtension}`;
-
-            // AZ ÚJ, DINAMIKUS ELÉRÉSI ÚT
-        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${newFileName}`;
-                
-        // A Dropbox objektum létrehozása a Refresh Tokennel
-        const dbx = new Dropbox({
-            refreshToken: REFRESH_TOKEN,
-            clientId: APP_KEY,
-            clientSecret: APP_SECRET,
-        });
-        
-        await dbx.filesUpload({
-            path: dropboxPath,
-            contents: file.content,
-            mode: 'overwrite',
-            autorename: false
-        });
-
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ message: `Sikeres feltöltés ide: ${dropboxPath}` }),
-        };
-
-    } catch (error) {
-        console.error('Dropbox feltöltési hiba:', error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ message: error.message || 'Szerver oldali hiba történt.' }),
-        };
-    }
-};
-
-
-    try {
         const { fields, file } = await parseMultipartForm(event);
         const { userId, selectedMonth, startDate, endDate } = fields;
 
-        if (!userId || !selectedMonth || !startDate || !endDate || !file) {
+        if (!userId || !selectedMonth || !startDate || !endDate) {
             throw new Error('Hiányzó adatok a táppénzes papír feltöltéséhez.');
         }
 
+        // Fájlnév generálása a dátumokból
         const startDay = new Date(startDate).getDate();
         const endDay = new Date(endDate).getDate();
         const dateRange = (startDay === endDay) ? `${startDay}` : `${startDay}-${endDay}`;
@@ -94,7 +68,7 @@ exports.handler = async (event) => {
         const fileExtension = file.filename.split('.').pop() || 'jpg';
         const newFileName = `KRANK_${dateRange}.${fileExtension}`;
 
-        const currentYear = new Date().getFullYear();
+        const currentYear = new Date(startDate).getFullYear(); // Az évszámot is a megadott dátumból vesszük!
         const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
 
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
