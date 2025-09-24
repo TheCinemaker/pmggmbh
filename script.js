@@ -16,6 +16,7 @@ const monthSelect = document.getElementById('monthSelect');
 const absenceMonthSelect = document.getElementById('absenceMonthSelect');
 const viewMonthSelect = document.getElementById('viewMonthSelect');
 const fileListContainer = document.getElementById('fileListContainer');
+const oralapSection = document.getElementById('oralapSection');
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -171,28 +172,41 @@ async function handleUpload(event) {
 // Távollét jelentés kezelése
 async function handleAbsenceSubmit(event) {
     event.preventDefault();
-    const submitButton = document.getElementById('absenceSubmitButton');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Küldés...';
-    absenceStatus.textContent = '';
-    absenceStatus.className = 'status';
+    // ... (gomb letiltása, status törlése) ...
 
-    const payload = {
-        userId: currentUser.id,
-        absenceType: document.getElementById('absenceType').value,
-        selectedMonth: absenceMonthSelect.value,
-        startDate: document.getElementById('startDate').value,
-        endDate: document.getElementById('endDate').value,
-    };
+    const absenceType = absenceTypeSelect.value;
+    let endpoint = '';
+    let payload;
 
-    try {
-        const response = await fetch('/.netlify/functions/logAbsence', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+    if (absenceType === 'KRANK') {
+        endpoint = '/.netlify/functions/uploadSickProof';
+        payload = new FormData();
+        payload.append('userId', currentUser.id);
+        payload.append('selectedMonth', absenceMonthSelect.value);
+        payload.append('startDate', document.getElementById('startDate').value);
+        payload.append('endDate', document.getElementById('endDate').value);
+        payload.append('file', sickProofFile.files[0]);
+    } else {
+        endpoint = '/.netlify/functions/logAbsence';
+        payload = JSON.stringify({
+            userId: currentUser.id,
+            absenceType: absenceType,
+            selectedMonth: absenceMonthSelect.value,
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value,
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
+    }
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            // A FormData-nak nem kell header, a JSON-nak igen
+            headers: (absenceType !== 'KRANK') ? { 'Content-Type': 'application/json' } : {},
+            body: payload,
+        });
+        // ... (válasz feldolgozása, hiba/siker üzenet) ...
+    } // ...
+}
 
         absenceStatus.className = 'status success';
         absenceStatus.textContent = result.message;
@@ -240,6 +254,24 @@ async function fetchAndDisplayFiles() {
     }
 }
 
+function updateUiForUserType(userType) {
+    if (userType === 'nem_óralapos') {
+        oralapSection.classList.add('hidden'); // Elrejtjük az óralap feltöltést
+    } else {
+        oralapSection.classList.remove('hidden'); // Megjelenítjük
+    }
+}
+
+function handleAbsenceTypeChange() {
+    if (absenceTypeSelect.value === 'KRANK') {
+        sickProofUploadGroup.classList.remove('hidden');
+        sickProofFile.required = true;
+    } else {
+        sickProofUploadGroup.classList.add('hidden');
+        sickProofFile.required = false;
+    }
+}
+
 // Kijelentkezés
 function handleLogout() {
     currentUser = null;
@@ -272,6 +304,7 @@ uploadForm.addEventListener('submit', handleUpload);
 logoutButton.addEventListener('click', handleLogout);
 absenceForm.addEventListener('submit', handleAbsenceSubmit);
 viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
+absenceTypeSelect.addEventListener('change', handleAbsenceTypeChange);
 
 /*
 // =======================================================
