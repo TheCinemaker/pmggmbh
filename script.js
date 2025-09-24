@@ -14,6 +14,8 @@ const absenceStatus = document.getElementById('absenceStatus');
 const welcomeMessage = document.getElementById('welcomeMessage');
 const monthSelect = document.getElementById('monthSelect');
 const absenceMonthSelect = document.getElementById('absenceMonthSelect');
+const viewMonthSelect = document.getElementById('viewMonthSelect');
+const fileListContainer = document.getElementById('fileListContainer');
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -33,7 +35,7 @@ function showScreen(screenName) {
 
 // Hónap-listák feltöltése
 async function populateMonthList(userId) {
-    const selects = [monthSelect, absenceMonthSelect];
+    const selects = [monthSelect, absenceMonthSelect, viewMonthSelect];
     selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>');
     
     try {
@@ -205,6 +207,39 @@ async function handleAbsenceSubmit(event) {
     }
 }
 
+async function fetchAndDisplayFiles() {
+    const selectedMonth = viewMonthSelect.value;
+    if (!selectedMonth || !currentUser) return;
+
+    fileListContainer.innerHTML = '<p>Fájlok betöltése...</p>';
+
+    try {
+        const response = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`);
+        if (!response.ok) throw new Error('Hiba a fájlok lekérésekor.');
+        
+        const files = await response.json();
+        fileListContainer.innerHTML = ''; // Töröljük a "betöltés..." szöveget
+
+        if (files.length === 0) {
+            fileListContainer.innerHTML = '<p>Nincsenek fájlok ebben a hónapban.</p>';
+            return;
+        }
+
+        files.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <span class="file-item-name">${file.name}</span>
+                <a href="${file.link}" target="_blank" class="view-button">Megtekintés</a>
+            `;
+            fileListContainer.appendChild(fileItem);
+        });
+
+    } catch (error) {
+        fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
+    }
+}
+
 // Kijelentkezés
 function handleLogout() {
     currentUser = null;
@@ -236,6 +271,7 @@ loginForm.addEventListener('submit', handleLogin);
 uploadForm.addEventListener('submit', handleUpload);
 logoutButton.addEventListener('click', handleLogout);
 absenceForm.addEventListener('submit', handleAbsenceSubmit);
+viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
 
 /*
 // =======================================================
