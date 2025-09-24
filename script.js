@@ -27,12 +27,12 @@ let currentUser = null;
 // --- I18N SZÓTÁR ---
 const translations = {
     hu: {
-        loginTitle: "Bejelentkezés",
-        nameLabel: "Név:",
-        pinLabel: "PIN kód:",
-        selectFromList: "Válassz a listából...",
-        loginButton: "Belépés",
-        loginButtonLoading: "Belépés...",
+        loginTitle: "LOGIN PAGE",
+        nameLabel: "Name:",
+        pinLabel: "PIN CODE:",
+        selectFromList: "select your name...",
+        loginButton: "SIGN IN",
+        loginButtonLoading: "Singing...",
         logoutTitle: "Kijelentkezés",
         welcome: "Üdv,",
         timesheetUploadTitle: "Óralap Feltöltése",
