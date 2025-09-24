@@ -10,6 +10,7 @@ const logoutButton = document.getElementById('logoutButton');
 const loginStatus = document.getElementById('loginStatus');
 const uploadStatus = document.getElementById('uploadStatus');
 const welcomeMessage = document.getElementById('welcomeMessage');
+const monthSelect = document.getElementById('monthSelect');
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -83,6 +84,7 @@ async function handleLogin(event) {
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
         welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
         showScreen('upload');
+        populateMonthList(currentUser.id);
         loginForm.reset();
 
     } catch (error) {
@@ -104,7 +106,8 @@ async function handleUpload(event) {
     uploadStatus.className = 'status';
 
     const formData = new FormData();
-    formData.append('employeeName', currentUser.id); // A bejelentkezett felhasználó ID-ját küldjük!
+    formData.append('employeeName', currentUser.id); 
+    formData.append('selectedMonth', document.getElementById('monthSelect').value);
     formData.append('weekRange', document.getElementById('weekRange').value);
     formData.append('file', document.getElementById('fileInput').files[0]);
 
@@ -129,6 +132,33 @@ async function handleUpload(event) {
     }
 }
 
+async function populateMonthList(userId) {
+    monthSelect.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>';
+    try {
+        const response = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
+        if (!response.ok) throw new Error('Nem sikerült betölteni a hónapokat.');
+        
+        const folders = await response.json();
+        
+        if (folders.length === 0) {
+            monthSelect.innerHTML = '<option value="" disabled selected>Nincsenek mappák ehhez az évhez</option>';
+            return;
+        }
+
+        monthSelect.innerHTML = ''; // Töröljük a "betöltés..." szöveget
+        folders.sort().reverse().forEach(folderName => { // Legfrissebb hónap legyen elöl
+            const option = document.createElement('option');
+            option.value = folderName;
+            option.textContent = folderName;
+            monthSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        uploadStatus.className = 'status error';
+        uploadStatus.textContent = `Hiba: ${error.message}`;
+    }
+}
+
 // Kijelentkezés
 function handleLogout() {
     currentUser = null;
@@ -145,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUser = JSON.parse(storedUser);
         welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
         showScreen('upload');
+        populateMonthList(currentUser.id);
     } else {
         showScreen('login');
     }
