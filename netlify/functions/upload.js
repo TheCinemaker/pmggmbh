@@ -62,7 +62,7 @@ exports.handler = async (event) => {
         const currentMonth = new Date().getMonth() + 1;
         const monthName = new Date().toLocaleString('de-DE', { month: 'long' });
         
-        const fileExtension = file.filename.split('.pop() || 'jpg';
+        const fileExtension = file.filename.split('.').pop() || 'jpg';
         const newFileName = `${weekRange}.${fileExtension}`;
         
         const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${currentMonth}. ${monthName}/${newFileName}`;
