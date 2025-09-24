@@ -59,7 +59,8 @@ exports.handler = async (event) => {
         if (!employeeName || !selectedMonth || !weekRange) { throw new Error('Hiányzó adatok.'); }
 
             const currentYear = new Date().getFullYear();
-
+        
+            const sanitizedWeekRange = weekRange.replace(/[^a-zA-Z0-9-]/g, '_');
             const fileExtension = file.filename.split('.').pop() || 'jpg';
             const newFileName = `${weekRange}.${fileExtension}`;
 
