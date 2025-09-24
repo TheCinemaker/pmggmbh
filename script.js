@@ -236,3 +236,20 @@ loginForm.addEventListener('submit', handleLogin);
 uploadForm.addEventListener('submit', handleUpload);
 logoutButton.addEventListener('click', handleLogout);
 absenceForm.addEventListener('submit', handleAbsenceSubmit);
+
+/*
+// =======================================================
+// PWA Service Worker - ÉLESÍTÉSKOR KOMMENTET KIVENNI!
+// =======================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('ServiceWorker sikeresen regisztrálva:', registration.scope);
+      })
+      .catch(err => {
+        console.log('ServiceWorker regisztráció sikertelen:', err);
+      });
+  });
+}
+*/
