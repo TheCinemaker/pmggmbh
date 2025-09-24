@@ -22,21 +22,21 @@
         <div id="loginSection" class="screen">
             <header class="app-header">
                 <img src="/images/pmglogo.jpeg" alt="Cég Logó" class="logo">
-                <h1 data-translate-key="loginTitle">Bejelentkezés</h1>
+                <h1 data-translate-key="loginTitle">LOGIN PAGE</h1>
             </header>
             <main class="content">
                 <form id="loginForm" class="app-form">
                     <div class="form-group">
-                        <label for="loginEmployeeName" data-translate-key="nameLabel">Név:</label>
+                        <label for="loginEmployeeName" data-translate-key="nameLabel">NAME:</label>
                         <select id="loginEmployeeName" required>
-                            <option value="" disabled selected data-translate-key="selectFromList">Válassz a listából...</option>
+                            <option value="" disabled selected data-translate-key="selectFromList">Select from list...</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="pinCode" data-translate-key="pinLabel">PIN kód:</label>
+                        <label for="pinCode" data-translate-key="pinLabel">PIN code:</label>
                         <input type="password" id="pinCode" inputmode="numeric" pattern="[0-9]*" required>
                     </div>
-                    <button type="submit" id="loginButton" data-translate-key="loginButton">Belépés</button>
+                    <button type="submit" id="loginButton" data-translate-key="loginButton">SIGN IN</button>
                 </form>
                 <div id="loginStatus" class="status"></div>
             </main>
