@@ -17,42 +17,48 @@ const absenceMonthSelect = document.getElementById('absenceMonthSelect');
 const viewMonthSelect = document.getElementById('viewMonthSelect');
 const fileListContainer = document.getElementById('fileListContainer');
 const oralapSection = document.getElementById('oralapSection');
+const sickProofUploadGroup = document.getElementById('sickProofUploadGroup');
+const sickProofFile = document.getElementById('sickProofFile');
+const absenceTypeSelect = document.getElementById('absenceType');
 
 // --- Állapotkezelés ---
 let currentUser = null;
 
 // --- FUNKCIÓK ---
 
-// Megjeleníti a megfelelő képernyőt (login vagy upload)
 function showScreen(screenName) {
     loginSection.classList.add('hidden');
     uploadSection.classList.add('hidden');
-    if (screenName === 'login') {
-        loginSection.classList.remove('hidden');
-    } else if (screenName === 'upload') {
-        uploadSection.classList.remove('hidden');
+    if (screenName === 'login') loginSection.classList.remove('hidden');
+    else if (screenName === 'upload') uploadSection.classList.remove('hidden');
+}
+
+function updateUiForUserType(userType) {
+    if (userType === 'nem_óralapos') {
+        if (oralapSection) oralapSection.classList.add('hidden');
+    } else {
+        if (oralapSection) oralapSection.classList.remove('hidden');
     }
 }
 
-// Hónap-listák feltöltése
 async function populateMonthList(userId) {
     const selects = [monthSelect, absenceMonthSelect, viewMonthSelect];
-    selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>');
+    selects.forEach(sel => { if(sel) sel.innerHTML = '<option value="" disabled selected>Hónapok betöltése...</option>'; });
     
     try {
         const response = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
         if (!response.ok) throw new Error('Nem sikerült betölteni a hónapokat.');
-        
         const folders = await response.json();
         
         if (folders.length === 0) {
-            selects.forEach(sel => sel.innerHTML = '<option value="" disabled selected>Nincsenek mappák</option>');
+            selects.forEach(sel => { if(sel) sel.innerHTML = '<option value="" disabled selected>Nincsenek mappák</option>'; });
             return;
         }
 
-        folders.sort((a, b) => parseInt(b) - parseInt(a)); // Legfrissebb hónap legyen elöl
+        folders.sort((a, b) => parseInt(b) - parseInt(a));
         
         selects.forEach(sel => {
+            if (!sel) return;
             sel.innerHTML = '';
             folders.forEach(folderName => {
                 const option = document.createElement('option');
@@ -61,14 +67,12 @@ async function populateMonthList(userId) {
                 sel.appendChild(option);
             });
         });
-
+        fetchAndDisplayFiles();
     } catch (error) {
-        uploadStatus.className = 'status error';
-        uploadStatus.textContent = `Hiba: ${error.message}`;
+        if(uploadStatus) uploadStatus.textContent = `Hiba: ${error.message}`;
     }
 }
 
-// Felhasználói lista lekérése és a legördülő feltöltése
 async function populateEmployeeList() {
     try {
         const response = await fetch('/.netlify/functions/getUsers');
@@ -76,7 +80,6 @@ async function populateEmployeeList() {
         const users = await response.json();
         
         users.sort((a, b) => a.displayName.localeCompare(b.displayName));
-
         users.forEach(user => {
             const option = document.createElement('option');
             option.value = user.id;
@@ -84,12 +87,10 @@ async function populateEmployeeList() {
             loginEmployeeSelect.appendChild(option);
         });
     } catch (error) {
-        loginStatus.className = 'status error';
         loginStatus.textContent = `Hiba: ${error.message}`;
     }
 }
 
-// Bejelentkezés kezelése
 async function handleLogin(event) {
     event.preventDefault();
     loginButton.disabled = true;
@@ -98,14 +99,7 @@ async function handleLogin(event) {
 
     const userId = loginEmployeeSelect.value;
     const pin = pinCodeInput.value;
-
-    if (!userId || !pin) {
-        loginStatus.className = 'status error';
-        loginStatus.textContent = 'Kérlek, válassz nevet és adj meg PIN kódot.';
-        loginButton.disabled = false;
-        loginButton.textContent = 'Belépés';
-        return;
-    }
+    if (!userId || !pin) { /* ... */ return; }
 
     try {
         const response = await fetch('/.netlify/functions/login', {
@@ -114,18 +108,17 @@ async function handleLogin(event) {
             body: JSON.stringify({ userId, pin }),
         });
         const result = await response.json();
-        
         if (!response.ok) throw new Error(result.message);
         
-        currentUser = { id: userId, displayName: result.displayName };
+        currentUser = { id: userId, displayName: result.displayName, type: result.userType };
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
         welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
+        updateUiForUserType(currentUser.type);
         showScreen('upload');
         populateMonthList(currentUser.id);
         loginForm.reset();
-
     } catch (error) {
-        loginStatus.className = 'status error';
         loginStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         loginButton.disabled = false;
@@ -133,14 +126,12 @@ async function handleLogin(event) {
     }
 }
 
-// Óralap feltöltés kezelése
 async function handleUpload(event) {
     event.preventDefault();
     const submitButton = document.getElementById('submitButton');
     submitButton.disabled = true;
     submitButton.textContent = 'Feltöltés folyamatban...';
     uploadStatus.textContent = '';
-    uploadStatus.className = 'status';
 
     const formData = new FormData();
     formData.append('employeeName', currentUser.id);
@@ -149,19 +140,13 @@ async function handleUpload(event) {
     formData.append('file', document.getElementById('fileInput').files[0]);
 
     try {
-        const response = await fetch('/.netlify/functions/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const response = await fetch('/.netlify/functions/upload', { method: 'POST', body: formData });
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
         
-        uploadStatus.className = 'status success';
         uploadStatus.textContent = 'Sikeres feltöltés!';
         uploadForm.reset();
-
     } catch (error) {
-        uploadStatus.className = 'status error';
         uploadStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         submitButton.disabled = false;
@@ -169,26 +154,30 @@ async function handleUpload(event) {
     }
 }
 
-// Távollét jelentés kezelése
 async function handleAbsenceSubmit(event) {
     event.preventDefault();
-    // ... (gomb letiltása, status törlése) ...
+    const submitButton = document.getElementById('absenceSubmitButton');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Küldés...';
+    absenceStatus.textContent = '';
 
     const absenceType = absenceTypeSelect.value;
     let endpoint = '';
-    let payload;
+    let options = { method: 'POST' };
 
     if (absenceType === 'KRANK') {
         endpoint = '/.netlify/functions/uploadSickProof';
-        payload = new FormData();
-        payload.append('userId', currentUser.id);
-        payload.append('selectedMonth', absenceMonthSelect.value);
-        payload.append('startDate', document.getElementById('startDate').value);
-        payload.append('endDate', document.getElementById('endDate').value);
-        payload.append('file', sickProofFile.files[0]);
+        const formData = new FormData();
+        formData.append('userId', currentUser.id);
+        formData.append('selectedMonth', absenceMonthSelect.value);
+        formData.append('startDate', document.getElementById('startDate').value);
+        formData.append('endDate', document.getElementById('endDate').value);
+        formData.append('file', sickProofFile.files[0]);
+        options.body = formData;
     } else {
         endpoint = '/.netlify/functions/logAbsence';
-        payload = JSON.stringify({
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify({
             userId: currentUser.id,
             absenceType: absenceType,
             selectedMonth: absenceMonthSelect.value,
@@ -198,22 +187,13 @@ async function handleAbsenceSubmit(event) {
     }
     
     try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            // A FormData-nak nem kell header, a JSON-nak igen
-            headers: (absenceType !== 'KRANK') ? { 'Content-Type': 'application/json' } : {},
-            body: payload,
-        });
-        // ... (válasz feldolgozása, hiba/siker üzenet) ...
-    } // ...
-}
+        const response = await fetch(endpoint, options);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
 
-        absenceStatus.className = 'status success';
         absenceStatus.textContent = result.message;
         absenceForm.reset();
-
     } catch (error) {
-        absenceStatus.className = 'status error';
         absenceStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         submitButton.disabled = false;
@@ -224,41 +204,26 @@ async function handleAbsenceSubmit(event) {
 async function fetchAndDisplayFiles() {
     const selectedMonth = viewMonthSelect.value;
     if (!selectedMonth || !currentUser) return;
-
     fileListContainer.innerHTML = '<p>Fájlok betöltése...</p>';
 
     try {
         const response = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`);
         if (!response.ok) throw new Error('Hiba a fájlok lekérésekor.');
-        
         const files = await response.json();
-        fileListContainer.innerHTML = ''; // Töröljük a "betöltés..." szöveget
+        fileListContainer.innerHTML = '';
 
         if (files.length === 0) {
             fileListContainer.innerHTML = '<p>Nincsenek fájlok ebben a hónapban.</p>';
             return;
         }
-
         files.forEach(file => {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
-            fileItem.innerHTML = `
-                <span class="file-item-name">${file.name}</span>
-                <a href="${file.link}" target="_blank" class="view-button">Megtekintés</a>
-            `;
+            fileItem.innerHTML = `<span class="file-item-name">${file.name}</span><a href="${file.link}" target="_blank" class="view-button">Megtekintés</a>`;
             fileListContainer.appendChild(fileItem);
         });
-
     } catch (error) {
         fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
-    }
-}
-
-function updateUiForUserType(userType) {
-    if (userType === 'nem_óralapos') {
-        oralapSection.classList.add('hidden'); // Elrejtjük az óralap feltöltést
-    } else {
-        oralapSection.classList.remove('hidden'); // Megjelenítjük
     }
 }
 
@@ -272,7 +237,6 @@ function handleAbsenceTypeChange() {
     }
 }
 
-// Kijelentkezés
 function handleLogout() {
     currentUser = null;
     sessionStorage.removeItem('currentUser');
@@ -281,19 +245,16 @@ function handleLogout() {
 
 // --- INICIALIZÁLÁS ---
 
-// Oldal betöltődésekor lefutó kód
 document.addEventListener('DOMContentLoaded', () => {
     const storedUser = sessionStorage.getItem('currentUser');
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         welcomeMessage.textContent = `Üdv, ${currentUser.displayName}!`;
+        updateUiForUserType(currentUser.type);
         showScreen('upload');
         populateMonthList(currentUser.id);
     } else {
         showScreen('login');
-    }
-    // A felhasználói listát csak akkor töltjük be, ha a login képernyőn vagyunk
-    if (!storedUser) {
         populateEmployeeList();
     }
 });
@@ -305,6 +266,7 @@ logoutButton.addEventListener('click', handleLogout);
 absenceForm.addEventListener('submit', handleAbsenceSubmit);
 viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
 absenceTypeSelect.addEventListener('change', handleAbsenceTypeChange);
+
 
 /*
 // =======================================================
