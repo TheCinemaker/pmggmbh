@@ -34,7 +34,9 @@ function showScreen(screenName) {
 }
 
 function updateUiForUserType(userType) {
-    if (userType === 'nem_óralapos') {
+    const type = userType ? userType.trim().toLowerCase() : 'oralapos';
+
+    if (type === 'nem_oralapos') {
         if (oralapSection) oralapSection.classList.add('hidden');
     } else {
         if (oralapSection) oralapSection.classList.remove('hidden');
