@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PMG Óralap Leadás</title>
+    
     <link rel="stylesheet" href="style.css">
+    
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#343a40">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,15 +17,15 @@
     <link rel="alternate icon" href="/icons/favicon.ico">
 </head>
 <body>
-    <div class="container">
-        <!-- Bejelentkezési Képernyő (Alapból látható) -->
-        <div id="loginSection">
-            <header>
+    <div class="app-container">
+        <!-- Bejelentkezési Képernyő -->
+        <div id="loginSection" class="screen">
+            <header class="app-header">
                 <img src="/images/pmglogo.jpeg" alt="Cég Logó" class="logo">
                 <h1>Bejelentkezés</h1>
             </header>
-            <main>
-                <form id="loginForm">
+            <main class="content">
+                <form id="loginForm" class="app-form">
                     <div class="form-group">
                         <label for="loginEmployeeName">Név:</label>
                         <select id="loginEmployeeName" required>
@@ -40,63 +42,66 @@
             </main>
         </div>
 
-        <!-- Feltöltő Képernyő (Alapból rejtett) -->
-        <div id="uploadSection" class="hidden">
-             <header>
-                <h1 id="welcomeMessage">Óralap Leadás</h1>
-                <button id="logoutButton" class="logout-button">Kijelentkezés</button>
+        <!-- Feltöltő Képernyő -->
+        <div id="uploadSection" class="screen hidden">
+            <header class="app-header">
+                <div id="welcomeMessage" class="welcome-text"></div>
+                <button id="logoutButton" class="logout-button" title="Kijelentkezés">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 17v-3H9v-4h7V7l5 5-5 5zM14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
+                </button>
             </header>
-            <main>
-                <!-- EZT A RÉSZT SZÚRD BE AZ UPLOAD FORM ALÁ -->
-                <hr style="margin: 30px 0;">
-                <h2 style="text-align: center; font-size: 1.2em; color: #555;">Távolmaradás Jelentése</h2>
-                    <form id="absenceForm">
+            <main class="content">
+                <div class="section">
+                    <h2 class="section-title">Óralap Feltöltése</h2>
+                    <form id="uploadForm" class="app-form">
+                        <div class="form-group">
+                            <label for="monthSelect">Cél hónap:</label>
+                            <select id="monthSelect" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="weekRange">Hét (pl. 5-9):</label>
+                            <input type="text" id="weekRange" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fileInput">Óralap (kép vagy PDF):</label>
+                            <input type="file" id="fileInput" accept="image/*,application/pdf" required>
+                        </div>
+                        <button type="submit" id="submitButton">Feltöltés</button>
+                    </form>
+                    <div id="uploadStatus" class="status"></div>
+                </div>
+
+                <hr class="separator">
+
+                <div class="section">
+                    <h2 class="section-title">Távolmaradás Jelentése</h2>
+                    <form id="absenceForm" class="app-form">
                         <div class="form-group">
                             <label for="absenceType">Típus:</label>
                             <select id="absenceType" required>
-                            <option value="URLAUB">Szabadság (Urlaub)</option>
-                            <option value="KRANK">Betegség (Krank)</option>
-                            <option value="UNBEZAHLT">Fizetés nélküli (Unbezahlt)</option>
-                        </select>
+                                <option value="URLAUB">Szabadság (Urlaub)</option>
+                                <option value="KRANK">Betegség (Krank)</option>
+                                <option value="UNBEZAHLT">Fizetés nélküli (Unbezahlt)</option>
+                            </select>
                         </div>
-                    <div class="form-group">
-                        <label for="absenceMonthSelect">Cél hónap:</label>
-                        <select id="absenceMonthSelect" required>
-                        <option value="" disabled selected>Hónapok betöltése...</option>
-                        </select>
-                    </div>
-                    <div class="form-group-row">
                         <div class="form-group">
-                            <label for="startDate">Kezdő dátum:</label>
-                            <input type="date" id="startDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="endDate">Záró dátum:</label>
-                        <input type="date" id="endDate" required>
-                    </div>
-                    </div>
-                <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
-                </form>
+                            <label for="absenceMonthSelect">Cél hónap:</label>
+                            <select id="absenceMonthSelect" required></select>
+                        </div>
+                        <div class="form-group-row">
+                            <div class="form-group">
+                                <label for="startDate">Kezdő dátum:</label>
+                                <input type="date" id="startDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="endDate">Záró dátum:</label>
+                                <input type="date" id="endDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" id="absenceSubmitButton">Jelentés elküldése</button>
+                    </form>
                     <div id="absenceStatus" class="status"></div>
-<!-- EDDIG TART AZ ÚJ RÉSZ -->
-                <form id="uploadForm">
-                    <div class="form-group">
-                        <label for="monthSelect">Cél hónap:</label>
-                        <select id="monthSelect" required>
-                        <option value="" disabled selected>Hónapok betöltése...</option>
-                    </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="weekRange">Hét (pl. 5-9):</label>
-                        <input type="text" id="weekRange" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fileInput">Óralap (kép vagy PDF):</label>
-                        <input type="file" id="fileInput" accept="image/*,application/pdf" required>
-                    </div>
-                    <button type="submit" id="submitButton">Feltöltés</button>
-                </form>
-                <div id="uploadStatus" class="status"></div>
+                </div>
             </main>
         </div>
     </div>
