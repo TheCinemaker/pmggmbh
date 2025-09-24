@@ -53,20 +53,19 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {
-        const { fields, file } = await parseMultipartForm(event);
-        const { employeeName, weekRange } = fields;
+            const { fields, file } = await parseMultipartForm(event);
+            const { employeeName, selectedMonth, weekRange } = fields; // <-- KIBŐVÍTVE
 
-        if (!employeeName || !weekRange) { throw new Error('Hiányzó adatok: Név vagy Hét.'); }
+        if (!employeeName || !selectedMonth || !weekRange) { throw new Error('Hiányzó adatok.'); }
 
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1;
-        const monthName = new Date().toLocaleString('de-DE', { month: 'long' });
-        
-        const fileExtension = file.filename.split('.').pop() || 'jpg';
-        const newFileName = `${weekRange}.${fileExtension}`;
-        
-        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${currentMonth}. ${monthName}/${newFileName}`;
-        
+            const currentYear = new Date().getFullYear();
+
+            const fileExtension = file.filename.split('.').pop() || 'jpg';
+            const newFileName = `${weekRange}.${fileExtension}`;
+
+            // AZ ÚJ, DINAMIKUS ELÉRÉSI ÚT
+        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${newFileName}`;
+                
         // A Dropbox objektum létrehozása a Refresh Tokennel
         const dbx = new Dropbox({
             refreshToken: REFRESH_TOKEN,
