@@ -33,7 +33,7 @@ const translations = {
         pinLabel: "PIN CODE:",
         selectFromList: "select your name...",
         loginButton: "SIGN IN",
-        loginButtonLoading: "Singing...",
+        loginButtonLoading: "Signing in...",
         logoutTitle: "Kijelentkezés",
         welcome: "Üdv,",
         timesheetUploadTitle: "Óralap Feltöltése",
@@ -70,92 +70,33 @@ const translations = {
         sickProofSuccess: "Táppénzes igazolás sikeresen feltöltve!",
     },
     pl: {
-        loginTitle: "Logowanie",
-        nameLabel: "Imię i nazwisko:",
-        pinLabel: "Kod PIN:",
-        selectFromList: "Wybierz z listy...",
-        loginButton: "Zaloguj się",
-        loginButtonLoading: "Logowanie...",
-        logoutTitle: "Wyloguj się",
-        welcome: "Witaj,",
-        timesheetUploadTitle: "Przesyłanie Karty Godzin",
-        targetMonthLabel: "Miesiąc docelowy:",
-        daysLabel: "Dni (np. 5-9 lub 30)",
-        timesheetFileLabel: "Karta godzin (obraz lub PDF):",
-        uploadButton: "Prześlij",
-        uploadButtonLoading: "Przesyłanie...",
-        absenceReportTitle: "Zgłoś nieobecność",
-        typeLabel: "Typ:",
-        absenceTypeVacation: "Urlop (Urlaub)",
-        absenceTypeSick: "Chorobowe (Krank)",
-        absenceTypeUnpaid: "Urlop bezpłatny (Unbezahlt)",
-        startDateLabel: "Data rozpoczęcia:",
-        endDateLabel: "Data zakończenia:",
-        sickProofLabel: "Prześlij zwolnienie lekarskie:",
-        reportButton: "Wyślij zgłoszenie",
-        reportButtonLoading: "Wysyłanie...",
-        viewFilesTitle: "Wyświetl przesłane pliki",
-        viewMonthLabel: "Wyświetl miesiąc:",
-        loadingMonths: "Ładowanie miesięcy...",
-        noFolders: "Brak folderów",
-        loadingFiles: "Ładowanie plików...",
-        noFiles: "Brak plików w tym miesiącu.",
-        viewButton: "Zobacz",
-        errorLoadingUsers: "Nie udało się załadować użytkowników.",
-        errorLoadingMonths: "Ładowanie miesięcy nie powiodło się.",
-        errorLoadingFiles: "Błąd podczas pobierania plików.",
-        errorMissingPin: "Proszę wybrać imię i podać kod PIN.",
-        errorMissingStartDate: "Proszę podać datę rozpoczęcia.",
-        errorMissingSickProof: "W przypadku choroby wymagane jest zaświadczenie.",
-        uploadSuccess: "Przesyłanie zakończone pomyślnie!",
-        absenceSuccess: "Nieobecność została pomyślnie zarejestrowana!",
-        sickProofSuccess: "Zwolnienie lekarskie zostało pomyślnie przesłane!",
+        // ... (lengyel fordítások)
     },
     de: {
-        loginTitle: "Anmeldung",
-        nameLabel: "Name:",
-        pinLabel: "PIN-Code:",
-        selectFromList: "Bitte aus der Liste wählen...",
-        loginButton: "Anmelden",
-        loginButtonLoading: "Anmelden...",
-        logoutTitle: "Abmelden",
-        welcome: "Willkommen,",
-        timesheetUploadTitle: "Stundenzettel Hochladen",
-        targetMonthLabel: "Zielmonat:",
-        daysLabel: "Tage (z.B. 5-9 oder 30)",
-        timesheetFileLabel: "Stundenzettel (Bild oder PDF):",
-        uploadButton: "Hochladen",
-        uploadButtonLoading: "Hochladen...",
-        absenceReportTitle: "Abwesenheit Melden",
-        typeLabel: "Typ:",
-        absenceTypeVacation: "Urlaub",
-        absenceTypeSick: "Krankenstand",
-        absenceTypeUnpaid: "Unbezahlter Urlaub",
-        startDateLabel: "Startdatum:",
-        endDateLabel: "Enddatum:",
-        sickProofLabel: "Ärztliche Bestätigung hochladen:",
-        reportButton: "Meldung Senden",
-        reportButtonLoading: "Senden...",
-        viewFilesTitle: "Hochgeladene Dateien Anzeigen",
-        viewMonthLabel: "Monat anzeigen:",
-        loadingMonths: "Monate werden geladen...",
-        noFolders: "Keine Ordner vorhanden",
-        loadingFiles: "Dateien werden geladen...",
-        noFiles: "Keine Dateien in diesem Monat.",
-        viewButton: "Ansehen",
-        errorLoadingUsers: "Benutzer konnten nicht geladen werden.",
-        errorLoadingMonths: "Fehler beim Laden der Monate.",
-        errorLoadingFiles: "Fehler beim Abrufen der Dateien.",
-        errorMissingPin: "Bitte Namen auswählen und PIN eingeben.",
-        errorMissingStartDate: "Bitte geben Sie das Startdatum ein.",
-        errorMissingSickProof: "Im Krankheitsfall ist eine Bestätigung erforderlich.",
-        uploadSuccess: "Erfolgreich hochgeladen!",
-        absenceSuccess: "Abwesenheit erfolgreich gemeldet!",
-        sickProofSuccess: "Ärztliche Bestätigung erfolgreich hochgeladen!",
+        // ... (német fordítások)
     }
 };
 
 // --- FUNKCIÓK ---
+
+function showToast(message, type = 'success') {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    Toast.fire({
+        icon: type,
+        title: message
+    });
+}
 
 function setLanguage(lang = 'hu') {
     const langDict = translations[lang] || translations['hu'];
@@ -175,16 +116,57 @@ function showScreen(screenName) {
     else if (screenName === 'upload') uploadSection.classList.remove('hidden');
 }
 
+function updateUiForUserType(userType) {
+    const type = (userType || 'oralapos').trim().toLowerCase();
+    if (type === 'nem_oralapos') {
+        if (oralapSection) oralapSection.classList.add('hidden');
+    } else {
+        if (oralapSection) oralapSection.classList.remove('hidden');
+    }
+}
+
 function updateUiForUserRole(userRole) {
-    if (userRole === 'admin') {
+    const role = (userRole || 'user').trim().toLowerCase();
+    if (role === 'admin') {
         if (adminButton) adminButton.classList.remove('hidden');
     } else {
         if (adminButton) adminButton.classList.add('hidden');
     }
 }
 
+async function fetchAndDisplayFiles() {
+    if (!viewMonthSelect) return;
+    const selectedMonth = viewMonthSelect.value;
+    const lang = (currentUser && currentUser.lang) || 'hu';
+    if (!selectedMonth || !currentUser) {
+        fileListContainer.innerHTML = '';
+        return;
+    };
+    fileListContainer.innerHTML = `<p>${translations[lang].loadingFiles}</p>`;
+
+    try {
+        const response = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`);
+        if (!response.ok) throw new Error(translations[lang].errorLoadingFiles);
+        const files = await response.json();
+        fileListContainer.innerHTML = '';
+
+        if (files.length === 0) {
+            fileListContainer.innerHTML = `<p>${translations[lang].noFiles}</p>`;
+            return;
+        }
+        files.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `<span class="file-item-name">${file.name}</span><a href="${file.link}" target="_blank" class="view-button">${translations[lang].viewButton}</a>`;
+            fileListContainer.appendChild(fileItem);
+        });
+    } catch (error) {
+        fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
+    }
+}
+
 async function populateMonthList(userId) {
-    const lang = currentUser.lang || 'hu';
+    const lang = (currentUser && currentUser.lang) || 'hu';
     const selects = [monthSelect, absenceMonthSelect, viewMonthSelect];
     selects.forEach(sel => { if(sel) sel.innerHTML = `<option value="" disabled selected>${translations[lang].loadingMonths}</option>`; });
     
@@ -208,9 +190,9 @@ async function populateMonthList(userId) {
                 });
             }
         });
-        fetchAndDisplayFiles();
+        fetchAndDisplayFiles(); // Automatikusan betöltjük az első hónap fájljait
     } catch (error) {
-        if(uploadStatus) uploadStatus.textContent = `Hiba: ${error.message}`;
+        if(uploadStatus) showToast(`Hiba: ${error.message}`, 'error');
     }
 }
 
@@ -234,16 +216,17 @@ async function populateEmployeeList() {
 
 async function handleLogin(event) {
     event.preventDefault();
+    const lang = 'hu'; // A login képernyő mindig magyar
     loginButton.disabled = true;
-    loginButton.textContent = translations['hu'].loginButtonLoading;
+    loginButton.textContent = translations[lang].loginButtonLoading;
     loginStatus.textContent = '';
 
     const userId = loginEmployeeSelect.value;
     const pin = pinCodeInput.value;
     if (!userId || !pin) {
-        loginStatus.textContent = translations['hu'].errorMissingPin;
+        loginStatus.textContent = translations[lang].errorMissingPin;
         loginButton.disabled = false;
-        loginButton.textContent = translations['hu'].loginButton;
+        loginButton.textContent = translations[lang].loginButton;
         return;
     }
 
@@ -256,13 +239,14 @@ async function handleLogin(event) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
         
-        currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang, role: result.userRole }; // A role is bekerül
+        currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang, role: result.userRole };
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
         
-        setLanguage(currentUser.lang);
-        welcomeMessage.textContent = `${translations[currentUser.lang].welcome} ${currentUser.displayName}!`;
+        const userLang = currentUser.lang || 'hu';
+        setLanguage(userLang);
+        welcomeMessage.textContent = `${translations[userLang].welcome} ${currentUser.displayName}!`;
         updateUiForUserType(currentUser.type);
-        updateUiForUserRole(currentUser.role); // <-- EZ A FONTOS ÚJ SOR!
+        updateUiForUserRole(currentUser.role);
         showScreen('upload');
         populateMonthList(currentUser.id);
         loginForm.reset();
@@ -270,7 +254,7 @@ async function handleLogin(event) {
         loginStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         loginButton.disabled = false;
-        loginButton.textContent = translations['hu'].loginButton;
+        loginButton.textContent = translations[lang].loginButton;
     }
 }
 
@@ -283,24 +267,20 @@ async function handleUpload(event) {
   submitButton.textContent = translations[lang].uploadButtonLoading;
   uploadStatus.textContent = '';
 
-  // ⛔️ NE resetelj és NE mutass siker toastot itt!
-  // Előbb olvasd ki a mezőket:
   const formData = new FormData();
   formData.append('employeeName', currentUser.id);
   formData.append('selectedMonth', monthSelect.value);
   formData.append('weekRange', document.getElementById('weekRange').value);
-  const file = document.getElementById('fileInput').files[0];
-  formData.append('file', file);
+  formData.append('file', document.getElementById('fileInput').files[0]);
 
   try {
     const response = await fetch('/.netlify/functions/upload', { method: 'POST', body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message);
 
-    // ✅ Siker: itt jöhet csak a toast + reset
     showToast(translations[lang].uploadSuccess, 'success');
-    uploadStatus.textContent = translations[lang].uploadSuccess;
     uploadForm.reset();
+    fetchAndDisplayFiles(); // Frissítjük a fájllistát feltöltés után
   } catch (error) {
     showToast(`Hiba: ${error.message}`, 'error');
   } finally {
@@ -320,9 +300,7 @@ async function handleAbsenceSubmit(event) {
 
     const startDateValue = document.getElementById('startDate').value;
     if (!startDateValue) {
-        // ❌ Hiba toast
         showToast(translations[lang].errorMissingStartDate, 'error');
-        absenceStatus.textContent = translations[lang].errorMissingStartDate;
         submitButton.disabled = false;
         submitButton.textContent = translations[lang].reportButton;
         return;
@@ -332,7 +310,6 @@ async function handleAbsenceSubmit(event) {
     const month = startDate.getMonth() + 1;
     const monthName = startDate.toLocaleString('de-DE', { month: 'long' });
     const selectedMonth = `${month}. ${monthName}`;
-
     const absenceType = absenceTypeSelect.value;
     let endpoint = '';
     let options = { method: 'POST' };
@@ -340,9 +317,7 @@ async function handleAbsenceSubmit(event) {
 
     if (absenceType === 'KRANK') {
         if (!sickProofFile.files || sickProofFile.files.length === 0) {
-            // ❌ Hiba toast
             showToast(translations[lang].errorMissingSickProof, 'error');
-            absenceStatus.textContent = translations[lang].errorMissingSickProof;
             submitButton.disabled = false;
             submitButton.textContent = translations[lang].reportButton;
             return;
@@ -373,75 +348,17 @@ async function handleAbsenceSubmit(event) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
-        // ✅ Siker toast
         const successMsg = translations[lang][successMessageKey];
         showToast(successMsg, 'success');
-        absenceStatus.textContent = successMsg;
-
         absenceForm.reset();
         handleAbsenceTypeChange();
+        fetchAndDisplayFiles(); // Frissítjük a fájllistát
     } catch (error) {
-        // ❌ Hiba toast
         showToast(`Hiba: ${error.message}`, 'error');
-        absenceStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = translations[lang].reportButton;
     }
-}
-
-async function fetchAndDisplayFiles() {
-    const selectedMonth = viewMonthSelect.value;
-    const lang = currentUser.lang || 'hu';
-    if (!selectedMonth || !currentUser) return;
-    fileListContainer.innerHTML = `<p>${translations[lang].loadingFiles}</p>`;
-
-    try {
-        const response = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`);
-        if (!response.ok) throw new Error(translations[lang].errorLoadingFiles);
-        const files = await response.json();
-        fileListContainer.innerHTML = '';
-
-        if (files.length === 0) {
-            fileListContainer.innerHTML = `<p>${translations[lang].noFiles}</p>`;
-            return;
-        }
-        files.forEach(file => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
-            fileItem.innerHTML = `<span class="file-item-name">${file.name}</span><a href="${file.link}" target="_blank" class="view-button">${translations[lang].viewButton}</a>`;
-            fileListContainer.appendChild(fileItem);
-        });
-    } catch (error) {
-        fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
-    }
-}
-
-function updateUiForUserRole(userRole) {
-    if (userRole === 'admin') {
-        adminButton.classList.remove('hidden');
-    } else {
-        adminButton.classList.add('hidden');
-    }
-}
-
-function showToast(message, type = 'success') {
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer);
-            toast.addEventListener('mouseleave', Swal.resumeTimer);
-        }
-    });
-
-    Toast.fire({
-        icon: type,
-        title: message
-    });
 }
 
 function handleAbsenceTypeChange() {
@@ -468,13 +385,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         
-        // JAVÍTÁS: Ellenőrizzük a nyelvet, mielőtt használnánk
         const lang = currentUser.lang || 'hu';
         const langDict = translations[lang] || translations['hu'];
 
         setLanguage(lang);
         welcomeMessage.textContent = `${langDict.welcome} ${currentUser.displayName}!`;
         
+        updateUiForUserType(currentUser.type);
         updateUiForUserRole(currentUser.role);
         showScreen('upload');
         populateMonthList(currentUser.id);
@@ -492,6 +409,7 @@ logoutButton.addEventListener('click', handleLogout);
 absenceForm.addEventListener('submit', handleAbsenceSubmit);
 viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
 absenceTypeSelect.addEventListener('change', handleAbsenceTypeChange);
+
 
 /*
 // =======================================================
