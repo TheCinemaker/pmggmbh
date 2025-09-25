@@ -120,7 +120,7 @@ function renderList(data) {
         return `
           <li>
             <span class="file-icon">📄</span>
-            <span class="file-name">${file.folder} / <strong>${file.name}</strong></span>
+            <span class="file-name" title="${file.folder} / ${file.name}">${file.folder} / <strong>${file.name}</strong></span>
             <span class="file-date">${when || ''}</span>
           </li>
         `;
