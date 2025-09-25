@@ -276,3 +276,32 @@ html, body { background: var(--bg); color: var(--text); }
   font-size:.9rem;
 }
 
+/* Fejléc: engedjük a törést kis kijelzőn */
+.app-header{
+  flex-wrap: wrap;
+}
+
+/* Cím rugalmas, hogy ne nyomja össze a gombokat */
+.app-header h1{
+  flex: 1 1 auto;
+  min-width: 160px; /* vagy 180px, ha kell */
+}
+
+/* Gombok konténere sorban, résközzel, fix helyfoglalással */
+.header-actions{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+/* Mobilon menjenek a gombok új sorba, jobb szélre */
+@media (max-width: 560px){
+  .header-actions{
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}
+
+
