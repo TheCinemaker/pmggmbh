@@ -279,7 +279,8 @@ async function handleUpload(event) {
     const lang = currentUser.lang || 'hu';
     submitButton.disabled = true;
     submitButton.textContent = translations[lang].uploadButtonLoading;
-    uploadStatus.textContent = '';
+    showToast(translations[lang].uploadSuccess);
+    uploadForm.reset();
 
     const formData = new FormData();
     formData.append('employeeName', currentUser.id);
@@ -295,7 +296,7 @@ async function handleUpload(event) {
         uploadStatus.textContent = translations[lang].uploadSuccess;
         uploadForm.reset();
     } catch (error) {
-        uploadStatus.textContent = `Hiba: ${error.message}`;
+        showToast(`Hiba: ${error.message}`, 'error');
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = translations[lang].uploadButton;
@@ -397,6 +398,25 @@ async function fetchAndDisplayFiles() {
     } catch (error) {
         fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
     }
+}
+
+function showToast(message, type = 'success') {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    Toast.fire({
+        icon: type,
+        title: message
+    });
 }
 
 function handleAbsenceTypeChange() {
