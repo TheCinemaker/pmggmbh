@@ -1,5 +1,8 @@
 const { Dropbox } = require('dropbox');
-// ... (Ugyanaz a konfigurációs blokk, mint az upload.js-ben) ...
+const Busboy = require('busboy');
+
+// --- Konfiguráció és Ellenőrzés ---
+const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN' ];
 
 exports.handler = async (event) => {
     // ... (Header és OPTIONS ellenőrzés) ...
