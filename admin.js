@@ -29,29 +29,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
     function renderList(data) {
-        userListContainer.innerHTML = '';
-        const filterText = nameFilter.value.toLowerCase();
+  userListContainer.innerHTML = '';
+  const filterText = (nameFilter.value || '').toLowerCase();
 
-        for (const user in data) {
-            if (user.toLowerCase().includes(filterText)) {
-                const card = document.createElement('div');
-                card.className = 'user-card';
-                
-                let fileListHTML = '<ul class="file-list">';
-                if (data[user].length === 0) {
-                    fileListHTML += '<li>Nincs feltöltött fájl.</li>';
-                } else {
-                    data[user].forEach(file => {
-                       fileListHTML += `<li>${file.folder} / <strong>${file.name}</strong></li>`;
-                    });
-                }
-                fileListHTML += '</ul>';
+  // Rendezett, szűrt user lista
+  const users = Object.keys(data)
+    .filter(u => u.toLowerCase().includes(filterText))
+    .sort((a, b) => a.localeCompare(b, 'hu-HU'));
 
-                card.innerHTML = `<h3>${user}</h3>${fileListHTML}`;
-                userListContainer.appendChild(card);
-            }
-        }
+  users.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'user-card';
+
+    const files = Array.isArray(data[user]) ? data[user] : [];
+
+    let fileListHTML = '<ul class="file-list">';
+    if (files.length === 0) {
+      fileListHTML += '<li class="empty">Nincs feltöltött fájl.</li>';
+    } else {
+      fileListHTML += files.map(file => `
+        <li>
+          <span class="file-icon">📄</span>
+          <span class="file-name">${file.folder} / <strong>${file.name}</strong></span>
+          <span class="file-date">${file.uploadedAtDisplay || ''}</span>
+        </li>
+      `).join('');
     }
+    fileListHTML += '</ul>';
+
+    card.innerHTML = `<h3>${user}</h3>${fileListHTML}`;
+    userListContainer.appendChild(card);
+  });
+
+  // Ha nincs találat a szűrés után
+  if (users.length === 0) {
+    userListContainer.innerHTML = '<p class="status">Nincs találat a megadott szűrőre.</p>';
+  }
+}
+
 
     nameFilter.addEventListener('input', () => renderList(allUploads));
     fetchAllUploads();
