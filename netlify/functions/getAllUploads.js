@@ -158,7 +158,7 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: baseHeaders, body: JSON.stringify(ordered) };
 
   } catch (error) {
-    console.error('getUploadsCurrentMonth hiba:', error);
+    console.error('getAllUploads hiba:', error);
     return {
       statusCode: 500,
       headers: baseHeaders,
