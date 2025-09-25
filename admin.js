@@ -11,19 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let allUploads = {};
 
     async function fetchAllUploads() {
-  userListContainer.innerHTML = '<p>Adatok betöltése...</p>';
+  userListContainer.innerHTML = '<p>Data herunterladen...</p>';
   try {
     const resp = await fetch('/.netlify/functions/getAllUploads?links=0'/*, {
       // ha használsz szerveroldali kulcsot:
       // headers: { 'x-admin-key': '***' }
     }*/);
     const text = await resp.text();
-    if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Szerverhiba'}`);
+    if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Serverprobleme'}`);
     const data = text ? JSON.parse(text) : {};
     allUploads = data;
     renderList(data);
   } catch (err) {
-    userListContainer.innerHTML = `<p class="status error">Hiba: ${err.message}</p>`;
+    userListContainer.innerHTML = `<p class="status error">Fehler: ${err.message}</p>`;
   }
 }
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let fileListHTML = '<ul class="file-list">';
     if (files.length === 0) {
-      fileListHTML += '<li class="empty">Nincs feltöltött fájl.</li>';
+      fileListHTML += '<li class="empty">Keine hochgeladenen Dateien.</li>';
     } else {
       fileListHTML += files.map(file => `
         <li>
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ha nincs találat a szűrés után
   if (users.length === 0) {
-    userListContainer.innerHTML = '<p class="status">Nincs találat a megadott szűrőre.</p>';
+    userListContainer.innerHTML = '<p class="status">Keine Treffer für den angegebenen Suchbegriff.</p>';
   }
 }
 
