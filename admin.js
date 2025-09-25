@@ -11,16 +11,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let allUploads = {};
 
     async function fetchAllUploads() {
-        userListContainer.innerHTML = '<p>Adatok betöltése...</p>';
-        try {
-            const response = await fetch('/.netlify/functions/getAllUploads');
-            const data = await response.json();
-            allUploads = data;
-            renderList(data);
-        } catch (error) {
-            userListContainer.innerHTML = `<p class="status error">Hiba: ${error.message}</p>`;
-        }
-    }
+  userListContainer.innerHTML = '<p>Adatok betöltése...</p>';
+  try {
+    const resp = await fetch('/.netlify/functions/getUploadsCurrentMonth?links=0'/*, {
+      // ha használsz szerveroldali kulcsot:
+      // headers: { 'x-admin-key': '***' }
+    }*/);
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Szerverhiba'}`);
+    const data = text ? JSON.parse(text) : {};
+    allUploads = data;
+    renderList(data);
+  } catch (err) {
+    userListContainer.innerHTML = `<p class="status error">Hiba: ${err.message}</p>`;
+  }
+}
+
     
     function renderList(data) {
         userListContainer.innerHTML = '';
