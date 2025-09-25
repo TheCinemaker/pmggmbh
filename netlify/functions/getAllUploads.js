@@ -1,7 +1,6 @@
-// netlify/functions/getAllUploads.js
+// netlify/functions/getUploadsCurrentMonth.js
 const { Dropbox } = require('dropbox');
 
-// --- Konfiguráció és Ellenőrzés (modul-szinten biztonságos) ---
 const REQUIRED_ENV = [
   'ALLOWED_ORIGIN',
   'DROPBOX_APP_KEY',
@@ -15,14 +14,12 @@ function checkEnv() {
   if (missing.length) throw new Error(`Hiányzó környezeti változók: ${missing.join(', ')}`);
 }
 
-try {
-  checkEnv();
-} catch (err) {
-  // Ha már itt elhasalna, adjunk vissza JSON-t
+try { checkEnv(); }
+catch (err) {
   exports.handler = async () => ({
     statusCode: 500,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: err.message }),
+    body: JSON.stringify({ message: err.message })
   });
   return;
 }
@@ -31,9 +28,8 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 const APP_KEY       = process.env.DROPBOX_APP_KEY;
 const APP_SECRET    = process.env.DROPBOX_APP_SECRET;
 const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null; // ha használsz szerveroldali védelmet
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
 
-// --- Közös headerek ---
 const baseHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -41,7 +37,7 @@ const baseHeaders = {
   'Content-Type': 'application/json',
 };
 
-// --- Helper: teljes mappa bejárása lapozással ---
+// Lapozás helper
 async function listFolderAll(dbx, path) {
   let entries = [];
   let resp = await dbx.filesListFolder({ path });
@@ -53,8 +49,13 @@ async function listFolderAll(dbx, path) {
   return entries;
 }
 
-// --- Opcionális normalizálás hónapnevekre, ha kellene ---
-// Itt most az eredeti mappanevet visszük tovább érintetlenül.
+// "9. September" formátum (de-DE, nagy kezdőbetű)
+function getCurrentMonthLabel(date = new Date()) {
+  const monthNum = date.getMonth() + 1;
+  let monthName = date.toLocaleString('de-DE', { month: 'long' }); // pl. "september"
+  monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1); // "September"
+  return `${monthNum}. ${monthName}`;
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -62,135 +63,94 @@ exports.handler = async (event) => {
   }
 
   try {
-    // (OPCIONÁLIS) Szerveroldali admin védelem – NE bízz a sessionStorage-ben!
+    // (opcionális) szerveroldali védelem
     if (ADMIN_API_KEY) {
       const key = event.headers['x-admin-key'];
       if (!key || key !== ADMIN_API_KEY) {
-        return {
-          statusCode: 401,
-          headers: baseHeaders,
-          body: JSON.stringify({ message: 'Unauthorized' }),
-        };
+        return { statusCode: 401, headers: baseHeaders, body: JSON.stringify({ message: 'Unauthorized' }) };
       }
     }
 
-    // Query paramok (mind opcionális)
     const qs = event.queryStringParameters || {};
-    const yearParam   = (qs.year && String(qs.year).trim()) || '';
-    const userFilter  = (qs.user && decodeURIComponent(qs.user).trim()) || '';        // pl. "AVAR Szilveszter"
-    const monthFilter = (qs.month && decodeURIComponent(qs.month).trim()) || '';      // pl. "12. Dezember"
-    const withLinks   = (qs.links === '1' || qs.links === 'true');                    // ideiglenes linket kér-e
-    const fallbackPrevYear = (qs.fallbackPrevYear === '1' || qs.fallbackPrevYear === 'true');
+    const withLinks = (qs.links === '1' || qs.links === 'true');
 
     const now = new Date();
-    const year = yearParam || String(now.getFullYear());
+    const year = String(now.getFullYear());
+    const monthLabel = getCurrentMonthLabel(now); // pl. "9. September"
 
     const dbx = new Dropbox({
       refreshToken: REFRESH_TOKEN,
       clientId: APP_KEY,
-      clientSecret: APP_SECRET,
+      clientSecret: APP_SECRET
     });
 
-    // Gyökér: év mappa
+    // 1) év gyökér
     const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
 
-    // Listázzuk a user mappákat; ha nem található és engedélyezett, próbáljuk az előző évet
-    let userFoldersEntries;
+    // user mappák
+    let yearEntries;
     try {
-      userFoldersEntries = await listFolderAll(dbx, basePath);
+      yearEntries = await listFolderAll(dbx, basePath);
     } catch (err) {
       const tag = err?.error?.error?.path?.reason?.['.tag'];
-      const isNotFound = err?.status === 409 && (tag === 'not_found' || tag === 'path');
-      if (isNotFound && fallbackPrevYear) {
-        const prevBasePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${Number(year) - 1}`;
-        userFoldersEntries = await listFolderAll(dbx, prevBasePath);
-      } else {
-        throw err;
+      const notFound = err?.status === 409 && (tag === 'not_found' || tag === 'path');
+      if (notFound) {
+        // nincs még idei mappa → üres lista
+        return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({}) };
       }
+      throw err;
     }
 
-    const userFolders = userFoldersEntries.filter(e => e['.tag'] === 'folder');
-
-    // Eredmény struktúra: { [userName]: [{ folder, name, path, link? }] }
+    const userFolders = yearEntries.filter(e => e['.tag'] === 'folder');
     const result = {};
 
-    // Végigmegyünk a usereken (defenzív: ha userFilter van, csak arra)
+    // 2) minden usernél csak az adott hónap mappát nézzük
     for (const uf of userFolders) {
       const userName = uf.name; // pl. "AVAR Szilveszter"
-      if (userFilter && userName !== userFilter) continue;
-
       result[userName] = [];
 
-      // Hónap mappák a user alatt
-      let monthEntries;
+      const monthPath = `${uf.path_lower}/${monthLabel}`; // /.../User/9. September
+
+      let monthFiles;
       try {
-        monthEntries = await listFolderAll(dbx, uf.path_lower);
-      } catch (innerErr) {
-        console.error(`Hiba a(z) ${userName} hónap-listázásánál:`, innerErr);
-        continue; // Egy user hibája ne állítsa meg az egészet
+        const entries = await listFolderAll(dbx, monthPath);
+        monthFiles = entries.filter(e => e['.tag'] === 'file');
+      } catch (err) {
+        // ha nincs ilyen hónap mappa → üresen hagyjuk
+        const tag = err?.error?.error?.path?.reason?.['.tag'];
+        const notFound = err?.status === 409 && (tag === 'not_found' || tag === 'path');
+        if (notFound) continue;
+        console.error(`Hiba a(z) ${userName} / ${monthLabel}:`, err);
+        continue;
       }
 
-      const monthFolders = monthEntries.filter(e => e['.tag'] === 'folder');
-
-      for (const mf of monthFolders) {
-        const monthName = mf.name; // pl. "12. Dezember"
-        if (monthFilter && monthName !== monthFilter) continue;
-
-        // Fájlok a hónap mappában
-        let fileEntries;
-        try {
-          fileEntries = await listFolderAll(dbx, mf.path_lower);
-        } catch (innerErr) {
-          console.error(`Hiba a(z) ${userName} / ${monthName} fájllistázásánál:`, innerErr);
-          continue;
+      if (!withLinks) {
+        for (const f of monthFiles) {
+          result[userName].push({ folder: monthLabel, name: f.name, path: f.path_lower });
         }
-
-        const files = fileEntries.filter(e => e['.tag'] === 'file');
-
-        if (!withLinks) {
-          // csak meta
-          for (const f of files) {
+      } else {
+        // linkek sorban (kisebb rate-limit kockázat)
+        for (const f of monthFiles) {
+          try {
+            const linkResp = await dbx.filesGetTemporaryLink({ path: f.path_lower });
             result[userName].push({
-              folder: monthName,
+              folder: monthLabel,
               name: f.name,
               path: f.path_lower,
+              link: linkResp.result.link
             });
-          }
-        } else {
-          // ideiglenes linkek (sorrendben, hogy elkerüljük a túl sok párhuzamos kérést / rate limitet)
-          for (const f of files) {
-            try {
-              const linkResp = await dbx.filesGetTemporaryLink({ path: f.path_lower });
-              result[userName].push({
-                folder: monthName,
-                name: f.name,
-                path: f.path_lower,
-                link: linkResp.result.link,
-              });
-            } catch (linkErr) {
-              console.error(`Link hiba: ${userName} / ${monthName} / ${f.name}`, linkErr);
-              // link nélkül is tehetjük a listába
-              result[userName].push({
-                folder: monthName,
-                name: f.name,
-                path: f.path_lower,
-              });
-            }
+          } catch (linkErr) {
+            console.error(`Link hiba: ${userName} / ${monthLabel} / ${f.name}`, linkErr);
+            result[userName].push({ folder: monthLabel, name: f.name, path: f.path_lower });
           }
         }
       }
 
-      // Opcionális: rendezzük a user fájljait (hónap szerint, majd név szerint)
-      result[userName].sort((a, b) => {
-        if (a.folder === b.folder) return a.name.localeCompare(b.name, 'de-DE');
-        // próbáljuk a hónap sorszámát kiolvasni a "12. Dezember" mintából:
-        const numA = parseInt(a.folder, 10) || 0;
-        const numB = parseInt(b.folder, 10) || 0;
-        return numB - numA; // csökkenő: legújabb elöl
-      });
+      // igény szerint név szerinti rendezés
+      result[userName].sort((a, b) => a.name.localeCompare(b.name, 'de-DE'));
     }
 
-    // Opcionális: a user kulcsok rendezése
+    // user kulcsok rendezése
     const ordered = Object.keys(result)
       .sort((a, b) => a.localeCompare(b, 'hu-HU'))
       .reduce((acc, key) => { acc[key] = result[key]; return acc; }, {});
@@ -198,11 +158,11 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: baseHeaders, body: JSON.stringify(ordered) };
 
   } catch (error) {
-    console.error('getAllUploads hiba:', error);
+    console.error('getUploadsCurrentMonth hiba:', error);
     return {
       statusCode: 500,
       headers: baseHeaders,
-      body: JSON.stringify({ message: error.message || 'Szerver hiba getAllUploads-ben.' }),
+      body: JSON.stringify({ message: error.message || 'Szerver hiba (aktuális hónap).' })
     };
   }
 };
