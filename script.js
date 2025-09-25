@@ -258,7 +258,7 @@ async function handleLogin(event) {
         
         currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang };
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
+        updateUiForUserRole(currentUser.role);
         setLanguage(currentUser.lang);
         welcomeMessage.textContent = `${translations[currentUser.lang].welcome} ${currentUser.displayName}!`;
         updateUiForUserType(currentUser.type);
@@ -413,6 +413,14 @@ async function fetchAndDisplayFiles() {
         });
     } catch (error) {
         fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
+    }
+}
+
+function updateUiForUserRole(userRole) {
+    if (userRole === 'admin') {
+        adminButton.classList.remove('hidden');
+    } else {
+        adminButton.classList.add('hidden');
     }
 }
 
