@@ -35,12 +35,15 @@ exports.handler = async (event) => {
         const { userId, pin } = JSON.parse(event.body);
         if (!userId || !pin) { throw new Error('Hiányzó adatok.'); }
 
-        const auth = new google.auth.GoogleAuth({ /* ... */ });
+        const auth = new google.auth.GoogleAuth({
+            credentials: { client_email: CLIENT_EMAIL, private_key: PRIVATE_KEY },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+        });
         const sheets = google.sheets({ version: 'v4', auth });
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHE-ET_NAME}!A:E`, // Olvassuk az E oszlopot is
+            range: `${SHEET_NAME}!A:E`, // ITT VOLT A HIBA, JAVÍTVA
         });
 
         const rows = response.data.values;
@@ -48,17 +51,17 @@ exports.handler = async (event) => {
 
         const userRow = rows.find(row => row[0] === userId);
         if (!userRow) {
-            return { statusCode: 404, /* ... */ };
+            return { statusCode: 404, headers, body: JSON.stringify({ message: 'Felhasználó nem található.' }) };
         }
         
-        const correctPin = userRow[1];
+        const correctPin = userRow[1]; // B oszlop
         if (pin !== correctPin) {
-            return { statusCode: 401, /* ... */ };
+            return { statusCode: 401, headers, body: JSON.stringify({ message: 'Hibás PIN kód.' }) };
         }
-
+        
         const userType = userRow[2] || 'oralapos'; 
         const userLang = userRow[3] || 'hu';
-        const userRole = userRow[4] || 'user'; // E oszlop, alapértelmezett 'user'
+        const userRole = userRow[4] || 'user';
 
         return {
             statusCode: 200,
@@ -68,7 +71,7 @@ exports.handler = async (event) => {
                 displayName: userId,
                 userType: userType,
                 userLang: userLang,
-                userRole: userRole // <-- Visszaadjuk a szerepkört
+                userRole: userRole
             }),
         };
     } catch (error) {
