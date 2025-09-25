@@ -274,45 +274,53 @@ async function handleLogin(event) {
 }
 
 async function handleUpload(event) {
-    event.preventDefault();
-    const submitButton = document.getElementById('submitButton');
-    const lang = currentUser.lang || 'hu';
-    submitButton.disabled = true;
-    submitButton.textContent = translations[lang].uploadButtonLoading;
-    showToast(translations[lang].uploadSuccess);
+  event.preventDefault();
+  const submitButton = document.getElementById('submitButton');
+  const lang = (currentUser && currentUser.lang) || 'hu';
+
+  submitButton.disabled = true;
+  submitButton.textContent = translations[lang].uploadButtonLoading;
+  uploadStatus.textContent = '';
+
+  // ⛔️ NE resetelj és NE mutass siker toastot itt!
+  // Előbb olvasd ki a mezőket:
+  const formData = new FormData();
+  formData.append('employeeName', currentUser.id);
+  formData.append('selectedMonth', monthSelect.value);
+  formData.append('weekRange', document.getElementById('weekRange').value);
+  const file = document.getElementById('fileInput').files[0];
+  formData.append('file', file);
+
+  try {
+    const response = await fetch('/.netlify/functions/upload', { method: 'POST', body: formData });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+
+    // ✅ Siker: itt jöhet csak a toast + reset
+    showToast(translations[lang].uploadSuccess, 'success');
+    uploadStatus.textContent = translations[lang].uploadSuccess;
     uploadForm.reset();
-
-    const formData = new FormData();
-    formData.append('employeeName', currentUser.id);
-    formData.append('selectedMonth', monthSelect.value);
-    formData.append('weekRange', document.getElementById('weekRange').value);
-    formData.append('file', document.getElementById('fileInput').files[0]);
-
-    try {
-        const response = await fetch('/.netlify/functions/upload', { method: 'POST', body: formData });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
-        
-        uploadStatus.textContent = translations[lang].uploadSuccess;
-        uploadForm.reset();
-    } catch (error) {
-        showToast(`Hiba: ${error.message}`, 'error');
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = translations[lang].uploadButton;
-    }
+  } catch (error) {
+    showToast(`Hiba: ${error.message}`, 'error');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = translations[lang].uploadButton;
+  }
 }
+
 
 async function handleAbsenceSubmit(event) {
     event.preventDefault();
     const submitButton = document.getElementById('absenceSubmitButton');
-    const lang = currentUser.lang || 'hu';
+    const lang = (currentUser && currentUser.lang) || 'hu';
     submitButton.disabled = true;
     submitButton.textContent = translations[lang].reportButtonLoading;
     absenceStatus.textContent = '';
 
     const startDateValue = document.getElementById('startDate').value;
     if (!startDateValue) {
+        // ❌ Hiba toast
+        showToast(translations[lang].errorMissingStartDate, 'error');
         absenceStatus.textContent = translations[lang].errorMissingStartDate;
         submitButton.disabled = false;
         submitButton.textContent = translations[lang].reportButton;
@@ -323,7 +331,7 @@ async function handleAbsenceSubmit(event) {
     const month = startDate.getMonth() + 1;
     const monthName = startDate.toLocaleString('de-DE', { month: 'long' });
     const selectedMonth = `${month}. ${monthName}`;
-    
+
     const absenceType = absenceTypeSelect.value;
     let endpoint = '';
     let options = { method: 'POST' };
@@ -331,6 +339,8 @@ async function handleAbsenceSubmit(event) {
 
     if (absenceType === 'KRANK') {
         if (!sickProofFile.files || sickProofFile.files.length === 0) {
+            // ❌ Hiba toast
+            showToast(translations[lang].errorMissingSickProof, 'error');
             absenceStatus.textContent = translations[lang].errorMissingSickProof;
             submitButton.disabled = false;
             submitButton.textContent = translations[lang].reportButton;
@@ -356,16 +366,22 @@ async function handleAbsenceSubmit(event) {
             endDate: document.getElementById('endDate').value,
         });
     }
-    
+
     try {
         const response = await fetch(endpoint, options);
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
-        absenceStatus.textContent = translations[lang][successMessageKey];
+        // ✅ Siker toast
+        const successMsg = translations[lang][successMessageKey];
+        showToast(successMsg, 'success');
+        absenceStatus.textContent = successMsg;
+
         absenceForm.reset();
         handleAbsenceTypeChange();
     } catch (error) {
+        // ❌ Hiba toast
+        showToast(`Hiba: ${error.message}`, 'error');
         absenceStatus.textContent = `Hiba: ${error.message}`;
     } finally {
         submitButton.disabled = false;
