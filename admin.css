@@ -1,132 +1,116 @@
-/* Konténer és fejléc */
-.app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+/* Layout-Basis (harmonizál a style.css-sel) */
+:root{
+  --bg-color:#0b0d11;
+  --surface-color:#141821;
+  --border-color:#232838;
+  --text-color:#e9edf3;
+  --text-muted:#9aa4b2;
+  --accent-color:#3b82f6; /* kék */
 }
 
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 0.5rem;
+.app-container{max-width:980px;margin:0 auto;padding:1rem;}
+.app-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding:.75rem 0 1rem;border-bottom:1px solid var(--border-color);
+}
+.app-header h1{margin:0;font-size:1.35rem;color:var(--text-color);}
+.logout-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:10px;background:var(--surface-color);
+  color:var(--text-color);border:1px solid var(--border-color);
+  transition:transform .05s, background .2s;
+}
+.logout-button:hover{background:#1a2230}
+.logout-button:active{transform:translateY(1px)}
+.logout-button svg{width:22px;height:22px}
+
+.content{padding:1rem 0}
+
+/* Szűrő */
+.form-group{margin:.5rem 0 1rem}
+#nameFilter{
+  width:100%;padding:.65rem .8rem;border-radius:10px;border:1px solid var(--border-color);
+  background:var(--surface-color);color:var(--text-color);outline:none;
+}
+#nameFilter::placeholder{color:var(--text-muted)}
+#nameFilter:focus{border-color:#2b3350}
+
+/* User-kártya */
+.user-card{
+  background:var(--surface-color);border:1px solid var(--border-color);
+  border-radius:14px;padding:1rem;margin-bottom:1rem;box-shadow:0 6px 16px rgba(0,0,0,.25);
+}
+.user-card-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;
+}
+.user-card-header h3{
+  margin:0;padding:0;font-size:1.05rem;color:var(--text-color);
 }
 
-.app-header h1 {
-  font-size: 1.8rem;
-  margin: 0;
+/* Info gomb */
+.info-btn{
+  border:none;background:var(--surface-color);
+  border:1px solid var(--border-color);
+  color:var(--text-color);
+  border-radius:999px;padding:.35rem .6rem;cursor:pointer;
+  font-size:.95rem;line-height:1;transition:background .2s, transform .05s, border-color .2s;
 }
+.info-btn:hover{background:#1b2231;border-color:#2b3756}
+.info-btn:active{transform:translateY(1px)}
 
-.logout-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-color);
-  border-radius: 50%;
-  padding: 0.5rem;
-  transition: background 0.2s, color 0.2s;
+/* Fájl lista */
+.file-list{list-style:none;margin:.25rem 0 0;padding:0}
+.file-list li{
+  display:grid;grid-template-columns:28px 1fr auto;gap:.65rem;
+  padding:.55rem .25rem;border-bottom:1px solid rgba(255,255,255,.05);
+  align-items:center;
 }
+.file-list li:last-child{border-bottom:none}
+.file-list .file-icon{opacity:.9}
+.file-list .file-name{color:var(--text-color)}
+.file-list .file-date{color:var(--text-muted);font-size:.9rem}
+.file-list .empty{color:var(--text-muted);padding:.4rem 0}
 
-.logout-button:hover {
-  background: var(--accent-color);
-  color: #fff;
-}
+/* státusz */
+.status{color:var(--text-muted);padding:.5rem 0}
+.status.error{color:#f59e0b}
 
-/* Keresőmező */
-.form-group {
-  margin-bottom: 1.2rem;
-  position: sticky;
-  top: 0;
-  background: var(--bg-color);
-  padding: 0.5rem 0;
-  z-index: 10;
+/* Modal */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;padding:1rem;z-index:999;
+  animation:fadeIn .12s ease-out;
 }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-#nameFilter {
-  width: 100%;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--surface-color);
-  transition: border-color 0.2s, box-shadow 0.2s;
+.modal{
+  background:var(--surface-color);color:var(--text-color);
+  width:100%;max-width:540px;border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;border:1px solid var(--border-color);
 }
+.modal-header,.modal-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 1rem;border-bottom:1px solid var(--border-color);
+}
+.modal-footer{border-top:1px solid var(--border-color);border-bottom:none;justify-content:flex-end}
+.modal-header h4{margin:0;font-size:1.05rem}
+.modal-close{
+  border:none;background:transparent;color:var(--text-color);
+  font-size:1.1rem;cursor:pointer;padding:.25rem;border-radius:8px;
+}
+.modal-close:hover{background:#1b2231}
 
-#nameFilter:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(100, 150, 250, 0.3);
+.modal-body{padding:.85rem 1rem 1rem;display:grid;gap:.6rem}
+.modal-row{
+  display:grid;grid-template-columns:140px 1fr;gap:.75rem;align-items:baseline;
 }
+.modal-row span{color:var(--text-muted)}
+.modal-primary{
+  border:none;background:var(--accent-color);color:#fff;
+  padding:.55rem .95rem;border-radius:10px;cursor:pointer;
+  transition:filter .15s;
+}
+.modal-primary:hover{filter:brightness(.95)}
 
-/* User kártyák */
-.user-card {
-  background-color: var(--surface-color);
-  border-radius: 10px;
-  padding: 1rem 1.2rem;
-  margin-bottom: 1.2rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  transition: background 0.2s;
-}
-
-.user-card:hover {
-  background: var(--surface-hover);
-}
-
-.user-card h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.15rem;
-  color: var(--text-strong);
-  font-weight: 600;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.3rem;
-}
-
-/* Fájllista */
-.file-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.file-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0.2rem;
-  border-bottom: 1px dashed var(--border-color);
-  font-size: 0.95rem;
-}
-
-.file-list li:last-child {
-  border-bottom: none;
-}
-
-/* Ikon + név + dátum elrendezés */
-.file-icon {
-  flex: 0 0 auto;
-  font-size: 1rem;
-}
-
-.file-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-date {
-  flex: 0 0 auto;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
-}
-
-/* Üres lista */
-.file-list li.empty {
-  color: var(--text-muted);
-  font-style: italic;
-  border: none;
-}
+/* Figyelmeztető badge (telefon formátum) */
+.badge-warn{display:inline-block;margin-left:.35rem;font-size:.85em;color:#f59e0b}
