@@ -128,7 +128,21 @@ button:disabled {
 button:hover:not(:disabled) {
     background-color: var(--primary-hover-color);
 }
-
+.admin-button {
+    position: absolute;
+    top: 1rem;
+    right: 4rem; 
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .logout-button {
     position: absolute;
     top: 1rem;
