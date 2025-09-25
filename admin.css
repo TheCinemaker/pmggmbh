@@ -13,11 +13,6 @@
 /* Alap */
 html, body { background: var(--bg); color: var(--text); }
 .app-container{max-width:1100px;margin:0 auto;padding:24px;}
-.app-header{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:8px 0 18px;border-bottom:1px solid var(--border);
-}
-.app-header h1{margin:0;font-size:22px;letter-spacing:.2px;color:var(--text);}
 .content{padding:18px 0}
 
 /* Safe-area padding (iOS notch) */
@@ -28,19 +23,79 @@ html, body { background: var(--bg); color: var(--text); }
   }
 }
 
-/* Vissza gomb */
+/* ===== HEADER: ház balra – cím középen – frissítés jobbra ===== */
+.app-header{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+.app-header h1{
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: .2px;
+  color: var(--text);
+  justify-self: center;
+  text-align: center;
+}
+
+/* Bal oldali ház gomb (home) + kompatibilitás a régi .logout-button-nal */
+.home-button,
 .logout-button{
-  display:inline-grid;place-items:center;width:42px;height:42px;
-  border-radius:12px;background:linear-gradient(180deg, #111a28, #0c121d);
-  color:var(--text);border:1px solid var(--border);
+  display:inline-grid; place-items:center;
+  width:42px; height:42px; border-radius:12px;
+  background:linear-gradient(180deg, #111a28, #0c121d);
+  color:var(--text); border:1px solid var(--border);
   box-shadow:0 4px 14px rgba(0,0,0,.25);
   transition:transform .06s ease, background .2s ease, border-color .2s ease;
+  justify-self: start;
 }
-.logout-button:hover{background:#131d2c;border-color:#1d2a40}
-.logout-button:active{transform:translateY(1px)}
-.logout-button svg{width:22px;height:22px}
+.home-button:hover,
+.logout-button:hover{ background:#131d2c; border-color:#1d2a40 }
+.home-button:active,
+.logout-button:active{ transform:translateY(1px) }
+.home-button svg,
+.logout-button svg{ width:22px; height:22px }
 
-/* Szűrő */
+/* Jobb oldali frissítés gomb */
+.icon-button{
+  display:inline-grid; place-items:center;
+  width:42px; height:42px; border-radius:12px;
+  background:linear-gradient(180deg, #111a28, #0c121d);
+  color:var(--text); border:1px solid var(--border);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+  transition:transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+  justify-self: end;
+}
+.icon-button:hover{ background:#131d2c; border-color:#1d2a40 }
+.icon-button:active{ transform:translateY(1px) }
+.icon-button[disabled]{ opacity:.6; cursor:progress; }
+.icon-button svg{ width:20px; height:20px }
+.icon-button.spinning svg{ animation:spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Fókuszjelzés (a11y) */
+.home-button:focus-visible,
+.logout-button:focus-visible,
+.icon-button:focus-visible,
+.info-btn:focus-visible,
+.modal-close:focus-visible,
+.modal-primary:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 6px var(--accent-weak);
+  border-color:rgba(79,140,255,.55);
+}
+
+/* Utolsó frissítés */
+.last-updated{
+  margin:10px 0 6px;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+/* ===== Szűrő ===== */
 .form-group{margin:6px 0 18px}
 #nameFilter{
   width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);
@@ -53,7 +108,7 @@ html, body { background: var(--bg); color: var(--text); }
   box-shadow:0 0 0 4px var(--accent-weak);
 }
 
-/* Kártya */
+/* ===== Kártya ===== */
 .user-card{
   background:linear-gradient(180deg, #0d1520, #0a1019);
   border:1px solid var(--border);
@@ -87,17 +142,7 @@ html, body { background: var(--bg); color: var(--text); }
 .info-btn:active{transform:translateY(1px)}
 .info-btn svg{width:18px;height:18px;opacity:.95}
 
-/* Fókuszjelzés (a11y) */
-.info-btn:focus-visible,
-.modal-close:focus-visible,
-.modal-primary:focus-visible,
-.logout-button:focus-visible{
-  outline:none;
-  box-shadow:0 0 0 6px var(--accent-weak);
-  border-color:rgba(79,140,255,.55);
-}
-
-/* Fájl lista */
+/* ===== Fájl lista ===== */
 .file-list{list-style:none;margin:4px 0 0;padding:0}
 .file-list li{
   display:grid;
@@ -130,14 +175,14 @@ html, body { background: var(--bg); color: var(--text); }
 .status{color:var(--muted);padding:.5rem 0}
 .status.error{color:#ffb454}
 
-/* Chips (pl. mappa, címkék – ha majd kell) */
+/* Chips (ha majd kell) */
 .chip{
   display:inline-block;background:rgba(255,255,255,.06);color:var(--text);
   border:1px solid var(--border);padding:4px 8px;border-radius:999px;
   font-size:.85rem;
 }
 
-/* Modal – blur, finom animáció */
+/* ===== Modal – blur, finom animáció ===== */
 .modal-backdrop{
   position:fixed;inset:0;background:rgba(6,10,16,.5);
   backdrop-filter: blur(6px);
@@ -213,6 +258,9 @@ html, body { background: var(--bg); color: var(--text); }
 /* ===== Mobil-optimalizálás ===== */
 @media (max-width: 560px){
   .app-container{ padding:16px; }
+  .app-header{ gap: 8px; }
+  .app-header h1{ font-size: 18px; }
+
   .user-card{ border-radius:14px; padding:12px 12px 6px; }
 
   /* fájlsor: 3 oszlopról 2 soros layout */
@@ -251,57 +299,3 @@ html, body { background: var(--bg); color: var(--text); }
 @media (prefers-reduced-motion: reduce){
   * { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
-
-.header-actions{display:flex; align-items:center; gap:10px;}
-
-.icon-button{
-  display:inline-grid; place-items:center;
-  width:42px; height:42px; border-radius:12px;
-  background:linear-gradient(180deg, #111a28, #0c121d);
-  color:var(--text); border:1px solid var(--border);
-  box-shadow:0 4px 14px rgba(0,0,0,.25);
-  transition:transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
-}
-.icon-button:hover{background:#131d2c; border-color:#1d2a40}
-.icon-button:active{transform:translateY(1px)}
-.icon-button[disabled]{opacity:.6; cursor:progress;}
-.icon-button svg{width:20px; height:20px}
-
-.icon-button.spinning svg{ animation:spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.last-updated{
-  margin:10px 0 6px;
-  color:var(--muted);
-  font-size:.9rem;
-}
-
-/* Fejléc: engedjük a törést kis kijelzőn */
-.app-header{
-  flex-wrap: wrap;
-}
-
-/* Cím rugalmas, hogy ne nyomja össze a gombokat */
-.app-header h1{
-  flex: 1 1 auto;
-  min-width: 160px; /* vagy 180px, ha kell */
-}
-
-/* Gombok konténere sorban, résközzel, fix helyfoglalással */
-.header-actions{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-/* Mobilon menjenek a gombok új sorba, jobb szélre */
-@media (max-width: 560px){
-  .header-actions{
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 8px;
-  }
-}
-
-
