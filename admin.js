@@ -91,9 +91,14 @@ function renderList(data) {
     const header = document.createElement('div');
     header.className = 'user-card-header';
     header.innerHTML = `
-      <h3>${user}</h3>
-      <button class="info-btn" type="button" aria-label="Info" title="Info">ℹ️</button>
-    `;
+  <h3>${user}</h3>
+  <button class="info-btn" type="button" aria-label="Info" title="Info">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm.001 5.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM10.9 11.5h2.2v6h-2.2v-6z"/>
+    </svg>
+    <span class="sr-only">Info</span>
+  </button>
+`;
     card.appendChild(header);
 
     // Fájl lista
