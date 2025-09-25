@@ -21,7 +21,7 @@ const sickProofUploadGroup    = document.getElementById('sickProofUploadGroup');
 const sickProofFile           = document.getElementById('sickProofFile');
 const absenceTypeSelect       = document.getElementById('absenceType');
 const adminButton             = document.getElementById('adminButton');
-const languageSelect          = document.getElementById('languageSelect'); // opcionális
+const languageSelect          = document.getElementById('languageSelect'); // ha van
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -171,6 +171,7 @@ function getLangDict(lang) {
 
 // --- UI / Toast ---
 function showToast(message, type = 'success') {
+  if (!window.Swal) { console.warn('SweetAlert2 nincs betöltve'); return; }
   const Toast = Swal.mixin({
     toast: true,
     position: 'top',
@@ -241,6 +242,9 @@ async function fetchAndDisplayFiles() {
     files.forEach(file => {
       const fileItem = document.createElement('div');
       fileItem.className = 'file-item';
+      fileItem.innerHTML = `
+        <span class="file-item-name">${file.name}</span>
+        <a href="${file.link}" target="_blank" class="view-button">${getLangDict(lang).viewButton}</a>
       `;
       fileListContainer.appendChild(fileItem);
     });
@@ -257,8 +261,9 @@ async function populateMonthList(userId) {
 
   try {
     const resp = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
-    if (!resp.ok) throw new Error(getLangDict(lang).errorLoadingMonths);
-    const folders = await resp.json();
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingMonths);
+    const folders = text ? JSON.parse(text) : [];
 
     selects.forEach(sel => {
       if (!sel) return;
@@ -266,6 +271,7 @@ async function populateMonthList(userId) {
       if (!folders.length) {
         sel.innerHTML = `<option value="" disabled selected>${getLangDict(lang).noFolders}</option>`;
       } else {
+        // Pl. "9. September" => parseInt jól működik a hónap eleji számmal
         folders.sort((a, b) => parseInt(b) - parseInt(a));
         folders.forEach(folderName => {
           const option = document.createElement('option');
@@ -289,19 +295,40 @@ async function populateMonthList(userId) {
 // --- Felhasználók betöltése (login) ---
 async function populateEmployeeList() {
   try {
-    const resp = await fetch('/.netlify/functions/getUsers');
-    if (!resp.ok) throw new Error(getLangDict('hu').errorLoadingUsers); // login képernyőn HU a baseline
-    const users = await resp.json();
+    if (loginEmployeeSelect) {
+      loginEmployeeSelect.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Betöltés…';
+      opt.disabled = true;
+      opt.selected = true;
+      loginEmployeeSelect.appendChild(opt);
+    }
 
-    users.sort((a, b) => a.displayName.localeCompare(b.displayName));
-    users.forEach(user => {
-      const option = document.createElement('option');
-      option.value = user.id;
-      option.textContent = user.displayName;
-      if (loginEmployeeSelect) loginEmployeeSelect.appendChild(option);
-    });
+    const resp = await fetch('/.netlify/functions/getUsers');
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || getLangDict('hu').errorLoadingUsers);
+    const users = text ? JSON.parse(text) : [];
+
+    if (loginEmployeeSelect) {
+      loginEmployeeSelect.innerHTML = '';
+      users.sort((a, b) => a.displayName.localeCompare(b.displayName));
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = getLangDict('hu').selectFromList || 'Válassz a listából…';
+      ph.disabled = true; ph.selected = true;
+      loginEmployeeSelect.appendChild(ph);
+
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.displayName;
+        loginEmployeeSelect.appendChild(option);
+      });
+    }
   } catch (error) {
     if (loginStatus) loginStatus.textContent = `Hiba: ${error.message}`;
+    console.error('getUsers hiba:', error);
   }
 }
 
@@ -525,9 +552,9 @@ function handleLogout() {
 
 // --- INICIALIZÁLÁS ---
 document.addEventListener('DOMContentLoaded', () => {
-  // Nyelvválasztó (ha van)
   const startLang = getCurrentLang();
   setLanguage(startLang);
+
   if (languageSelect) {
     languageSelect.value = startLang;
     languageSelect.addEventListener('change', (e) => {
