@@ -251,3 +251,28 @@ html, body { background: var(--bg); color: var(--text); }
 @media (prefers-reduced-motion: reduce){
   * { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
+
+.header-actions{display:flex; align-items:center; gap:10px;}
+
+.icon-button{
+  display:inline-grid; place-items:center;
+  width:42px; height:42px; border-radius:12px;
+  background:linear-gradient(180deg, #111a28, #0c121d);
+  color:var(--text); border:1px solid var(--border);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+  transition:transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+}
+.icon-button:hover{background:#131d2c; border-color:#1d2a40}
+.icon-button:active{transform:translateY(1px)}
+.icon-button[disabled]{opacity:.6; cursor:progress;}
+.icon-button svg{width:20px; height:20px}
+
+.icon-button.spinning svg{ animation:spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.last-updated{
+  margin:10px 0 6px;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
