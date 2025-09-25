@@ -423,8 +423,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         
-        setLanguage(currentUser.lang);
-        welcomeMessage.textContent = `${translations[currentUser.lang].welcome} ${currentUser.displayName}!`;
+        // JAVÍTÁS: Ellenőrizzük a nyelvet, mielőtt használnánk
+        const lang = currentUser.lang || 'hu';
+        const langDict = translations[lang] || translations['hu'];
+
+        setLanguage(lang);
+        welcomeMessage.textContent = `${langDict.welcome} ${currentUser.displayName}!`;
         
         updateUiForUserType(currentUser.type);
         showScreen('upload');
