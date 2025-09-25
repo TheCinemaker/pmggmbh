@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 2px solid var(--border-color);
   padding-bottom: 0.5rem;
 }
@@ -26,7 +26,7 @@
   background: var(--surface-color);
   border-radius: 50%;
   padding: 0.5rem;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .logout-button:hover {
@@ -36,7 +36,7 @@
 
 /* Keresőmező */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
   position: sticky;
   top: 0;
   background: var(--bg-color);
@@ -65,22 +65,22 @@
   background-color: var(--surface-color);
   border-radius: 10px;
   padding: 1rem 1.2rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  transition: transform 0.15s, box-shadow 0.15s;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: background 0.2s;
 }
 
 .user-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  background: var(--surface-hover);
 }
 
 .user-card h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: var(--text-strong);
+  font-weight: 600;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
 }
 
 /* Fájllista */
@@ -91,10 +91,11 @@
 }
 
 .file-list li {
-  padding: 0.4rem 0.2rem;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border-color);
+  gap: 0.75rem;
+  padding: 0.4rem 0.2rem;
+  border-bottom: 1px dashed var(--border-color);
   font-size: 0.95rem;
 }
 
@@ -102,9 +103,30 @@
   border-bottom: none;
 }
 
-/* Ikon a fájlokhoz */
-.file-list li::before {
-  content: "📄";
-  margin-right: 0.6rem;
+/* Ikon + név + dátum elrendezés */
+.file-icon {
+  flex: 0 0 auto;
   font-size: 1rem;
+}
+
+.file-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-date {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* Üres lista */
+.file-list li.empty {
+  color: var(--text-muted);
+  font-style: italic;
+  border: none;
 }
