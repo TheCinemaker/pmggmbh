@@ -1,73 +1,226 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Ellenőrizzük, hogy admin van-e bejelentkezve
-    const storedUser = sessionStorage.getItem('currentUser');
-    if (!storedUser || JSON.parse(storedUser).role !== 'admin') {
-        document.body.innerHTML = '<h1>Hozzáférés Megtagadva</h1><a href="index.html">Vissza a főoldalra</a>';
-        return;
-    }
+// admin.js
 
-    const userListContainer = document.getElementById('userListContainer');
-    const nameFilter = document.getElementById('nameFilter');
-    let allUploads = {};
+// --- Német UI sztringek ---
+const DE = {
+  loading: 'Daten werden geladen…',
+  errorPrefix: 'Fehler:',
+  emptyFiles: 'Keine hochgeladenen Dateien.',
+  noResults: 'Keine Treffer für den Filter.',
+  accessDeniedTitle: 'Zugriff verweigert',
+  backHome: 'Zurück zur Startseite',
+  infoTitle: 'Mitarbeiterinfo',
+  labels: {
+    name: 'Name',
+    phone: 'Telefon',
+    email: 'E-Mail',
+    role: 'Rolle',
+    type: 'Typ',
+    lang: 'Sprache'
+  },
+  close: 'Schließen'
+};
 
-    async function fetchAllUploads() {
-  userListContainer.innerHTML = '<p>Data herunterladen...</p>';
-  try {
-    const resp = await fetch('/.netlify/functions/getAllUploads?links=0'/*, {
-      // ha használsz szerveroldali kulcsot:
-      // headers: { 'x-admin-key': '***' }
-    }*/);
-    const text = await resp.text();
-    if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Serverprobleme'}`);
-    const data = text ? JSON.parse(text) : {};
-    allUploads = data;
-    renderList(data);
-  } catch (err) {
-    userListContainer.innerHTML = `<p class="status error">Fehler: ${err.message}</p>`;
-  }
+// --- Állapot ---
+let allUploads = {};     // { "Max Mustermann": [ { name, folder, uploadedAt, uploadedAtDisplay } ] }
+let usersByName = {};    // { "max mustermann": { displayName,id,phone,email,userRole,userType,userLang } }
+
+// --- Helper-ek ---
+const E164 = /^\+\d{7,15}$/;
+
+function formatDateDE(isoOrAny) {
+  if (!isoOrAny) return '';
+  const d = new Date(isoOrAny);
+  if (isNaN(d.getTime())) return String(isoOrAny);
+  return d.toLocaleString('de-DE', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
 }
 
-    
-    function renderList(data) {
-  userListContainer.innerHTML = '';
-  const filterText = (nameFilter.value || '').toLowerCase();
+function safeJson(text) {
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return null; }
+}
 
-  // Rendezett, szűrt user lista
+function normName(s) {
+  return (s || '').trim().toLowerCase();
+}
+
+// --- Adatok betöltése ---
+async function fetchUsersMeta() {
+  const resp = await fetch('/.netlify/functions/getUsers');
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Serverfehler'}`);
+  const arr = safeJson(text) || [];
+  usersByName = {};
+  arr.forEach(u => {
+    const key = normName(u.displayName || u.id);
+    if (key) usersByName[key] = u;
+  });
+}
+
+async function fetchAllUploads() {
+  const userListContainer = document.getElementById('userListContainer');
+  userListContainer.innerHTML = `<p>${DE.loading}</p>`;
+
+  const resp = await fetch('/.netlify/functions/getAllUploads?links=0');
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`(${resp.status}) ${text || 'Serverfehler'}`);
+  const data = safeJson(text) || {};
+  allUploads = data;
+  renderList(data);
+}
+
+// --- Lista kirajzolás ---
+function renderList(data) {
+  const userListContainer = document.getElementById('userListContainer');
+  const nameFilter = document.getElementById('nameFilter');
+
+  userListContainer.innerHTML = '';
+  const filterText = normName(nameFilter?.value);
+
   const users = Object.keys(data)
-    .filter(u => u.toLowerCase().includes(filterText))
-    .sort((a, b) => a.localeCompare(b, 'hu-HU'));
+    .filter(u => normName(u).includes(filterText))
+    .sort((a, b) => a.localeCompare(b, 'de-DE'));
 
   users.forEach(user => {
     const card = document.createElement('div');
     card.className = 'user-card';
 
+    // Fejléc + info gomb
+    const header = document.createElement('div');
+    header.className = 'user-card-header';
+    header.innerHTML = `
+      <h3>${user}</h3>
+      <button class="info-btn" type="button" aria-label="Info" title="Info">ℹ️</button>
+    `;
+    card.appendChild(header);
+
+    // Fájl lista
     const files = Array.isArray(data[user]) ? data[user] : [];
+    const ul = document.createElement('ul');
+    ul.className = 'file-list';
 
-    let fileListHTML = '<ul class="file-list">';
-    if (files.length === 0) {
-      fileListHTML += '<li class="empty">Keine hochgeladenen Dateien.</li>';
+    if (!files.length) {
+      ul.innerHTML = `<li class="empty">${DE.emptyFiles}</li>`;
     } else {
-      fileListHTML += files.map(file => `
-        <li>
-          <span class="file-icon">📄</span>
-          <span class="file-name">${file.folder} / <strong>${file.name}</strong></span>
-          <span class="file-date">${file.uploadedAtDisplay || ''}</span>
-        </li>
-      `).join('');
+      // rendezés: legfrissebb fel tetején
+      files.sort((a, b) => {
+        const da = new Date(a.uploadedAt || a.uploadedAtDisplay || 0).getTime();
+        const db = new Date(b.uploadedAt || b.uploadedAtDisplay || 0).getTime();
+        return db - da;
+      });
+      ul.innerHTML = files.map(file => {
+        const when = file.uploadedAtDisplay || formatDateDE(file.uploadedAt);
+        return `
+          <li>
+            <span class="file-icon">📄</span>
+            <span class="file-name">${file.folder} / <strong>${file.name}</strong></span>
+            <span class="file-date">${when || ''}</span>
+          </li>
+        `;
+      }).join('');
     }
-    fileListHTML += '</ul>';
+    card.appendChild(ul);
 
-    card.innerHTML = `<h3>${user}</h3>${fileListHTML}`;
+    // info modal megnyitása
+    header.querySelector('.info-btn').addEventListener('click', () => openUserInfoModal(user));
+
     userListContainer.appendChild(card);
   });
 
-  // Ha nincs találat a szűrés után
-  if (users.length === 0) {
-    userListContainer.innerHTML = '<p class="status">Keine Treffer für den angegebenen Suchbegriff.</p>';
+  if (!users.length) {
+    userListContainer.innerHTML = `<p class="status">${DE.noResults}</p>`;
   }
 }
 
+// --- Info modal ---
+function openUserInfoModal(displayName) {
+  const meta = usersByName[normName(displayName)] || {};
+  const phone = meta.phone || '';
+  const phoneHtml = phone
+    ? `<a href="tel:${phone}">${phone}</a>${E164.test(phone) ? '' : ' <span class="badge-warn" title="Vermutlich kein vollständiges internationales Format">⚠︎</span>'}`
+    : '—';
 
+  const email = meta.email || '';
+  const emailHtml = email ? `<a href="mailto:${email}">${email}</a>` : '—';
+
+  const role = meta.userRole || '—';
+  const type = meta.userType || '—';
+  const lang = meta.userLang || '—';
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h4 id="modalTitle">${DE.infoTitle}</h4>
+        <button class="modal-close" aria-label="${DE.close}">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row"><span>${DE.labels.name}:</span><strong>${displayName}</strong></div>
+        <div class="modal-row"><span>${DE.labels.phone}:</span><strong>${phoneHtml}</strong></div>
+        <div class="modal-row"><span>${DE.labels.email}:</span><strong>${emailHtml}</strong></div>
+        <div class="modal-row"><span>${DE.labels.role}:</span><strong>${role}</strong></div>
+        <div class="modal-row"><span>${DE.labels.type}:</span><strong>${type}</strong></div>
+        <div class="modal-row"><span>${DE.labels.lang}:</span><strong>${lang}</strong></div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-primary">${DE.close}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  backdrop.querySelector('.modal-close').addEventListener('click', close);
+  backdrop.querySelector('.modal-primary').addEventListener('click', close);
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+  });
+}
+
+// --- Init / Admin védelem ---
+document.addEventListener('DOMContentLoaded', async () => {
+  // Admin ellenőrzés
+  try {
+    const stored = sessionStorage.getItem('currentUser');
+    const user = stored ? JSON.parse(stored) : null;
+    if (!user || (user.role || user.userRole) !== 'admin') {
+      document.body.innerHTML = `
+        <div class="app-container">
+          <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
+          <main class="content">
+            <a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a>
+          </main>
+        </div>
+      `;
+      return;
+    }
+  } catch {
+    document.body.innerHTML = `
+      <div class="app-container">
+        <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
+        <main class="content">
+          <a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a>
+        </main>
+      </div>
+    `;
+    return;
+  }
+
+  // Betöltés
+  const userListContainer = document.getElementById('userListContainer');
+  const nameFilter = document.getElementById('nameFilter');
+
+  try {
+    await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
+  } catch (err) {
+    userListContainer.innerHTML = `<p class="status error">${DE.errorPrefix} ${err.message}</p>`;
+  }
+
+  if (nameFilter) {
     nameFilter.addEventListener('input', () => renderList(allUploads));
-    fetchAllUploads();
+  }
 });
