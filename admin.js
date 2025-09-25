@@ -154,41 +154,53 @@ function openUserInfoModal(displayName) {
   const type = meta.userType || '—';
   const lang = meta.userLang || '—';
 
+  // ha már van nyitott modal, zárjuk
+  document.querySelectorAll('.modal-backdrop').forEach(n => n.remove());
+
   const backdrop = document.createElement('div');
-backdrop.className = 'modal-backdrop';
-backdrop.innerHTML = `
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-header">
-      <h4 id="modalTitle">${DE.infoTitle}</h4>
-      <button class="modal-close" aria-label="${DE.close}">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/>
-        </svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-grid">
-        <div class="label">${DE.labels.name}:</div>
-        <div class="value">${displayName}</div>
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h4 id="modalTitle">${DE.infoTitle}</h4>
+        <button class="modal-close" aria-label="${DE.close}">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="label">${DE.labels.name}:</div>
+          <div class="value">${displayName}</div>
 
-        <div class="label">${DE.labels.phone}:</div>
-        <div class="value">${phoneHtml}</div>
+          <div class="label">${DE.labels.phone}:</div>
+          <div class="value">${phoneHtml}</div>
 
-        <div class="label">${DE.labels.email}:</div>
-        <div class="value">${emailHtml}</div>
+          <div class="label">${DE.labels.email}:</div>
+          <div class="value">${emailHtml}</div>
 
-        <div class="label">${DE.labels.lang}:</div>
-        <div class="value">${lang}</div>
+          <div class="label">${DE.labels.role}:</div>
+          <div class="value">${role}</div>
+
+          <div class="label">${DE.labels.type}:</div>
+          <div class="value">${type}</div>
+
+          <div class="label">${DE.labels.lang}:</div>
+          <div class="value">${lang}</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-primary">${DE.close}</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="modal-primary">${DE.close}</button>
-    </div>
-  </div>
-`;
-nt.body.appendChild(backdrop);
+  `;
+
+  // ⛔️ Itt volt az elgépelés
+  document.body.appendChild(backdrop);
 
   const close = () => backdrop.remove();
+
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
@@ -196,6 +208,7 @@ nt.body.appendChild(backdrop);
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
   });
 }
+
 
 // --- Init / Admin védelem ---
 document.addEventListener('DOMContentLoaded', async () => {
