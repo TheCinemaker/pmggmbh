@@ -20,6 +20,7 @@ const oralapSection = document.getElementById('oralapSection');
 const sickProofUploadGroup = document.getElementById('sickProofUploadGroup');
 const sickProofFile = document.getElementById('sickProofFile');
 const absenceTypeSelect = document.getElementById('absenceType');
+const adminButton = document.getElementById('adminButton');
 
 // --- Állapotkezelés ---
 let currentUser = null;
@@ -174,12 +175,11 @@ function showScreen(screenName) {
     else if (screenName === 'upload') uploadSection.classList.remove('hidden');
 }
 
-function updateUiForUserType(userType) {
-    const type = userType ? userType.trim().toLowerCase() : 'oralapos';
-    if (type === 'nem_oralapos') {
-        if (oralapSection) oralapSection.classList.add('hidden');
+function updateUiForUserRole(userRole) {
+    if (userRole === 'admin') {
+        if (adminButton) adminButton.classList.remove('hidden');
     } else {
-        if (oralapSection) oralapSection.classList.remove('hidden');
+        if (adminButton) adminButton.classList.add('hidden');
     }
 }
 
@@ -256,12 +256,13 @@ async function handleLogin(event) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
         
-        currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang };
+        currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang, role: result.userRole }; // A role is bekerül
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        updateUiForUserRole(currentUser.role);
+        
         setLanguage(currentUser.lang);
         welcomeMessage.textContent = `${translations[currentUser.lang].welcome} ${currentUser.displayName}!`;
         updateUiForUserType(currentUser.type);
+        updateUiForUserRole(currentUser.role); // <-- EZ A FONTOS ÚJ SOR!
         showScreen('upload');
         populateMonthList(currentUser.id);
         loginForm.reset();
@@ -474,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setLanguage(lang);
         welcomeMessage.textContent = `${langDict.welcome} ${currentUser.displayName}!`;
         
-        updateUiForUserType(currentUser.type);
+        updateUiForUserRole(currentUser.role);
         showScreen('upload');
         populateMonthList(currentUser.id);
     } else {
