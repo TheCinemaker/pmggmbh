@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAllUploads() {
   userListContainer.innerHTML = '<p>Adatok betöltése...</p>';
   try {
-    const resp = await fetch('/.netlify/functions/getUploadsCurrentMonth?links=0'/*, {
+    const resp = await fetch('/.netlify/functions/getAllUploads?links=0'/*, {
       // ha használsz szerveroldali kulcsot:
       // headers: { 'x-admin-key': '***' }
     }*/);
