@@ -212,7 +212,7 @@ function openUserInfoModal(displayName) {
 
 // --- Init / Admin védelem ---
 document.addEventListener('DOMContentLoaded', async () => {
-  // Admin ellenőrzés
+  // --- Admin ellenőrzés ---
   try {
     const stored = sessionStorage.getItem('currentUser');
     const user = stored ? JSON.parse(stored) : null;
@@ -239,17 +239,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Betöltés
+  // --- Elemszelektorok ---
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
+  const refreshBtn = document.getElementById('refreshBtn');
 
-  try {
-    await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
-  } catch (err) {
-    userListContainer.innerHTML = `<p class="status error">${DE.errorPrefix} ${err.message}</p>`;
-  }
+  // --- Helper: "Zuletzt aktualisiert" frissítése ---
+  const setLastUpdated = () => {
+    const el = document.getElementById('lastUpdated');
+    if (!el) return;
+    const ts = new Date().toLocaleString('de-DE', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const prefix = (typeof DE === 'object' && DE.refreshedAt) ? DE.refreshedAt : 'Zuletzt aktualisiert:';
+    el.textContent = `${prefix} ${ts}`;
+  };
 
+  // --- Első betöltés / fallback frissítés ---
+  const doLoad = async () => {
+    try {
+      refreshBtn?.setAttribute('disabled', '');
+      refreshBtn?.classList.add('spinning');
+      userListContainer.innerHTML = `<p>${DE.loading}</p>`;
+      await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
+      renderList(allUploads);
+      setLastUpdated();
+    } catch (err) {
+      userListContainer.innerHTML = `<p class="status error">${DE.errorPrefix} ${err.message}</p>`;
+    } finally {
+      refreshBtn?.removeAttribute('disabled');
+      refreshBtn?.classList.remove('spinning');
+    }
+  };
+
+  // --- Indító betöltés ---
+  await doLoad();
+
+  // --- Szűrő ---
   if (nameFilter) {
     nameFilter.addEventListener('input', () => renderList(allUploads));
   }
+
+  // --- Frissítés gomb ---
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      const saved = nameFilter ? nameFilter.value : '';
+      // ha van dedikált refreshAdminData(), használjuk azt; különben fallback
+      if (typeof refreshAdminData === 'function') {
+        await refreshAdminData();
+      } else {
+        await doLoad();
+        if (nameFilter) nameFilter.value = saved;
+        renderList(allUploads);
+      }
+    });
+  }
+
+  // --- Ctrl/Cmd + R lokális frissítésre (oldal reload helyett) ---
+  document.addEventListener('keydown', (e) => {
+    const isMac = navigator.platform.toUpperCase().includes('MAC');
+    const key = (e.key || '').toLowerCase();
+    if ((isMac && e.metaKey && key === 'r') || (!isMac && e.ctrlKey && key === 'r')) {
+      e.preventDefault();
+      refreshBtn?.click();
+    }
+  });
 });
+
