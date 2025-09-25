@@ -241,9 +241,6 @@ async function fetchAndDisplayFiles() {
     files.forEach(file => {
       const fileItem = document.createElement('div');
       fileItem.className = 'file-item';
-      fileItem.innerHTML = `
-        <span class="file-item-name">${file.name}</span>
-        <a href="${file.link}" target="_blank" class="view-button">${getLangDict(lang).viewButton}</a>
       `;
       fileListContainer.appendChild(fileItem);
     });
