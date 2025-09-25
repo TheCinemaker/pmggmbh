@@ -216,7 +216,7 @@ async function populateEmployeeList() {
 
 async function handleLogin(event) {
     event.preventDefault();
-    const lang = 'hu'; // A login képernyő mindig magyar
+    const lang = 'hu';
     loginButton.disabled = true;
     loginButton.textContent = translations[lang].loginButtonLoading;
     loginStatus.textContent = '';
@@ -242,9 +242,11 @@ async function handleLogin(event) {
         currentUser = { id: userId, displayName: result.displayName, type: result.userType, lang: result.userLang, role: result.userRole };
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
         
+        // JAVÍTÁS: HELYES SORREND
         const userLang = currentUser.lang || 'hu';
-        setLanguage(userLang);
-        welcomeMessage.textContent = `${translations[userLang].welcome} ${currentUser.displayName}!`;
+        setLanguage(userLang); // 1. Nyelv beállítása
+        welcomeMessage.textContent = `${translations[userLang].welcome} ${currentUser.displayName}!`; // 2. Üdvözlés a helyes nyelven
+        
         updateUiForUserType(currentUser.type);
         updateUiForUserRole(currentUser.role);
         showScreen('upload');
@@ -257,7 +259,6 @@ async function handleLogin(event) {
         loginButton.textContent = translations[lang].loginButton;
     }
 }
-
 async function handleUpload(event) {
   event.preventDefault();
   const submitButton = document.getElementById('submitButton');
@@ -385,11 +386,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         
+        // JAVÍTÁS: HELYES SORREND
         const lang = currentUser.lang || 'hu';
-        const langDict = translations[lang] || translations['hu'];
-
-        setLanguage(lang);
-        welcomeMessage.textContent = `${langDict.welcome} ${currentUser.displayName}!`;
+        setLanguage(lang); // 1. Nyelv beállítása
+        welcomeMessage.textContent = `${translations[lang].welcome} ${currentUser.displayName}!`; // 2. Üdvözlés a helyes nyelven
         
         updateUiForUserType(currentUser.type);
         updateUiForUserRole(currentUser.role);
