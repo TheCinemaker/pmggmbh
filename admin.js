@@ -155,27 +155,38 @@ function openUserInfoModal(displayName) {
   const lang = meta.userLang || '—';
 
   const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <h4 id="modalTitle">${DE.infoTitle}</h4>
-        <button class="modal-close" aria-label="${DE.close}">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-row"><span>${DE.labels.name}:</span><strong>${displayName}</strong></div>
-        <div class="modal-row"><span>${DE.labels.phone}:</span><strong>${phoneHtml}</strong></div>
-        <div class="modal-row"><span>${DE.labels.email}:</span><strong>${emailHtml}</strong></div>
-        <div class="modal-row"><span>${DE.labels.role}:</span><strong>${role}</strong></div>
-        <div class="modal-row"><span>${DE.labels.type}:</span><strong>${type}</strong></div>
-        <div class="modal-row"><span>${DE.labels.lang}:</span><strong>${lang}</strong></div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-primary">${DE.close}</button>
+backdrop.className = 'modal-backdrop';
+backdrop.innerHTML = `
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h4 id="modalTitle">${DE.infoTitle}</h4>
+      <button class="modal-close" aria-label="${DE.close}">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="label">${DE.labels.name}:</div>
+        <div class="value">${displayName}</div>
+
+        <div class="label">${DE.labels.phone}:</div>
+        <div class="value">${phoneHtml}</div>
+
+        <div class="label">${DE.labels.email}:</div>
+        <div class="value">${emailHtml}</div>
+
+        <div class="label">${DE.labels.lang}:</div>
+        <div class="value">${lang}</div>
       </div>
     </div>
-  `;
-  document.body.appendChild(backdrop);
+    <div class="modal-footer">
+      <button class="modal-primary">${DE.close}</button>
+    </div>
+  </div>
+`;
+nt.body.appendChild(backdrop);
 
   const close = () => backdrop.remove();
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
