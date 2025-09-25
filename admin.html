@@ -4,27 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Adminbereich</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
       <h1>Adminbereich</h1>
-      <a href="index.html" class="logout-button" title="Zurück zur Startseite" aria-label="Zurück zur Startseite">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"></path>
-        </svg>
+      <a href="index.html" class="logout-button" title="Zurück zur Startseite">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"></path></svg>
       </a>
     </header>
 
     <main class="content" id="adminContent">
       <div class="form-group">
-        <input type="text" id="nameFilter" placeholder="Nach Namen filtern …" aria-label="Nach Namen filtern">
+        <input type="text" id="nameFilter" placeholder="Nach Name filtern…" />
       </div>
-
       <div id="userListContainer">
-        <!-- Hier erscheinen die Benutzer und ihre Dateien -->
+        <!-- Karten werden per JS gerendert -->
       </div>
     </main>
   </div>
