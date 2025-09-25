@@ -9,6 +9,7 @@ const DE = {
   accessDeniedTitle: 'Zugriff verweigert',
   backHome: 'Zurück zur Startseite',
   infoTitle: 'Mitarbeiterinfo',
+  DE.refreshedAt = 'Zuletzt aktualisiert:';,
   labels: {
     name: 'Name',
     phone: 'Telefon',
