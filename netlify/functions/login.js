@@ -35,15 +35,12 @@ exports.handler = async (event) => {
         const { userId, pin } = JSON.parse(event.body);
         if (!userId || !pin) { throw new Error('Hiányzó adatok.'); }
 
-        const auth = new google.auth.GoogleAuth({
-            credentials: { client_email: CLIENT_EMAIL, private_key: PRIVATE_KEY },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-        });
+        const auth = new google.auth.GoogleAuth({ /* ... */ });
         const sheets = google.sheets({ version: 'v4', auth });
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:D`, // Most már az A-tól D oszlopig olvasunk
+            range: `${SHE-ET_NAME}!A:E`, // Olvassuk az E oszlopot is
         });
 
         const rows = response.data.values;
@@ -51,19 +48,17 @@ exports.handler = async (event) => {
 
         const userRow = rows.find(row => row[0] === userId);
         if (!userRow) {
-            return { statusCode: 404, headers, body: JSON.stringify({ message: 'Felhasználó nem található.' }) };
+            return { statusCode: 404, /* ... */ };
         }
         
-        const correctPin = userRow[1]; // B oszlop
+        const correctPin = userRow[1];
         if (pin !== correctPin) {
-            return { statusCode: 401, headers, body: JSON.stringify({ message: 'Hibás PIN kód.' }) };
+            return { statusCode: 401, /* ... */ };
         }
 
-        // Típus kiolvasása a C oszlopból
         const userType = userRow[2] || 'oralapos'; 
-        
-        // Nyelv kiolvasása a D oszlopból
-        const userLang = userRow[3] || 'hu'; // Ha üres, alapértelmezetten magyar
+        const userLang = userRow[3] || 'hu';
+        const userRole = userRow[4] || 'user'; // E oszlop, alapértelmezett 'user'
 
         return {
             statusCode: 200,
@@ -72,7 +67,8 @@ exports.handler = async (event) => {
                 success: true,
                 displayName: userId,
                 userType: userType,
-                userLang: userLang // Visszaküldjük a nyelvet is
+                userLang: userLang,
+                userRole: userRole // <-- Visszaadjuk a szerepkört
             }),
         };
     } catch (error) {
