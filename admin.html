@@ -13,13 +13,14 @@
   <h1>Admin</h1>
 
   <div class="header-actions">
-    <button id="refreshBtn" class="icon-button" title="Aktualisieren" aria-label="Aktualisieren">
+    <button id="refreshBtn" class="icon-button" type="button" title="Aktualisieren" aria-label="Aktualisieren">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.1A6 6 0 1 1 12 6c1.3 0 2.5.42 3.45 1.13L13 10h7V3l-2.35 2.35Z"/>
       </svg>
+      <span class="sr-only">Aktualisieren</span>
     </button>
 
-    <a href="index.html" class="logout-button" title="Zurück zur Startseite">
+    <a href="index.html" class="logout-button" title="Zurück zur Startseite" aria-label="Zurück zur Startseite">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/>
       </svg>
@@ -28,6 +29,10 @@
 </header>
 
 <div id="lastUpdated" class="last-updated" aria-live="polite"></div>
+
+<noscript>
+  <p style="color:#ffb454">Diese Seite benötigt JavaScript, um Daten zu laden.</p>
+</noscript>
 
     <main class="content" id="adminContent">
       <div class="form-group">
