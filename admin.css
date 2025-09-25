@@ -1,0 +1,19 @@
+.user-card {
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.user-card h3 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+.file-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+.file-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--surface-color);
+}
