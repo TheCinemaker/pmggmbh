@@ -3,33 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN Site</title>
+    <title>Admin Felület</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#343a40">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Óralap">
-    <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/icons/favicon.ico">
+    <link rel="stylesheet" href="admin.css"> <!-- Külön stíluslap -->
 </head>
 <body>
     <div class="app-container">
-        <!-- Admin Login -->
-        <div id="adminLoginSection">
-            <h1>Admin Login</h1>
-            <form id="adminLoginForm">
-                <input type="password" id="adminPassword" placeholder="Jelszó">
-                <button type="submit">SIGN IN</button>
-            </form>
-        </div>
-        <!-- Admin Tartalom (rejtett) -->
-        <div id="adminContentSection" class="hidden">
-            <h1>uploads</h1>
-            <div id="userFileList"></div>
-        </div>
+        <header class="app-header">
+            <h1>Admin Felület</h1>
+            <a href="index.html" class="logout-button" title="Vissza a főoldalra">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"></path></svg>
+            </a>
+        </header>
+        <main class="content" id="adminContent">
+            <div class="form-group">
+                <input type="text" id="nameFilter" placeholder="Név szűrése...">
+            </div>
+            <div id="userListContainer">
+                <!-- Ide kerülnek a felhasználók és a fájljaik -->
+            </div>
+        </main>
     </div>
     <script src="admin.js"></script>
 </body>
