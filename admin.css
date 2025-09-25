@@ -1,22 +1,34 @@
-/* ===== Admin – friss, letisztult design ===== */
+/* ===== Admin – friss, letisztult design (mobil-first) ===== */
 :root{
   --bg:#0b0f15;
   --card:#0f1722;
   --muted:#8b97a8;
   --text:#ecf1f8;
   --border:rgba(255,255,255,.08);
-  --accent:#4f8cff;           /* kék */
+  --accent:#4f8cff;            /* kék */
   --accent-weak:rgba(79,140,255,.15);
   --shadow:0 10px 30px rgba(0,0,0,.35);
 }
 
+/* Alap */
+html, body { background: var(--bg); color: var(--text); }
 .app-container{max-width:1100px;margin:0 auto;padding:24px;}
 .app-header{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:8px 0 18px;border-bottom:1px solid var(--border);
 }
 .app-header h1{margin:0;font-size:22px;letter-spacing:.2px;color:var(--text);}
+.content{padding:18px 0}
 
+/* Safe-area padding (iOS notch) */
+@supports (padding: max(0px)) {
+  .app-container {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+  }
+}
+
+/* Vissza gomb */
 .logout-button{
   display:inline-grid;place-items:center;width:42px;height:42px;
   border-radius:12px;background:linear-gradient(180deg, #111a28, #0c121d);
@@ -27,8 +39,6 @@
 .logout-button:hover{background:#131d2c;border-color:#1d2a40}
 .logout-button:active{transform:translateY(1px)}
 .logout-button svg{width:22px;height:22px}
-
-.content{padding:18px 0}
 
 /* Szűrő */
 .form-group{margin:6px 0 18px}
@@ -57,11 +67,11 @@
 }
 .user-card-header h3{
   margin:0;font-size:18px;letter-spacing:.2px;color:var(--text);
+  max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; /* ne fusson ki */
 }
 
 /* Info gomb – elegáns, kerek, ikonos */
 .info-btn{
-  --ring: transparent;
   display:inline-grid;place-items:center;
   width:36px;height:36px;border-radius:999px;
   border:1px solid var(--border);
@@ -77,26 +87,41 @@
 .info-btn:active{transform:translateY(1px)}
 .info-btn svg{width:18px;height:18px;opacity:.95}
 
+/* Fókuszjelzés (a11y) */
+.info-btn:focus-visible,
+.modal-close:focus-visible,
+.modal-primary:focus-visible,
+.logout-button:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 6px var(--accent-weak);
+  border-color:rgba(79,140,255,.55);
+}
+
 /* Fájl lista */
 .file-list{list-style:none;margin:4px 0 0;padding:0}
 .file-list li{
-  display:grid;grid-template-columns: 22px 1fr auto;gap:12px;
-  padding:10px 6px;border-bottom:1px dashed rgba(255,255,255,.06);
+  display:grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas: "icon name date";
   align-items:center;
+  gap:12px;
+  padding:10px 6px;
+  border-bottom:1px dashed rgba(255,255,255,.06);
 }
 .file-list li:last-child{border-bottom:none}
 
 .file-icon{
+  grid-area: icon;
   display:inline-grid;place-items:center;width:22px;height:22px;
   border-radius:6px;background:rgba(255,255,255,.06);
 }
 .file-name{
-  color:var(--text);
-  line-height:1.25;
+  grid-area: name; min-width:0;
+  color:var(--text);line-height:1.25;
 }
 .file-name strong{font-weight:600}
-
 .file-date{
+  grid-area: date; text-align:right;
   color:var(--muted);font-size:.92rem;white-space:nowrap;
 }
 
@@ -118,12 +143,13 @@
   backdrop-filter: blur(6px);
   display:flex;align-items:center;justify-content:center;padding:18px;z-index:999;
   animation:fadeIn .12s ease-out;
+  overscroll-behavior: contain; /* ne húzza alatta az oldalt */
 }
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 .modal{
-  width:100%;max-width:560px;border-radius:18px;overflow:hidden;
-  border:1px solid var(--border);
+  width:calc(100vw - 32px);max-width:560px;
+  border-radius:18px;overflow:hidden;border:1px solid var(--border);
   background:linear-gradient(180deg, #0e1520, #0a0f18);
   color:var(--text);box-shadow:0 24px 60px rgba(0,0,0,.45);
   transform-origin:center;animation:pop .14s ease-out;
@@ -135,8 +161,8 @@
   padding:12px 14px;border-bottom:1px solid var(--border);
 }
 .modal-footer{border-top:1px solid var(--border);border-bottom:none;justify-content:flex-end}
-
 .modal-header h4{margin:0;font-size:16px;letter-spacing:.2px}
+
 .modal-close{
   display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;
   border:1px solid var(--border);background:transparent;color:var(--text);
@@ -146,13 +172,27 @@
 .modal-close:active{transform:translateY(1px)}
 .modal-close svg{width:18px;height:18px}
 
-.modal-body{padding:12px 14px 14px;display:grid;gap:10px}
+.modal-body{
+  padding:12px 14px 14px;display:grid;gap:10px;
+  max-height: calc(100svh - 180px); /* biztonságos viewport magasság */
+  overflow:auto;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+}
 .modal-grid{
   display:grid;grid-template-columns: 140px 1fr;gap:10px 14px;align-items:baseline;
 }
 .modal-grid .label{color:var(--muted)}
-.modal-grid .value a{color:var(--text);text-decoration: none;border-bottom:1px dashed rgba(255,255,255,.2)}
+.modal-grid .value a{
+  color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.2)
+}
 .modal-grid .value a:hover{border-bottom-color:var(--accent)}
+
+/* hosszú e-mail/tel tördelése */
+.modal-grid .value,
+.modal-grid .value a{
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 
 .modal-primary{
   border:none;background:var(--accent);color:#fff;
@@ -165,4 +205,49 @@
 .badge-warn{display:inline-block;margin-left:.35rem;font-size:.85em;color:#ffb454}
 
 /* Kisegítő osztályok */
-.sr-only{position:absolute !important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.sr-only{
+  position:absolute !important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* ===== Mobil-optimalizálás ===== */
+@media (max-width: 560px){
+  .app-container{ padding:16px; }
+  .user-card{ border-radius:14px; padding:12px 12px 6px; }
+
+  /* fájlsor: 3 oszlopról 2 soros layout */
+  .file-list li{
+    grid-template-columns: 22px 1fr;
+    grid-template-areas:
+      "icon name"
+      ".    date";
+    align-items:start;
+    row-gap:6px;
+  }
+  /* név mobilon 2 sorig olvashatóan tördelődik */
+  .file-name{
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .file-date{
+    justify-self:start;
+    margin-left:22px;         /* igazítás az ikonhoz */
+    font-size:.88rem;
+  }
+
+  /* modal grid egyoszlopos */
+  .modal-grid{
+    grid-template-columns: 1fr;
+  }
+  .modal-grid .label{
+    opacity:.8;
+  }
+}
+
+/* ===== Kevesebb animáció, ha a user kéri ===== */
+@media (prefers-reduced-motion: reduce){
+  * { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+}
