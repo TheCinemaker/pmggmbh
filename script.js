@@ -26,28 +26,31 @@ const languageSelect          = document.getElementById('languageSelect'); // ha
 // --- Állapotkezelés ---
 let currentUser = null;
 
-// PIN láthatóság váltó
-const togglePinBtn = document.getElementById('togglePinVisibility');
-if (togglePinBtn && pinCodeInput) {
-  const setUi = () => {
-    const visible = pinCodeInput.type === 'text';
-    togglePinBtn.setAttribute('aria-pressed', String(visible));
-    togglePinBtn.title      = visible ? 'PIN elrejtése' : 'PIN mutatása';
-    togglePinBtn.ariaLabel  = togglePinBtn.title;
+// PIN show/hide
+const pinInput  = document.getElementById('pinCode');
+const eyeBtn    = document.getElementById('togglePinVisibility');
+
+if (pinInput && eyeBtn) {
+  // állapot beállító helper
+  const setVisible = (visible) => {
+    pinInput.type = visible ? 'text' : 'password';
+    eyeBtn.classList.toggle('is-visible', visible);
+    eyeBtn.setAttribute('aria-pressed', String(visible));
+    const label = visible ? 'Hide PIN' : 'Show PIN';
+    eyeBtn.setAttribute('aria-label', label);
+    eyeBtn.title = label;
   };
 
-  togglePinBtn.addEventListener('click', () => {
-    pinCodeInput.type = (pinCodeInput.type === 'password') ? 'text' : 'password';
-    setUi();
+  // kattintásra vált
+  eyeBtn.addEventListener('click', () => {
+    const next = pinInput.type !== 'text'; // ha most nem látszik, tegyük láthatóvá
+    setVisible(next);
   });
 
-  // opcionális: nyomva tartásra mutat, elengedésre elrejt
-  let pressed = false;
-  togglePinBtn.addEventListener('mousedown', () => { pressed = true; pinCodeInput.type = 'text'; setUi(); });
-  window.addEventListener('mouseup',   () => { if (pressed) { pressed = false; pinCodeInput.type = 'password'; setUi(); } });
-
-  setUi(); // init
+  // biztos ami biztos: induláskor rejtve
+  setVisible(false);
 }
+
 
 
 // --- I18N SZÓTÁR ---
