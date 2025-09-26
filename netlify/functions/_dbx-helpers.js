@@ -7,7 +7,7 @@ const HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const STATE_PATH = '/PMG Mindenes - PMG ALLES/system/admin-last-seen.json';
+const STATE_PATH = '/PMG Mindenes - PMG ALLES/Stundenzettel 2025/SYSTEM/admin-last-seen.json';
 
 /**
  * Létrehoz és visszaad egy inicializált Dropbox klienst.
