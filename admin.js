@@ -352,51 +352,11 @@ function setLastUpdated() {
 // Init: auth check + betöltések    //
 //////////////////////////////////////
 document.addEventListener('DOMContentLoaded', async () => {
-  // Admin ellenőrzés
-  try {
-    const stored = sessionStorage.getItem('currentUser');
-    const user = stored ? JSON.parse(stored) : null;
-    if (!user || (user.role || user.userRole) !== 'admin') {
-      document.body.innerHTML = `
-        <div class="app-container">
-          <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
-          <main class="content">
-            <a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a>
-          </main>
-        </div>
-      `;
-      return;
-    }
-
-    // baseline betöltés (személyes)
-    await loadPersonalBaseline(user.id);
-    if (!personalBaselineISO) {
-      await markBaselineNow(user.id, user.displayName || '');
-      console.log('[admin] ', DE.firstVisitBaseline);
-    }
-
-    // "Seit letztem Besuch" gomb a headerbe
-    const headerActions = document.querySelector('.header-actions');
-    if (headerActions && !document.getElementById('sinceVisitBtn')) {
-      const btn = document.createElement('button');
-      btn.id = 'sinceVisitBtn';
-      btn.className = 'icon-button';
-      btn.title = DE.sinceVisitTitle;
-      btn.innerHTML = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M12 1a11 11 0 1 0 11 11A11.012 11.012 0 0 0 12 1Zm1 11V6h-2v8h7v-2Z"/>
-        </svg>
-      `;
-      headerActions.insertBefore(btn, headerActions.firstChild);
-      btn.addEventListener('click', () => {
-        openSinceVisitModal(async () => {
-          await markBaselineNow(user.id, user.displayName || '');
-          console.log(DE.baselineUpdated);
-        });
-      });
-    }
-
-  } catch {
+  // --- Admin jogosultság ellenőrzés: EZ külön try/catch nélkül! ---
+  let user = null;
+  try { user = JSON.parse(sessionStorage.getItem('currentUser') || 'null'); } catch {}
+  const role = (user?.role || user?.userRole || '').toLowerCase();
+  if (!user || role !== 'admin') {
     document.body.innerHTML = `
       <div class="app-container">
         <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
@@ -408,17 +368,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Alapelemek
+  // --- UI alap ---
   ensureLastUpdatedEl();
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
   const refreshBtn = document.getElementById('refreshBtn');
+  const headerActions = document.querySelector('.header-actions');
 
   if (!userListContainer) {
     console.error('[admin] #userListContainer hiányzik.');
     return;
   }
 
+  // --- "Seit letztem Besuch" gomb (akkor is kirakjuk, ha baseline épp nem érhető el) ---
+  if (headerActions && !document.getElementById('sinceVisitBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'sinceVisitBtn';
+    btn.className = 'icon-button';
+    btn.title = DE.sinceVisitTitle;
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M12 1a11 11 0 1 0 11 11A11.012 11.012 0 0 0 12 1Zm1 11V6h-2v8h7v-2Z"/>
+      </svg>`;
+    headerActions.insertBefore(btn, headerActions.firstChild);
+    btn.addEventListener('click', () => {
+      openSinceVisitModal(async () => {
+        try { await markBaselineNow(user.id, user.displayName || ''); }
+        catch (e) { console.warn('baseline POST fail (ignored):', e); }
+      });
+    });
+  }
+
+  // --- Baseline betöltés NEM fatális ---
+  try {
+    await loadPersonalBaseline(user.id);
+    if (!personalBaselineISO) {
+      await markBaselineNow(user.id, user.displayName || '');
+      console.log('[admin]', DE.firstVisitBaseline);
+    }
+  } catch (e) {
+    console.warn('baseline GET/POST hiba (nem fatális, megyünk tovább):', e);
+  }
+
+  // --- Betöltő függvény ---
   const doLoad = async () => {
     try {
       refreshBtn?.setAttribute('disabled', '');
@@ -428,17 +420,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderList(allUploads);
       setLastUpdated();
 
+      // Ha van baseline és van új tartalom, feldobjuk a modált
       if (personalBaselineISO) {
         const diff = collectSinceBaseline();
         const hasNew = Object.keys(diff).some(k => (diff[k] || []).length);
         if (hasNew) {
           openSinceVisitModal(async () => {
-            const stored = sessionStorage.getItem('currentUser');
-            const user = stored ? JSON.parse(stored) : null;
-            if (user) {
-              await markBaselineNow(user.id, user.displayName || '');
-              console.log(DE.baselineUpdated);
-            }
+            try { await markBaselineNow(user.id, user.displayName || ''); }
+            catch (e) { console.warn('baseline POST fail (ignored):', e); }
           });
         }
       }
@@ -451,16 +440,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  // Első betöltés
   await doLoad();
 
+  // Szűrő és refresh
   nameFilter?.addEventListener('input', () => renderList(allUploads));
-
   refreshBtn?.addEventListener('click', async () => {
     const saved = nameFilter ? nameFilter.value : '';
     await doLoad();
     if (nameFilter) nameFilter.value = saved;
   });
 
+  // Ctrl/Cmd+R = helyi frissítés
   document.addEventListener('keydown', (e) => {
     const isMac = navigator.platform.toUpperCase().includes('MAC');
     const key = (e.key || '').toLowerCase();
@@ -470,3 +461,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
+
