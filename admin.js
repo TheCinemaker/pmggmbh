@@ -189,31 +189,37 @@ function openUserInfoModal(displayName) {
   `;
   document.body.appendChild(backdrop);
 
-  const close = () => backdrop.remove();
+  const escListener = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+  
+  const close = () => {
+    backdrop.remove();
+    document.removeEventListener('keydown', escListener);
+  };
+  
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
-  document.addEventListener('keydown', function esc(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
-  });
+  document.addEventListener('keydown', escListener);
 }
 
 //////////////////////////
 // "Since last visit"   //
 //////////////////////////
-// baseline beolvasása
 async function loadPersonalBaseline(adminId) {
   const url = `/.netlify/functions/adminLastSeen?adminId=${encodeURIComponent(adminId)}`;
   const resp = await fetch(url);
   const text = await resp.text();
   if (!resp.ok) throw new Error(`(adminLastSeen GET ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || null;   // <-- itt a fix
+  personalBaselineISO = data.lastSeen || null;
 }
 
-// baseline frissítése MOST-ra
 async function markBaselineNow(adminId, displayName) {
-  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {  // <-- végpont fix
+  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ adminId, timestamp: new Date().toISOString(), displayName }),
@@ -221,7 +227,7 @@ async function markBaselineNow(adminId, displayName) {
   const text = await resp.text();
   if (!resp.ok) throw new Error(`(adminLastSeenUpdate POST ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || new Date().toISOString();  // <-- kulcs fix
+  personalBaselineISO = data.lastSeen || new Date().toISOString();
 }
 
 function collectSinceBaseline() {
@@ -300,16 +306,24 @@ function openSinceVisitModal(onMarkReviewed) {
   `;
   document.body.appendChild(backdrop);
 
-  const close = () => backdrop.remove();
+  const escListener = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+
+  const close = () => {
+    backdrop.remove();
+    document.removeEventListener('keydown', escListener);
+  };
+  
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.js-mark-reviewed').addEventListener('click', async () => {
     await onMarkReviewed?.();
     close();
   });
-  document.addEventListener('keydown', function esc(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
-  });
+  document.addEventListener('keydown', escListener);
 }
 
 //////////////////////////
@@ -445,7 +459,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saved = nameFilter ? nameFilter.value : '';
     await doLoad();
     if (nameFilter) nameFilter.value = saved;
-    renderList(allUploads);
   });
 
   document.addEventListener('keydown', (e) => {
