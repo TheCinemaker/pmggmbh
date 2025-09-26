@@ -234,30 +234,57 @@ button:hover:not(:disabled) {
 }
 .view-button:hover { background-color: var(--primary-hover-color); }
 
-.input-with-toggle { position: relative; }
+/* === PIN visibility toggle === */
+.input-with-toggle {
+  position: relative;
+  width: 100%;
+}
+
 .input-with-toggle input {
   width: 100%;
-  padding-right: 46px; /* hely a gombnak */
+  padding: 0.75rem 1rem;
+  padding-right: 52px !important; /* több hely a nagyobb gombnak */
+  box-sizing: border-box;
 }
 
 .eye-btn {
   position: absolute;
-  right: 8px;
-  top: 6px; /* fix érték a padding miatt */
-  width: 32px;
-  height: 32px;
+  right: 6px;
+  top: 1px !important; /* FELJEBB viszi */
+  width: 40px !important; /* NAGYOBB */
+  height: 40px !important; /* NAGYOBB */
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted-color);
   cursor: pointer;
+  transition: all 0.2s ease;
   z-index: 2;
+  margin: 0;
+  padding: 0;
 }
 
 .eye-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--text-color);
 }
+
+.eye-btn:active {
+  transform: scale(0.9);
+}
+
+.eye-btn svg {
+  width: 24px !important; /* NAGYOBB ikon */
+  height: 24px !important; /* NAGYOBB ikon */
+  fill: currentColor;
+}
+
+/* Ikon váltás */
+.eye-btn .eye-open { display: none; }
+.eye-btn .eye-closed { display: block; }
+
+.eye-btn.is-visible .eye-open { display: block; }
+.eye-btn.is-visible .eye-closed { display: none; }
