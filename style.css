@@ -233,3 +233,28 @@ button:hover:not(:disabled) {
     text-decoration: none;
 }
 .view-button:hover { background-color: var(--primary-hover-color); }
+
+.input-with-toggle { position: relative; }
+.input-with-toggle input {
+  width: 100%;
+  padding-right: 46px; /* hely a gombnak */
+}
+
+/* szem gomb */
+.eye-btn{
+  position:absolute; top:50%; right:8px; transform:translateY(-50%);
+  width:36px; height:36px; border-radius:10px; cursor:pointer;
+  display:inline-grid; place-items:center;
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg, #111a28, #0c121d);
+  color:#ecf1f8;
+}
+.eye-btn:hover{ background:#131d2c; border-color:#1d2a40; }
+.eye-btn:active{ transform:translateY(-50%) translateY(1px); }
+.eye-btn svg{ width:18px; height:18px; }
+
+/* ikonváltás az aria-pressed alapján */
+.eye-btn .eye-closed{ display:none; }
+.eye-btn[aria-pressed="true"] .eye-open{ display:none; }
+.eye-btn[aria-pressed="true"] .eye-closed{ display:inline; }
+
