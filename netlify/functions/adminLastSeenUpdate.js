@@ -1,6 +1,6 @@
-// POST /.netlify/functions/admin-last-seen-update
+// POST /.netlify/functions/adminLastSeenUpdate
 // Body: { adminId: string, timestamp?: ISOstring }
-// Ment: { [adminId]: ISOstring } a STATE_PATH alatt
+// Ment: { [adminId]: ISOstring } a STATE_PATH alá
 const { Dropbox } = require('dropbox');
 
 const HEADERS = {
@@ -17,11 +17,11 @@ const STATE_PATH = '/PMG Mindenes - PMG ALLES/system/admin-last-seen.json';
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: HEADERS, body: JSON.stringify({ message: 'Method not allowed' }) };
+  }
 
   try {
-    if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, headers: HEADERS, body: JSON.stringify({ message: 'Method not allowed' }) };
-    }
     const body = JSON.parse(event.body || '{}');
     const adminId = (body.adminId || '').trim();
     const ts = (body.timestamp || new Date().toISOString()).trim();
@@ -31,7 +31,7 @@ exports.handler = async (event) => {
 
     const dbx = new Dropbox({ clientId: APP_KEY, clientSecret: APP_SECRET, refreshToken: REFRESH_TOKEN });
 
-    // jelenlegi map beolvasása (ha nincs, üres)
+    // Jelenlegi map betöltése (ha nincs, üres)
     let map = {};
     try {
       const dl = await dbx.filesDownload({ path: STATE_PATH });
@@ -39,8 +39,10 @@ exports.handler = async (event) => {
       const text = Buffer.isBuffer(buf) ? buf.toString('utf8') : String(buf || '');
       map = JSON.parse(text || '{}');
     } catch (err) {
-      const tag = err?.error?.error?.path?.reason?.['.tag'] || err?.error?.error?.['.tag'];
-      if (!(err?.status === 409 && (tag === 'not_found' || tag === 'path'))) {
+      const tagTop = err?.error?.error?.['.tag'];            // 'path'
+      const tagDeep = err?.error?.error?.path?.['.tag'];     // 'not_found'
+      if (!(err?.status === 409 && (tagTop === 'path' || tagDeep === 'not_found'))) {
+        console.error('adminLastSeenUpdate download error:', err);
         throw err;
       }
     }
@@ -56,7 +58,7 @@ exports.handler = async (event) => {
 
     return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true, lastSeen: ts }) };
   } catch (e) {
-    console.error('admin-last-seen-update error:', e);
+    console.error('adminLastSeenUpdate error:', e);
     return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ message: e.message || 'Server error' }) };
   }
 };
