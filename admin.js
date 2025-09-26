@@ -24,7 +24,7 @@ const DE = {
 /////////////////////
 // Állapot, helper //
 /////////////////////
-let allUploads = {};   // { "Name": [{ name, folder, uploadedAt, uploadedAtDisplay, link? }] }
+let allUploads = {};   // { "Name": [{ name, folder, uploadedAt, uploadedAtDisplay, link? }]}
 let usersByName = {};  // { "name lower": { displayName,id,phone,email,userLang,userRole,userType } }
 let personalBaselineISO = null;
 
@@ -189,21 +189,13 @@ function openUserInfoModal(displayName) {
   `;
   document.body.appendChild(backdrop);
 
-  const escListener = (e) => {
-    if (e.key === 'Escape') {
-      close();
-    }
-  };
-  
-  const close = () => {
-    backdrop.remove();
-    document.removeEventListener('keydown', escListener);
-  };
-  
+  const close = () => backdrop.remove();
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
-  document.addEventListener('keydown', escListener);
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+  });
 }
 
 //////////////////////////
@@ -215,19 +207,19 @@ async function loadPersonalBaseline(adminId) {
   const text = await resp.text();
   if (!resp.ok) throw new Error(`(adminLastSeen GET ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || null;
+  personalBaselineISO = data.lastSeenISO || null;
 }
 
 async function markBaselineNow(adminId, displayName) {
-  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {
+  const resp = await fetch('/.netlify/functions/adminLastSeen', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ adminId, timestamp: new Date().toISOString(), displayName }),
+    body: JSON.stringify({ adminId, displayName }),
   });
   const text = await resp.text();
-  if (!resp.ok) throw new Error(`(adminLastSeenUpdate POST ${resp.status}) ${text || ''}`);
+  if (!resp.ok) throw new Error(`(adminLastSeen POST ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || new Date().toISOString();
+  personalBaselineISO = data.lastSeenISO || new Date().toISOString();
 }
 
 function collectSinceBaseline() {
@@ -235,19 +227,14 @@ function collectSinceBaseline() {
   const t0 = new Date(personalBaselineISO).getTime();
   if (!Number.isFinite(t0)) return {};
 
-  const out = {};
+  const out = {}; // { displayName: [ fileObj, ... ] }
   Object.keys(allUploads).forEach(user => {
     const arr = Array.isArray(allUploads[user]) ? allUploads[user] : [];
     const hits = arr.filter(f => {
       const t = new Date(f.uploadedAt || f.uploadedAtDisplay || 0).getTime();
       return Number.isFinite(t) && t >= t0;
     });
-    if (hits.length) {
-      hits.sort((a, b) =>
-        new Date(b.uploadedAt || b.uploadedAtDisplay || 0) - new Date(a.uploadedAt || a.uploadedAtDisplay || 0)
-      );
-      out[user] = hits;
-    }
+    if (hits.length) out[user] = hits.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
   });
   return out;
 }
@@ -263,11 +250,11 @@ function openSinceVisitModal(onMarkReviewed) {
   if (!users.length) {
     inner = `<p class="status">${DE.nothingSinceVisit}</p>`;
   } else {
+    // max-height scroll a modal-body már kezeli css-ből
     inner = users.map(u => {
       const files = diff[u];
       const items = files.map(f => {
-        const when = f.uploadedAt ? formatDateDE(f.uploadedAt)
-                   : (f.uploadedAtDisplay ? formatDateDE(f.uploadedAtDisplay) : '');
+        const when = f.uploadedAt ? formatDateDE(f.uploadedAt) : (f.uploadedAtDisplay ? formatDateDE(f.uploadedAtDisplay) : '');
         const label = `${f.folder ? f.folder + ' / ' : ''}${f.name}`;
         return `
           <li>
@@ -306,24 +293,16 @@ function openSinceVisitModal(onMarkReviewed) {
   `;
   document.body.appendChild(backdrop);
 
-  const escListener = (e) => {
-    if (e.key === 'Escape') {
-      close();
-    }
-  };
-
-  const close = () => {
-    backdrop.remove();
-    document.removeEventListener('keydown', escListener);
-  };
-  
+  const close = () => backdrop.remove();
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.js-mark-reviewed').addEventListener('click', async () => {
     await onMarkReviewed?.();
     close();
   });
-  document.addEventListener('keydown', escListener);
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+  });
 }
 
 //////////////////////////
@@ -371,11 +350,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // baseline betöltés (személyes)
     await loadPersonalBaseline(user.id);
     if (!personalBaselineISO) {
+      // első látogatás → baseline mostantól
       await markBaselineNow(user.id, user.displayName || '');
+      // Nem dobunk modalt, csak tájékoztatásként kiírhatod console-ba:
       console.log('[admin] ', DE.firstVisitBaseline);
+      // Ha akarsz toastot, itt megoldható.
     }
 
-    // "Seit letztem Besuch" gomb a headerbe
+    // Kisegítő UI: "Seit letztem Besuch" gomb a headerbe (óra ikon)
     const headerActions = document.querySelector('.header-actions');
     if (headerActions && !document.getElementById('sinceVisitBtn')) {
       const btn = document.createElement('button');
@@ -387,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <path fill="currentColor" d="M12 1a11 11 0 1 0 11 11A11.012 11.012 0 0 0 12 1Zm1 11V6h-2v8h7v-2Z"/>
         </svg>
       `;
-      headerActions.insertBefore(btn, headerActions.firstChild);
+      headerActions.insertBefore(btn, headerActions.firstChild); // balra a házikó mellé
       btn.addEventListener('click', () => {
         openSinceVisitModal(async () => {
           await markBaselineNow(user.id, user.displayName || '');
@@ -428,10 +410,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderList(allUploads);
       setLastUpdated();
 
+      // Frissítés után (ha van baseline), ajánljuk fel a "seit letztem Besuch" modalt,
+      // ha tényleg van új.
       if (personalBaselineISO) {
         const diff = collectSinceBaseline();
         const hasNew = Object.keys(diff).some(k => (diff[k] || []).length);
         if (hasNew) {
+          // automatikus modal felugrás
           openSinceVisitModal(async () => {
             const stored = sessionStorage.getItem('currentUser');
             const user = stored ? JSON.parse(stored) : null;
@@ -451,16 +436,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  // Első betöltés
   await doLoad();
 
+  // Szűrő
   nameFilter?.addEventListener('input', () => renderList(allUploads));
 
+  // Frissítés gomb
   refreshBtn?.addEventListener('click', async () => {
     const saved = nameFilter ? nameFilter.value : '';
     await doLoad();
     if (nameFilter) nameFilter.value = saved;
+    renderList(allUploads);
   });
 
+  // Ctrl/Cmd + R → lokális frissítés
   document.addEventListener('keydown', (e) => {
     const isMac = navigator.platform.toUpperCase().includes('MAC');
     const key = (e.key || '').toLowerCase();
