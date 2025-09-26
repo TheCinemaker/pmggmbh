@@ -1,5 +1,4 @@
 // netlify/functions/_dbx-helpers.js
-
 const { Dropbox } = require('dropbox');
 
 const HEADERS = {
@@ -7,13 +6,15 @@ const HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const STATE_PATH = '/admin-last-seen.json';
+const STATE_DIR  = '/PMG Mindenes - PMG ALLES/Stundenzettel 2025/SYSTEM';
+const STATE_PATH = `${STATE_DIR}/admin-last-seen.json`;
 
-/**
- * Létrehoz és visszaad egy inicializált Dropbox klienst.
- * @returns {Dropbox}
- */
 function createDbxClient() {
+  // Gyors sanity log (értéket nem írunk ki)
+  if (!process.env.DROPBOX_APP_KEY || !process.env.DROPBOX_APP_SECRET || !process.env.DROPBOX_REFRESH_TOKEN) {
+    console.error('Dropbox env hiányzik: ',
+      !!process.env.DROPBOX_APP_KEY, !!process.env.DROPBOX_APP_SECRET, !!process.env.DROPBOX_REFRESH_TOKEN);
+  }
   return new Dropbox({
     clientId: process.env.DROPBOX_APP_KEY,
     clientSecret: process.env.DROPBOX_APP_SECRET,
@@ -21,13 +22,27 @@ function createDbxClient() {
   });
 }
 
-/**
- * Beolvassa és parse-olja az admin last seen állapotot tartalmazó JSON fájlt.
- * Ha a fájl nem létezik, üres objektumot ad vissza.
- * Más hiba esetén dobja a hibát.
- * @param {Dropbox} dbx - Egy inicializált Dropbox kliens.
- * @returns {Promise<Object>} Az állapotokat tartalmazó map.
- */
+// Ha hiányzik a SYSTEM mappa: létrehozzuk (idempotens).
+async function ensureFolder(dbx, path) {
+  try {
+    await dbx.filesCreateFolderV2({ path, autorename: false });
+  } catch (err) {
+    const already = err?.status === 409;
+    if (!already) throw err;
+  }
+}
+
+async function whoAmI(dbx) {
+  // 401-et itt is megfogjuk, és érthetőbb hibát adunk vissza a logban
+  try {
+    const me = await dbx.usersGetCurrentAccount();
+    return me?.result?.account_id || 'unknown';
+  } catch (e) {
+    console.error('Dropbox auth check (whoAmI) failed:', e?.message || e);
+    throw e;
+  }
+}
+
 async function readState(dbx) {
   try {
     const dl = await dbx.filesDownload({ path: STATE_PATH });
@@ -35,18 +50,14 @@ async function readState(dbx) {
     const text = Buffer.isBuffer(buf) ? buf.toString('utf8') : String(buf || '');
     return JSON.parse(text || '{}');
   } catch (err) {
-    // Csak a "file not found" hibát nyeljük el, a többit továbbdobjuk.
-    const isNotFoundError = err?.status === 409 &&
-      err?.error?.error?.['.tag'] === 'path' &&
-      err?.error?.error?.path?.['.tag'] === 'not_found';
-
-    if (isNotFoundError) {
-      return {}; // Fájl nem létezik még, ez normális.
-    }
-    // Minden más hiba komoly probléma.
+    const isNotFound =
+      err?.status === 409 &&
+      (err?.error?.error?.path?.reason?.['.tag'] === 'not_found' ||
+       err?.error?.error?.['.tag'] === 'path');
+    if (isNotFound) return {};
     console.error('Dropbox state read error:', err);
     throw err;
   }
 }
 
-module.exports = { HEADERS, STATE_PATH, createDbxClient, readState };
+module.exports = { HEADERS, STATE_DIR, STATE_PATH, createDbxClient, ensureFolder, readState, whoAmI };
