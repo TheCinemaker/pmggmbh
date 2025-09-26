@@ -299,3 +299,63 @@ html, body { background: var(--bg); color: var(--text); }
 @media (prefers-reduced-motion: reduce){
   * { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
+
+/* Szélesebb modal a delta listához */
+.modal.modal-wide{
+  max-width: 760px;           /* desktopon kényelmesebb */
+  width: calc(100vw - 32px);
+}
+
+/* Delta modal tartalom */
+.delta-info.muted{ color: var(--muted); margin-bottom: 8px; }
+.delta-groups{ display:block; }
+
+.delta-user{ margin: 10px 0 14px; }
+.delta-user h5{
+  margin:0 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.delta-user .count{ color: var(--muted); font-weight: 500; }
+
+.delta-files{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.delta-files li{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border-bottom: 1px dashed rgba(255,255,255,.06);
+  background: linear-gradient(180deg, #0d1520, #0a1019);
+}
+.delta-files li:last-child{ border-bottom: none; }
+
+.delta-files .path{
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.delta-files .date{
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+/* Mobil finomhangolás */
+@media (max-width: 560px){
+  .modal.modal-wide{ max-width: 100%; }
+  .delta-files li{
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .delta-files .date{ justify-self: start; }
+}
