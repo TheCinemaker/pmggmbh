@@ -263,12 +263,17 @@ button:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
+  border-radius: 50px;
   background: transparent;
   color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 2;
+}
+
+.eye-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
 
 .eye-btn:active {
