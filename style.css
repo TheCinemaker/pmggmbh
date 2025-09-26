@@ -240,24 +240,6 @@ button:hover:not(:disabled) {
   padding-right: 46px; /* hely a gombnak */
 }
 
-/* szem gomb */
-.eye-btn{
-  position:absolute; top:50%; right:8px; transform:translateY(-50%);
-  width:36px; height:36px; border-radius:10px; cursor:pointer;
-  display:inline-grid; place-items:center;
-  border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(180deg, #111a28, #0c121d);
-  color:#ecf1f8;
-}
-.eye-btn:hover{ background:#131d2c; border-color:#1d2a40; }
-.eye-btn:active{ transform:translateY(-50%) translateY(1px); }
-.eye-btn svg{ width:18px; height:18px; }
-
-/* ikonváltás az aria-pressed alapján */
-.eye-btn .eye-closed{ display:none; }
-.eye-btn[aria-pressed="true"] .eye-open{ display:none; }
-.eye-btn[aria-pressed="true"] .eye-closed{ display:inline; }
-
 /* === PIN visibility toggle === */
 .input-with-toggle{
   position: relative;
@@ -268,7 +250,7 @@ button:hover:not(:disabled) {
 /* hagyjunk helyet a gombnak a jobb oldalon */
 .input-with-toggle input{
   width: 100%;
-  padding-right: 48px;
+  padding-right: 48px; /* hely a gombnak */
 }
 
 .eye-btn{
@@ -281,17 +263,27 @@ button:hover:not(:disabled) {
   display: inline-grid;
   place-items: center;
   border-radius: 10px;
-  border: 1px solid var(--border, rgba(255,255,255,.12));
+  border: 1px solid rgba(255,255,255,.12);
   background: linear-gradient(180deg, #111a28, #0c121d);
-  color: inherit;
+  color: #ecf1f8;
   cursor: pointer;
-  transition: transform .06s ease, background .2s ease, border-color .2s ease;
-  z-index: 1; /* az input felett legyen */
+  transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+  z-index: 1;
 }
-.eye-btn:hover { background:#131d2c; border-color:#1d2a40; }
-.eye-btn:active{ transform: translateY(-50%) scale(0.98); }
 
-.eye-btn svg{ width: 18px; height: 18px; }
+.eye-btn:hover { 
+  background: #131d2c; 
+  border-color: #1d2a40; 
+}
+
+.eye-btn:active{ 
+  transform: translateY(-50%) scale(0.98); 
+}
+
+.eye-btn svg{ 
+  width: 18px; 
+  height: 18px; 
+}
 
 /* alapállapot: rejtett PIN -> zárt szem látszik */
 .eye-btn .eye-open{ display: none; }
@@ -301,4 +293,6 @@ button:hover:not(:disabled) {
 .eye-btn.is-visible .eye-open{ display: block; }
 .eye-btn.is-visible .eye-closed{ display: none; }
 
-
+/* ARIA attribútumok támogatása */
+.eye-btn[aria-pressed="true"] .eye-open{ display: block; }
+.eye-btn[aria-pressed="true"] .eye-closed{ display: none; }
