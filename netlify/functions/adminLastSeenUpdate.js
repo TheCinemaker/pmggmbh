@@ -1,5 +1,5 @@
 // netlify/functions/adminLastSeenUpdate.js
-const { HEADERS, STATE_DIR, STATE_PATH, createDbxClient, ensureFolder, readState, whoAmI } = require('./_dbx-helpers');
+const { HEADERS, STATE_DIR, STATE_PATH, createDbxClient, ensureFolder, readState } = require('./_dbx-helpers');
 
 exports.handler = async (event) => {
   const headers = { ...HEADERS, 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
@@ -17,10 +17,8 @@ exports.handler = async (event) => {
     }
 
     const dbx = createDbxClient();
-    // 401 diagnosztika
-    await whoAmI(dbx);
 
-    // Mappa biztosítása
+    // biztosítsuk a SYSTEM mappát
     await ensureFolder(dbx, STATE_DIR);
 
     const map = await readState(dbx);
@@ -35,7 +33,9 @@ exports.handler = async (event) => {
 
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, lastSeen: ts }) };
   } catch (e) {
-    console.error('adminLastSeenUpdate error:', e);
-    return { statusCode: 500, headers, body: JSON.stringify({ message: e.message || 'Server error' }) };
+    const code = e?.status || e?.statusCode || 500;
+    const tag = e?.error?.error_summary || e?.error?.error?.['.tag'] || null;
+    console.error('adminLastSeenUpdate error:', code, tag, e?.error || e);
+    return { statusCode: 500, headers, body: JSON.stringify({ message: 'dropbox_error', code, tag }) };
   }
 };
