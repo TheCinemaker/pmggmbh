@@ -354,8 +354,10 @@ function setLastUpdated() {
 document.addEventListener('DOMContentLoaded', async () => {
   // --- Admin jogosultság ellenőrzés: EZ külön try/catch nélkül! ---
   let user = null;
-  try { user = JSON.parse(sessionStorage.getItem('currentUser') || 'null'); } catch {}
-  const role = (user?.role || user?.userRole || '').toLowerCase();
+  try {
+  const stored = sessionStorage.getItem('currentUser');
+  const user = stored ? JSON.parse(stored) : null;
+  const role = String(user?.role || user?.userRole || '').toLowerCase();
   if (!user || role !== 'admin') {
     document.body.innerHTML = `
       <div class="app-container">
@@ -367,6 +369,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
     return;
   }
+
+  // --- Baseline betöltés + fail-safe létrehozás ---
+  try {
+    await loadPersonalBaseline(user.id);
+  } catch (e) {
+    console.warn('baseline GET hiba (nem fatális):', e);
+  }
+  if (!personalBaselineISO) {
+    try {
+      await markBaselineNow(user.id, user.displayName || '');
+      console.log('[admin] ', DE.firstVisitBaseline);
+    } catch (e) {
+      console.warn('baseline POST hiba (nem fatális):', e);
+    }
+  }
+
+  // "Seit letztem Besuch" gomb … (a te kódod maradhat)
+} catch {
+  document.body.innerHTML = `
+    <div class="app-container">
+      <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
+      <main class="content">
+        <a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a>
+      </main>
+    </div>
+  `;
+  return;
+}
 
   // --- UI alap ---
   ensureLastUpdatedEl();
