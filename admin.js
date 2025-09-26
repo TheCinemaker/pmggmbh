@@ -1,4 +1,4 @@
-// admin.js – DE-only UI + "seit letztem Besuch" delta modal
+// admin.js – DE-only UI + "seit letztem Besuch" delta modal (stabil)
 
 //////////////////////////
 // Német UI sztringek  //
@@ -117,6 +117,7 @@ function renderList(data) {
     if (files.length === 0) {
       ul.innerHTML = `<li class="empty">${DE.emptyFiles}</li>`;
     } else {
+      // legfrissebb elöl
       files.sort((a, b) => {
         const da = new Date(a.uploadedAt || 0).getTime();
         const db = new Date(b.uploadedAt || 0).getTime();
@@ -189,17 +190,9 @@ function openUserInfoModal(displayName) {
   `;
   document.body.appendChild(backdrop);
 
-  const escListener = (e) => {
-    if (e.key === 'Escape') {
-      close();
-    }
-  };
-  
-  const close = () => {
-    backdrop.remove();
-    document.removeEventListener('keydown', escListener);
-  };
-  
+  const escListener = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => { backdrop.remove(); document.removeEventListener('keydown', escListener); };
+
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
@@ -209,25 +202,42 @@ function openUserInfoModal(displayName) {
 //////////////////////////
 // "Since last visit"   //
 //////////////////////////
+function localBaselineKey(adminId) {
+  return `adminLastSeen:${adminId}`;
+}
+
 async function loadPersonalBaseline(adminId) {
-  const url = `/.netlify/functions/adminLastSeen?adminId=${encodeURIComponent(adminId)}`;
-  const resp = await fetch(url);
-  const text = await resp.text();
-  if (!resp.ok) throw new Error(`(adminLastSeen GET ${resp.status}) ${text || ''}`);
-  const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || null;
+  try {
+    const url = `/.netlify/functions/adminLastSeen?adminId=${encodeURIComponent(adminId)}`;
+    const resp = await fetch(url);
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || `(adminLastSeen GET ${resp.status})`);
+    const data = safeJsonParse(text) || {};
+    personalBaselineISO = data.lastSeen || null;
+  } catch (err) {
+    console.warn('baseline GET hiba (fallback localStorage):', err?.message || err);
+    personalBaselineISO = personalBaselineISO || localStorage.getItem(localBaselineKey(adminId)) || null;
+  }
 }
 
 async function markBaselineNow(adminId, displayName) {
-  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ adminId, timestamp: new Date().toISOString(), displayName }),
-  });
-  const text = await resp.text();
-  if (!resp.ok) throw new Error(`(adminLastSeenUpdate POST ${resp.status}) ${text || ''}`);
-  const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || new Date().toISOString();
+  const nowIso = new Date().toISOString();
+  try {
+    const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminId, timestamp: nowIso, displayName }),
+    });
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || `(adminLastSeenUpdate POST ${resp.status})`);
+    const data = safeJsonParse(text) || {};
+    personalBaselineISO = data.lastSeen || nowIso;
+  } catch (err) {
+    console.warn('baseline POST hiba (lokális mentés):', err?.message || err);
+    personalBaselineISO = nowIso;
+  } finally {
+    localStorage.setItem(localBaselineKey(adminId), personalBaselineISO);
+  }
 }
 
 function collectSinceBaseline() {
@@ -306,17 +316,9 @@ function openSinceVisitModal(onMarkReviewed) {
   `;
   document.body.appendChild(backdrop);
 
-  const escListener = (e) => {
-    if (e.key === 'Escape') {
-      close();
-    }
-  };
+  const escListener = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => { backdrop.remove(); document.removeEventListener('keydown', escListener); };
 
-  const close = () => {
-    backdrop.remove();
-    document.removeEventListener('keydown', escListener);
-  };
-  
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.js-mark-reviewed').addEventListener('click', async () => {
@@ -352,13 +354,11 @@ function setLastUpdated() {
 // Init: auth check + betöltések    //
 //////////////////////////////////////
 document.addEventListener('DOMContentLoaded', async () => {
-  // --- Admin jogosultság ellenőrzés: EZ külön try/catch nélkül! ---
-  let user = null;
-  try {
-  const stored = sessionStorage.getItem('currentUser');
-  const user = stored ? JSON.parse(stored) : null;
-  const role = String(user?.role || user?.userRole || '').toLowerCase();
-  if (!user || role !== 'admin') {
+  // ---- Admin jogosultság ellenőrzés
+  let sessionUser = null;
+  try { sessionUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null'); } catch {}
+  const role = String(sessionUser?.role || sessionUser?.userRole || '').toLowerCase();
+  if (!sessionUser || role !== 'admin') {
     document.body.innerHTML = `
       <div class="app-container">
         <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
@@ -369,40 +369,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
     return;
   }
+  const adminId   = sessionUser.id;
+  const adminName = sessionUser.displayName || '';
 
-  // --- Baseline betöltés + fail-safe létrehozás ---
-  try {
-    await loadPersonalBaseline(user.id);
-  } catch (e) {
-    console.warn('baseline GET hiba (nem fatális):', e);
-  }
+  // ---- Baseline betöltés + ha nincs, létrehozás (nem fatális, fallbackelünk)
+  try { await loadPersonalBaseline(adminId); } catch (e) { console.warn('baseline GET hiba:', e); }
   if (!personalBaselineISO) {
-    try {
-      await markBaselineNow(user.id, user.displayName || '');
-      console.log('[admin] ', DE.firstVisitBaseline);
-    } catch (e) {
-      console.warn('baseline POST hiba (nem fatális):', e);
-    }
+    try { await markBaselineNow(adminId, adminName); console.log('[admin]', DE.firstVisitBaseline); }
+    catch (e) { console.warn('baseline POST hiba:', e); }
   }
 
-  // "Seit letztem Besuch" gomb … (a te kódod maradhat)
-} catch {
-  document.body.innerHTML = `
-    <div class="app-container">
-      <header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header>
-      <main class="content">
-        <a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a>
-      </main>
-    </div>
-  `;
-  return;
-}
-
-  // --- UI alap ---
+  // ---- UI alap
   ensureLastUpdatedEl();
   const userListContainer = document.getElementById('userListContainer');
-  const nameFilter = document.getElementById('nameFilter');
-  const refreshBtn = document.getElementById('refreshBtn');
+  const nameFilter   = document.getElementById('nameFilter');
+  const refreshBtn   = document.getElementById('refreshBtn');
   const headerActions = document.querySelector('.header-actions');
 
   if (!userListContainer) {
@@ -410,7 +391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // --- "Seit letztem Besuch" gomb (akkor is kirakjuk, ha baseline épp nem érhető el) ---
+  // „Seit letztem Besuch” gomb (óra ikon)
   if (headerActions && !document.getElementById('sinceVisitBtn')) {
     const btn = document.createElement('button');
     btn.id = 'sinceVisitBtn';
@@ -420,44 +401,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path fill="currentColor" d="M12 1a11 11 0 1 0 11 11A11.012 11.012 0 0 0 12 1Zm1 11V6h-2v8h7v-2Z"/>
       </svg>`;
-    headerActions.insertBefore(btn, headerActions.firstChild);
+    headerActions.insertBefore(btn, headerActions.firstChild || null);
     btn.addEventListener('click', () => {
       openSinceVisitModal(async () => {
-        try { await markBaselineNow(user.id, user.displayName || ''); }
-        catch (e) { console.warn('baseline POST fail (ignored):', e); }
+        await markBaselineNow(adminId, adminName);
+        console.log(DE.baselineUpdated);
       });
     });
   }
 
-  // --- Baseline betöltés NEM fatális ---
-  try {
-    await loadPersonalBaseline(user.id);
-    if (!personalBaselineISO) {
-      await markBaselineNow(user.id, user.displayName || '');
-      console.log('[admin]', DE.firstVisitBaseline);
-    }
-  } catch (e) {
-    console.warn('baseline GET/POST hiba (nem fatális, megyünk tovább):', e);
-  }
-
-  // --- Betöltő függvény ---
+  // ---- Betöltő függvény
   const doLoad = async () => {
     try {
       refreshBtn?.setAttribute('disabled', '');
       refreshBtn?.classList.add('spinning');
       userListContainer.innerHTML = `<p>${DE.loading}</p>`;
+
       await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
       renderList(allUploads);
       setLastUpdated();
 
-      // Ha van baseline és van új tartalom, feldobjuk a modált
+      // ha van baseline és tényleg van új tartalom, dobjuk fel automatikusan a modált
       if (personalBaselineISO) {
         const diff = collectSinceBaseline();
         const hasNew = Object.keys(diff).some(k => (diff[k] || []).length);
         if (hasNew) {
           openSinceVisitModal(async () => {
-            try { await markBaselineNow(user.id, user.displayName || ''); }
-            catch (e) { console.warn('baseline POST fail (ignored):', e); }
+            await markBaselineNow(adminId, adminName);
+            console.log(DE.baselineUpdated);
           });
         }
       }
@@ -473,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Első betöltés
   await doLoad();
 
-  // Szűrő és refresh
+  // Szűrő és refresh események
   nameFilter?.addEventListener('input', () => renderList(allUploads));
   refreshBtn?.addEventListener('click', async () => {
     const saved = nameFilter ? nameFilter.value : '';
@@ -481,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (nameFilter) nameFilter.value = saved;
   });
 
-  // Ctrl/Cmd+R = helyi frissítés
+  // Ctrl/Cmd + R → helyi frissítés
   document.addEventListener('keydown', (e) => {
     const isMac = navigator.platform.toUpperCase().includes('MAC');
     const key = (e.key || '').toLowerCase();
@@ -491,4 +462,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
-
