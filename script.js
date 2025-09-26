@@ -26,6 +26,30 @@ const languageSelect          = document.getElementById('languageSelect'); // ha
 // --- Állapotkezelés ---
 let currentUser = null;
 
+// PIN láthatóság váltó
+const togglePinBtn = document.getElementById('togglePinVisibility');
+if (togglePinBtn && pinCodeInput) {
+  const setUi = () => {
+    const visible = pinCodeInput.type === 'text';
+    togglePinBtn.setAttribute('aria-pressed', String(visible));
+    togglePinBtn.title      = visible ? 'PIN elrejtése' : 'PIN mutatása';
+    togglePinBtn.ariaLabel  = togglePinBtn.title;
+  };
+
+  togglePinBtn.addEventListener('click', () => {
+    pinCodeInput.type = (pinCodeInput.type === 'password') ? 'text' : 'password';
+    setUi();
+  });
+
+  // opcionális: nyomva tartásra mutat, elengedésre elrejt
+  let pressed = false;
+  togglePinBtn.addEventListener('mousedown', () => { pressed = true; pinCodeInput.type = 'text'; setUi(); });
+  window.addEventListener('mouseup',   () => { if (pressed) { pressed = false; pinCodeInput.type = 'password'; setUi(); } });
+
+  setUi(); // init
+}
+
+
 // --- I18N SZÓTÁR ---
 const translations = {
   hu: {
