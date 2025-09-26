@@ -258,3 +258,47 @@ button:hover:not(:disabled) {
 .eye-btn[aria-pressed="true"] .eye-open{ display:none; }
 .eye-btn[aria-pressed="true"] .eye-closed{ display:inline; }
 
+/* === PIN visibility toggle === */
+.input-with-toggle{
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* hagyjunk helyet a gombnak a jobb oldalon */
+.input-with-toggle input{
+  width: 100%;
+  padding-right: 48px;
+}
+
+.eye-btn{
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255,255,255,.12));
+  background: linear-gradient(180deg, #111a28, #0c121d);
+  color: inherit;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease;
+  z-index: 1; /* az input felett legyen */
+}
+.eye-btn:hover { background:#131d2c; border-color:#1d2a40; }
+.eye-btn:active{ transform: translateY(-50%) scale(0.98); }
+
+.eye-btn svg{ width: 18px; height: 18px; }
+
+/* alapállapot: rejtett PIN -> zárt szem látszik */
+.eye-btn .eye-open{ display: none; }
+.eye-btn .eye-closed{ display: block; }
+
+/* látható PIN -> nyitott szem */
+.eye-btn.is-visible .eye-open{ display: block; }
+.eye-btn.is-visible .eye-closed{ display: none; }
+
+
