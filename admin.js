@@ -201,28 +201,27 @@ function openUserInfoModal(displayName) {
 //////////////////////////
 // "Since last visit"   //
 //////////////////////////
+// baseline beolvasása
 async function loadPersonalBaseline(adminId) {
-  // 👉 ehhez a Netlify functionhöz passzol: adminLastSeen.js (GET)
   const url = `/.netlify/functions/adminLastSeen?adminId=${encodeURIComponent(adminId)}`;
   const resp = await fetch(url);
   const text = await resp.text();
   if (!resp.ok) throw new Error(`(adminLastSeen GET ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  // tolerant: elfogadjuk a lastSeen és lastSeenISO kulcsot is
-  personalBaselineISO = data.lastSeen || data.lastSeenISO || null;
+  personalBaselineISO = data.lastSeen || null;   // <-- itt a fix
 }
 
+// baseline frissítése MOST-ra
 async function markBaselineNow(adminId, displayName) {
-  // 👉 ehhez a Netlify functionhöz passzol: adminLastSeenUpdate.js (POST)
-  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {
+  const resp = await fetch('/.netlify/functions/adminLastSeenUpdate', {  // <-- végpont fix
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ adminId, timestamp: new Date().toISOString() })
+    body: JSON.stringify({ adminId, timestamp: new Date().toISOString(), displayName }),
   });
   const text = await resp.text();
   if (!resp.ok) throw new Error(`(adminLastSeenUpdate POST ${resp.status}) ${text || ''}`);
   const data = safeJsonParse(text) || {};
-  personalBaselineISO = data.lastSeen || data.lastSeenISO || new Date().toISOString();
+  personalBaselineISO = data.lastSeen || new Date().toISOString();  // <-- kulcs fix
 }
 
 function collectSinceBaseline() {
