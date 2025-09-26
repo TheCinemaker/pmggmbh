@@ -24,21 +24,52 @@
                 <h1 data-translate-key="loginTitle">LOGIN PAGE</h1>
             </header>
             <main class="content">
-                <form id="loginForm" class="app-form">
-                    <div class="form-group">
-                        <label for="loginEmployeeName" data-translate-key="nameLabel">NAME:</label>
-                        <select id="loginEmployeeName" required>
-                            <option value="" disabled selected data-translate-key="selectFromList">Select from list...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="pinCode" data-translate-key="pinLabel">PIN code:</label>
-                        <input type="password" id="pinCode" inputmode="numeric" pattern="[0-9]*" required>
-                    </div>
-                    <button type="submit" id="loginButton" data-translate-key="loginButton">SIGN IN</button>
-                </form>
-                <div id="loginStatus" class="status"></div>
-            </main>
+  <form id="loginForm" class="app-form">
+    <div class="form-group">
+      <label for="loginEmployeeName" data-translate-key="nameLabel">NAME:</label>
+      <select id="loginEmployeeName" required>
+        <option value="" disabled selected data-translate-key="selectFromList">Select from list...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="pinCode" data-translate-key="pinLabel">PIN code:</label>
+
+      <div class="input-with-toggle">
+        <input
+          type="password"
+          id="pinCode"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="current-password"
+          required
+        >
+
+        <button
+          type="button"
+          id="togglePinVisibility"
+          class="eye-btn"
+          aria-label="Show PIN"
+          aria-pressed="false"
+          title="Show PIN"
+        >
+          <!-- nyitott szem -->
+          <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+          </svg>
+          <!-- áthúzott szem -->
+          <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M2 5.27 3.28 4l17 17L19 22.27l-3.12-3.12A12.2 12.2 0 0 1 12 19C5 19 1 12 1 12a21.98 21.98 0 0 1 6.21-6.87L2 5.27Zm9.88 3.41L9.7 6.5A5 5 0 0 1 17 12c0 .5-.07.98-.2 1.44l-2.05-2.05A2.5 2.5 0 0 0 11.88 8.68ZM12 7a5 5 0 0 0-5 5c0 .61.11 1.2.3 1.74l-2.2 2.2A21.92 21.92 0 0 1 1 12s4-7 11-7c1.1 0 2.13.16 3.1.44l-2.2 2.2C12.8 7.1 12.41 7 12 7Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <button type="submit" id="loginButton" data-translate-key="loginButton">SIGN IN</button>
+  </form>
+
+  <div id="loginStatus" class="status"></div>
+</main>
         </div>
 
         <!-- Feltöltő Képernyő -->
