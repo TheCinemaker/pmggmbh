@@ -1,26 +1,29 @@
-// netlify/functions/adminLastSeen.js
-const { HEADERS, createDbxClient, readState } = require('./_dbx-helpers');
+// GET /.netlify/functions/adminLastSeen?adminId=<ID>
+// Válasz: { lastSeen: ISOstring | null }
+const { getStore } = require('@netlify/blobs');
+
+const HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 exports.handler = async (event) => {
-  const headers = { ...HEADERS, 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS };
 
   try {
-    const adminId = event.queryStringParameters?.adminId?.trim();
+    const adminId = (event.queryStringParameters?.adminId || '').trim();
     if (!adminId) {
-      return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing adminId' }) };
+      return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ message: 'Missing adminId' }) };
     }
 
-    const dbx = createDbxClient();
-    const map = await readState(dbx);
-    const lastSeen = map[adminId] || null;
+    const store = getStore('admin-last-seen');         // egy név a store-hoz
+    const map = (await store.getJSON('state')) || {};  // { [adminId]: ISO }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ lastSeen }) };
+    const lastSeen = map[adminId] || null;
+    return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ lastSeen }) };
   } catch (e) {
-    // adjunk több infót a kliensnek
-    const code = e?.status || e?.statusCode || 500;
-    const tag = e?.error?.error_summary || e?.error?.error?.['.tag'] || null;
-    console.error('adminLastSeen error:', code, tag, e?.error || e);
-    return { statusCode: 500, headers, body: JSON.stringify({ message: 'dropbox_error', code, tag }) };
+    console.error('adminLastSeen error:', e);
+    return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ message: e.message || 'Server error' }) };
   }
 };
