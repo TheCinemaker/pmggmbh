@@ -1,41 +1,36 @@
-// netlify/functions/adminLastSeenUpdate.js
-const { HEADERS, STATE_DIR, STATE_PATH, createDbxClient, ensureFolder, readState } = require('./_dbx-helpers');
+// POST /.netlify/functions/adminLastSeenUpdate
+// Body: { adminId: string, timestamp?: ISOstring }
+const { getStore } = require('@netlify/blobs');
+
+const HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 exports.handler = async (event) => {
-  const headers = { ...HEADERS, 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS };
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ message: 'Method not allowed' }) };
+    return { statusCode: 405, headers: HEADERS, body: JSON.stringify({ message: 'Method not allowed' }) };
   }
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const adminId = body.adminId?.trim();
+    const adminId = (body.adminId || '').trim();
     const ts = (body.timestamp || new Date().toISOString()).trim();
     if (!adminId) {
-      return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing adminId' }) };
+      return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ message: 'Missing adminId' }) };
     }
 
-    const dbx = createDbxClient();
+    const store = getStore('admin-last-seen');
+    const map = (await store.getJSON('state')) || {};
 
-    // biztosítsuk a SYSTEM mappát
-    await ensureFolder(dbx, STATE_DIR);
-
-    const map = await readState(dbx);
     map[adminId] = ts;
+    await store.setJSON('state', map);
 
-    await dbx.filesUpload({
-      path: STATE_PATH,
-      contents: Buffer.from(JSON.stringify(map, null, 2), 'utf8'),
-      mode: { '.tag': 'overwrite' },
-      mute: true,
-    });
-
-    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, lastSeen: ts }) };
+    return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true, lastSeen: ts }) };
   } catch (e) {
-    const code = e?.status || e?.statusCode || 500;
-    const tag = e?.error?.error_summary || e?.error?.error?.['.tag'] || null;
-    console.error('adminLastSeenUpdate error:', code, tag, e?.error || e);
-    return { statusCode: 500, headers, body: JSON.stringify({ message: 'dropbox_error', code, tag }) };
+    console.error('adminLastSeenUpdate error:', e);
+    return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ message: e.message || 'Server error' }) };
   }
 };
