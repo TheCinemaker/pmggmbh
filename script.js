@@ -280,11 +280,28 @@ async function fetchAndDisplayFiles() {
   }
 }
 
-// --- Hónap lista betöltés ---
+// --- Hónap név formázó: "9. September" az aktuális dátumból ---
+function makeFolderNameFromDate(d = new Date()) {
+  const m = d.getMonth() + 1; // 1..12
+  const monthNameDe = d.toLocaleString('de-DE', { month: 'long' }); // pl. "September"
+  return `${m}. ${monthNameDe}`;
+}
+
+// --- Kiválasztja az aktuális hónapot, ha létezik; különben a legújabb mappát ---
+function selectBestMonth(sel, folders, targetName) {
+  if (!sel || !folders.length) return;
+  sel.value = folders.includes(targetName) ? targetName : folders[0];
+}
+
+// --- Hónap lista betöltés (VÉGLEGES) ---
 async function populateMonthList(userId) {
   const lang = getCurrentLang();
   const selects = [monthSelect, absenceMonthSelect, viewMonthSelect];
-  selects.forEach(sel => { if (sel) sel.innerHTML = `<option value="" disabled selected>${getLangDict(lang).loadingMonths}</option>`; });
+
+  // ideiglenes "Betöltés..." opció
+  selects.forEach(sel => {
+    if (sel) sel.innerHTML = `<option value="" disabled selected>${getLangDict(lang).loadingMonths}</option>`;
+  });
 
   try {
     const resp = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
@@ -292,30 +309,35 @@ async function populateMonthList(userId) {
     if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingMonths);
     const folders = text ? JSON.parse(text) : [];
 
+    // pl. ["9. September","8. August", ...] – legújabb elöl
+    folders.sort((a, b) => parseInt(b) - parseInt(a));
+
+    // feltöltjük a selecteket
     selects.forEach(sel => {
       if (!sel) return;
       sel.innerHTML = '';
       if (!folders.length) {
         sel.innerHTML = `<option value="" disabled selected>${getLangDict(lang).noFolders}</option>`;
-      } else {
-        // Pl. "9. September" => parseInt jól működik a hónap eleji számmal
-        folders.sort((a, b) => parseInt(b) - parseInt(a));
-        folders.forEach(folderName => {
-          const option = document.createElement('option');
-          option.value = folderName;
-          option.textContent = folderName;
-          sel.appendChild(option);
-        });
+        return;
       }
+      folders.forEach(folderName => {
+        const option = document.createElement('option');
+        option.value = folderName;
+        option.textContent = folderName;
+        sel.appendChild(option);
+      });
     });
 
-    // Nézethez kiválasztjuk a legújabb hónapot
-    if (viewMonthSelect && folders.length) {
-      viewMonthSelect.value = folders[0];
-    }
+    // LÉNYEG: mindig az AKTUÁLIS hónapot állítsuk be (pl. "9. September")
+    const currentMonthFolder = makeFolderNameFromDate(new Date());
+    selectBestMonth(monthSelect,        folders, currentMonthFolder);
+    selectBestMonth(absenceMonthSelect, folders, currentMonthFolder);
+    selectBestMonth(viewMonthSelect,    folders, currentMonthFolder);
+
+    // Frissítsük a fájllistát a view-nál
     fetchAndDisplayFiles();
   } catch (error) {
-    if (uploadStatus) showToast(`Hiba: ${error.message}`, 'error');
+    showToast(`Hiba: ${error.message}`, 'error');
   }
 }
 
