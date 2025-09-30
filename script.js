@@ -66,7 +66,7 @@ const translations = {
     welcome: "Üdv,",
     timesheetUploadTitle: "Óralap Feltöltése",
     targetMonthLabel: "Cél hónap:",
-    daysLabel: "Napok (pl. 5-9 vagy 30)",
+    daysLabel: "Óralap dátumai (pl. 5-9)",
     timesheetFileLabel: "Óralap (kép vagy PDF):",
     uploadButton: "Feltöltés",
     uploadButtonLoading: "Feltöltés...",
