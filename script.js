@@ -290,7 +290,18 @@ function makeFolderNameFromDate(d = new Date()) {
 // --- Kiválasztja az aktuális hónapot, ha létezik; különben a legújabb mappát ---
 function selectBestMonth(sel, folders, targetName) {
   if (!sel || !folders.length) return;
-  sel.value = folders.includes(targetName) ? targetName : folders[0];
+
+  // 1) direkt egyezés (ideális eset)
+  if (folders.includes(targetName)) {
+    sel.value = targetName;
+    return;
+  }
+
+  // 2) robust: egyezés hónapszám alapján (vezető nullák, eltérő case, extra szóközök esetére)
+  const targetNum = String(parseInt(targetName, 10)); // pl. "9"
+  const found = folders.find(fn => String(parseInt(fn, 10)) === targetNum);
+
+  sel.value = found || folders[0];
 }
 
 // --- Hónap lista betöltés (VÉGLEGES) ---
