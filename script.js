@@ -430,7 +430,7 @@ async function handleLogin(event) {
       lang: (['hu','de','pl'].includes((result.userLang || '').toLowerCase()) ? result.userLang.toLowerCase() : getCurrentLang()),
       role: result.userRole
     };
-    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
     const uiLang = getCurrentLang();
     const dict   = getLangDict(uiLang);
