@@ -16,7 +16,7 @@ const DE = {
   deltaTitle: 'Neue Dateien seit letztem Update',
   deltaNone: 'Keine neuen Dateien seit dem letzten Update.',
   deltaCount: (n) => `${n} neue Datei${n === 1 ? '' : 'en'}`,
-  labels: { name: 'Name', phone: 'Telefon', email: 'E-Mail', lang: 'Sprache', company: 'Firma' }, // --- ÚJ: Company label ---
+  labels: { name: 'Name', phone: 'Telefon', email: 'E-Mail', lang: 'Sprache', company: 'Firma' },
   close: 'Schließen'
 };
 
@@ -25,7 +25,7 @@ const DE = {
 /////////////////////
 let allUploads = {};
 let usersByName = {};
-let allUsers = []; // --- ÚJ: Felhasználók listája a cégadattal együtt ---
+let allUsers = [];
 
 // delta állapot
 let lastSnapshot = null;
@@ -78,21 +78,16 @@ function diffSnapshots(prevSnap, currData) {
   return diff;
 }
 
-// --- ÚJ: Függvény a cég-szűrő dinamikus feltöltéséhez ---
 function populateCompanyFilter(users) {
   const companyFilter = document.getElementById('companyFilter');
   if (!companyFilter) return;
-
   const companies = [...new Set(users.map(u => u.company).filter(Boolean))];
   companies.sort((a, b) => a.localeCompare(b, 'de-DE'));
-
   companyFilter.innerHTML = '';
-
   const allOption = document.createElement('option');
   allOption.value = '';
   allOption.textContent = 'Alle Firmen';
   companyFilter.appendChild(allOption);
-
   companies.forEach(company => {
     const option = document.createElement('option');
     option.value = company;
@@ -100,7 +95,6 @@ function populateCompanyFilter(users) {
     companyFilter.appendChild(option);
   });
 }
-
 
 //////////////////////////////
 // Backend adatbetöltések   //
@@ -112,7 +106,7 @@ async function fetchUsersMeta() {
   if (!resp.ok) throw new Error(`GET ${url} (${resp.status}) ${body || ''}`);
   
   const usersArray = safeJsonParse(body) || [];
-  allUsers = usersArray; // --- VÁLTOZÁS ---
+  allUsers = usersArray;
   
   const map = {};
   usersArray.forEach(u => {
@@ -120,8 +114,7 @@ async function fetchUsersMeta() {
     if (key) map[key] = u;
   });
   usersByName = map;
-  
-  populateCompanyFilter(allUsers); // --- ÚJ ---
+  populateCompanyFilter(allUsers);
 }
 
 async function fetchAllUploads() {
@@ -133,7 +126,6 @@ async function fetchAllUploads() {
   const body = await resp.text();
   if (!resp.ok) throw new Error(`GET ${urlBase} (${resp.status}) ${body || ''}`);
   const data = safeJsonParse(body) || {};
-
   Object.keys(data).forEach(u => {
     if (!Array.isArray(data[u])) data[u] = [];
     data[u].forEach(f => {
@@ -141,7 +133,6 @@ async function fetchAllUploads() {
       f.uploadedAtDisplay = f.uploadedAtDisplay || f.uploadedAt || null;
     });
   });
-
   allUploads = data;
   renderList(allUploads);
 }
@@ -152,31 +143,25 @@ async function fetchAllUploads() {
 function renderList(data) {
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
-  const companyFilter = document.getElementById('companyFilter'); // --- ÚJ ---
+  const companyFilter = document.getElementById('companyFilter');
   if (!userListContainer) {
     console.error('[admin] Hiányzik #userListContainer');
     return;
   }
-
-  const nameQuery = normName(nameFilter?.value); // --- VÁLTOZÁS ---
-  const selectedCompany = companyFilter?.value; // --- ÚJ ---
-
+  const nameQuery = normName(nameFilter?.value);
+  const selectedCompany = companyFilter?.value;
   const users = Object.keys(data)
-    .filter(displayName => { // --- VÁLTOZÁS: Kibővített szűrés ---
+    .filter(displayName => {
       const nameMatch = normName(displayName).includes(nameQuery);
       if (!nameMatch) return false;
-
       if (selectedCompany) {
         const userMeta = usersByName[normName(displayName)];
         return userMeta && userMeta.company === selectedCompany;
       }
-      
       return true;
     })
     .sort((a, b) => a.localeCompare(b, 'de-DE'));
-
   userListContainer.innerHTML = '';
-
   users.forEach(displayName => {
     const files = Array.isArray(data[displayName]) ? data[displayName] : [];
     const card = document.createElement('div');
@@ -201,7 +186,6 @@ function renderList(data) {
     header.querySelector('.info-btn').addEventListener('click', () => openUserInfoModal(displayName));
     userListContainer.appendChild(card);
   });
-
   if (users.length === 0) {
     userListContainer.innerHTML = `<p class="status">${DE.noResults}</p>`;
   }
@@ -214,13 +198,11 @@ function openUserInfoModal(displayName) {
   const email = meta.email || '';
   const emailHtml = email ? `<a href="mailto:${email}">${email}</a>` : '—';
   const lang = meta.userLang || '—';
-  const company = meta.company || '—'; // --- ÚJ ---
-
+  const company = meta.company || '—';
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
   backdrop.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h4 id="modalTitle">${DE.infoTitle}</h4><button class="modal-close" aria-label="${DE.close}"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg></button></div><div class="modal-body"><div class="modal-grid"><div class="label">${DE.labels.name}:</div><div class="value">${displayName}</div><div class="label">${DE.labels.company}:</div><div class="value">${company}</div><div class="label">${DE.labels.phone}:</div><div class="value">${phoneHtml}</div><div class="label">${DE.labels.email}:</div><div class="value">${emailHtml}</div><div class="label">${DE.labels.lang}:</div><div class="value">${lang}</div></div></div><div class="modal-footer"><button class="modal-primary">${DE.close}</button></div></div>`;
   document.body.appendChild(backdrop);
-  
   const escListener = (e) => { if (e.key === 'Escape') close(); };
   const close = () => {
     backdrop.remove();
@@ -232,9 +214,6 @@ function openUserInfoModal(displayName) {
   document.addEventListener('keydown', escListener);
 }
 
-//////////////////////////////
-// Delta modal megjelenítés //
-//////////////////////////////
 function openDeltaModal(diff) {
   const total = Object.values(diff || {}).reduce((s, arr) => s + (arr ? arr.length : 0), 0);
   const backdrop = document.createElement('div');
@@ -257,9 +236,6 @@ function openDeltaModal(diff) {
   document.addEventListener('keydown', escListener);
 }
 
-//////////////////////////
-// Last updated segéd   //
-//////////////////////////
 function ensureLastUpdatedEl() {
   if (document.getElementById('lastUpdated')) return;
   const el = document.createElement('div');
@@ -282,7 +258,7 @@ function setLastUpdated(ts) {
 //////////////////////////////
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const stored = sessionStorage.getItem('currentUser');
+    const stored = localStorage.getItem('currentUser'); // --- JAVÍTÁS: sessionStorage -> localStorage ---
     const user = stored ? JSON.parse(stored) : null;
     if (!user || (user.role || user.userRole) !== 'admin') {
       document.body.innerHTML = `<div class="app-container"><header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header><main class="content"><a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a></main></div>`;
@@ -296,7 +272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ensureLastUpdatedEl();
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
-  const companyFilter = document.getElementById('companyFilter'); // --- ÚJ ---
+  const companyFilter = document.getElementById('companyFilter');
   const refreshBtn = document.getElementById('refreshBtn');
 
   if (!userListContainer) {
@@ -304,9 +280,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const savedSnap = safeJsonParse(sessionStorage.getItem('admin_lastSnapshot'));
+  // --- JAVÍTÁS: Átállás localStorage-ra a perzisztens tároláshoz ---
+  const savedSnap = safeJsonParse(localStorage.getItem('admin_lastSnapshot'));
   if (savedSnap) lastSnapshot = savedSnap;
-  const savedUpdated = sessionStorage.getItem('admin_lastUpdated');
+  const savedUpdated = localStorage.getItem('admin_lastUpdated');
   if (savedUpdated) { lastUpdatedAt = Number(savedUpdated) || Date.now(); setLastUpdated(lastUpdatedAt); }
 
   const doLoad = async (showDelta = false) => {
@@ -316,16 +293,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       userListContainer.innerHTML = `<p>${DE.loading}</p>`;
       const prevSnap = lastSnapshot || null;
       await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
-      // A renderList-et a fetchAllUploads már meghívja, itt nem kell újra
       lastUpdatedAt = Date.now();
       setLastUpdated(lastUpdatedAt);
-      sessionStorage.setItem('admin_lastUpdated', String(lastUpdatedAt));
+      localStorage.setItem('admin_lastUpdated', String(lastUpdatedAt)); // --- JAVÍTÁS ---
       if (showDelta && prevSnap) {
         const delta = diffSnapshots(prevSnap, allUploads);
         openDeltaModal(delta);
       }
       lastSnapshot = buildSnapshot(allUploads);
-      sessionStorage.setItem('admin_lastSnapshot', JSON.stringify(lastSnapshot));
+      localStorage.setItem('admin_lastSnapshot', JSON.stringify(lastSnapshot)); // --- JAVÍTÁS ---
     } catch (err) {
       console.error('[admin] Betöltési hiba:', err);
       userListContainer.innerHTML = `<p class="status error">${DE.errorPrefix} ${err.message || 'Unbekannter Fehler'}</p>`;
@@ -335,17 +311,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  await doLoad(false);
+  // --- JAVÍTÁS: Első betöltésnél is mutassa a különbséget ---
+  await doLoad(true);
 
   nameFilter?.addEventListener('input', () => renderList(allUploads));
-  companyFilter?.addEventListener('change', () => renderList(allUploads)); // --- ÚJ ---
+  companyFilter?.addEventListener('change', () => renderList(allUploads));
 
   refreshBtn?.addEventListener('click', async () => {
     const savedNameFilter = nameFilter ? nameFilter.value : '';
-    const savedCompanyFilter = companyFilter ? companyFilter.value : ''; // --- ÚJ ---
+    const savedCompanyFilter = companyFilter ? companyFilter.value : '';
     await doLoad(true);
     if (nameFilter) nameFilter.value = savedNameFilter;
-    if (companyFilter) companyFilter.value = savedCompanyFilter; // --- ÚJ ---
+    if (companyFilter) companyFilter.value = savedCompanyFilter;
     renderList(allUploads);
   });
 
@@ -358,11 +335,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // --- ÚJ: Vissza a tetejére gomb logikája ---
   const backToTopButton = document.getElementById('backToTopBtn');
   if (backToTopButton) {
     window.addEventListener('scroll', () => {
-      // 300px görgetés után jelenik meg
       if (window.scrollY > 300) {
         backToTopButton.classList.add('show');
       } else {
@@ -370,10 +345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     backToTopButton.addEventListener('click', () => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth' // Szép, animált görgetés
-      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 });
