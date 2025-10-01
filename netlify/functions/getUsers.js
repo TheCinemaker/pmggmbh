@@ -47,8 +47,8 @@ exports.handler = async (event) => {
     });
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // A:id  B:pin  C:type  D:lang  E:role  F:phone  G:email
-    const range = `${SHEET_NAME}!A:G`;
+    // --- MÓDOSÍTÁS 1: A tartomány kiterjesztése a H oszlopra ---
+    const range = `${SHEET_NAME}!A:H`; 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range
@@ -56,10 +56,10 @@ exports.handler = async (event) => {
 
     let rows = response.data.values || [];
 
-    // Ha van fejléc-sor, dobjuk el (heurisztika)
+    // Fejléc-sor eldobása (heurisztika) - kibővítve a 'ceg' szóval
     if (rows.length) {
       const head = rows[0].join(' ').toLowerCase();
-      if (/(pin|lang|role|phone|email|type)/.test(head)) {
+      if (/(pin|lang|role|phone|email|type|ceg)/.test(head)) { // <-- Bővítés itt
         rows = rows.slice(1);
       }
     }
@@ -77,6 +77,9 @@ exports.handler = async (event) => {
         const userRole = (r[4] || 'user').trim().toLowerCase();
         const phone    = normalizePhoneLoose(r[5] || '');
         const email    = (r[6] || '').trim();
+        
+        // --- MÓDOSÍTÁS 2: A cég adat beolvasása a H oszlopból (index: 7) ---
+        const company  = (r[7] || '').trim() || null; // Ha üres, legyen null
 
         return {
           id,
@@ -85,7 +88,8 @@ exports.handler = async (event) => {
           userLang,
           userRole,
           phone,
-          email
+          email,
+          company // <-- ÚJ MEZŐ
         };
       });
 
