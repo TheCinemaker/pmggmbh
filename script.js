@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const storedUser = sessionStorage.getItem('currentUser');
+  const storedUser = localStorage.getItem('currentUser');
   if (storedUser) {
     currentUser = JSON.parse(storedUser);
 
