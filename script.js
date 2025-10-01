@@ -605,7 +605,7 @@ function handleAbsenceTypeChange() {
 
 function handleLogout() {
   currentUser = null;
-  sessionStorage.removeItem('currentUser');
+  localStorage.removeItem('currentUser');
   showScreen('login');
   setLanguage(getCurrentLang());
 }
