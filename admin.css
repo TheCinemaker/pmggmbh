@@ -359,3 +359,47 @@ html, body { background: var(--bg); color: var(--text); }
   }
   .delta-files .date{ justify-self: start; }
 }
+
+/* --- Vissza a tetejére gomb stílusai --- */
+.back-to-top {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  
+  /* Alapból rejtve van, a JS teszi láthatóvá */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(15px);
+  transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+  
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: var(--primary-color, #333); /* Használja a meglévő primary színt, vagy a sötétszürkét */
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  
+  /* Flexbox a nyíl középre igazításához */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  background-color: var(--primary-hover-color, #555);
+}
+
+.back-to-top svg {
+  width: 28px;
+  height: 28px;
+  transform: translateY(-1px); /* Kis vizuális korrekció */
+}
