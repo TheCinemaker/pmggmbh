@@ -1,4 +1,4 @@
-// admin.js – DE-only UI + REFRESH DELTA MODAL
+// admin.js – DE-only UI + REFRESH DELTA MODAL + Company Filter + Back To Top
 
 //////////////////////////
 // Német UI sztringek   //
@@ -16,20 +16,20 @@ const DE = {
   deltaTitle: 'Neue Dateien seit letztem Update',
   deltaNone: 'Keine neuen Dateien seit dem letzten Update.',
   deltaCount: (n) => `${n} neue Datei${n === 1 ? '' : 'en'}`,
-  labels: { name: 'Name', phone: 'Telefon', email: 'E-Mail', lang: 'Sprache', company: 'Firma' }, // --- ÚJ --- company label
+  labels: { name: 'Name', phone: 'Telefon', email: 'E-Mail', lang: 'Sprache', company: 'Firma' }, // --- ÚJ: Company label ---
   close: 'Schließen'
 };
 
 /////////////////////
 // Állapot, helper //
 /////////////////////
-let allUploads = {};    // { "Name": [ { name, folder, uploadedAt, uploadedAtDisplay, link? } ] }
-let usersByName = {};   // { "name lower": { displayName,id,phone,email,userLang,userRole,userType,company? } }
-let allUsers = [];      // --- ÚJ --- Felhasználók listája a cégadattal együtt
+let allUploads = {};
+let usersByName = {};
+let allUsers = []; // --- ÚJ: Felhasználók listája a cégadattal együtt ---
 
 // delta állapot
-let lastSnapshot = null;   // { user: { "folder/name": timestamp } }
-let lastUpdatedAt = null;  // number (ms)
+let lastSnapshot = null;
+let lastUpdatedAt = null;
 
 const E164 = /^\+\d{7,15}$/;
 
@@ -78,7 +78,7 @@ function diffSnapshots(prevSnap, currData) {
   return diff;
 }
 
-// --- ÚJ --- Függvény a cég-szűrő dinamikus feltöltéséhez
+// --- ÚJ: Függvény a cég-szűrő dinamikus feltöltéséhez ---
 function populateCompanyFilter(users) {
   const companyFilter = document.getElementById('companyFilter');
   if (!companyFilter) return;
@@ -101,6 +101,7 @@ function populateCompanyFilter(users) {
   });
 }
 
+
 //////////////////////////////
 // Backend adatbetöltések   //
 //////////////////////////////
@@ -111,10 +112,10 @@ async function fetchUsersMeta() {
   if (!resp.ok) throw new Error(`GET ${url} (${resp.status}) ${body || ''}`);
   
   const usersArray = safeJsonParse(body) || [];
-  allUsers = usersArray; // --- ÚJ ---
+  allUsers = usersArray; // --- VÁLTOZÁS ---
   
   const map = {};
-  usersArray.forEach(u => { // --- ÚJ --- arr helyett usersArray
+  usersArray.forEach(u => {
     const key = normName(u.displayName || u.id);
     if (key) map[key] = u;
   });
@@ -157,12 +158,11 @@ function renderList(data) {
     return;
   }
 
-  const nameQuery = normName(nameFilter?.value); // --- ÚJ --- átnevezve filter -> nameQuery
+  const nameQuery = normName(nameFilter?.value); // --- VÁLTOZÁS ---
   const selectedCompany = companyFilter?.value; // --- ÚJ ---
 
   const users = Object.keys(data)
-    .filter(displayName => {
-      // --- ÚJ --- Kibővített szűrési logika
+    .filter(displayName => { // --- VÁLTOZÁS: Kibővített szűrés ---
       const nameMatch = normName(displayName).includes(nameQuery);
       if (!nameMatch) return false;
 
@@ -179,49 +179,25 @@ function renderList(data) {
 
   users.forEach(displayName => {
     const files = Array.isArray(data[displayName]) ? data[displayName] : [];
-
     const card = document.createElement('div');
     card.className = 'user-card';
-
     const header = document.createElement('div');
     header.className = 'user-card-header';
-    header.innerHTML = `
-      <h3 title="${displayName}">${displayName}</h3>
-      <button class="info-btn" type="button" aria-label="Info" title="Info">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm.001 5.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM10.9 11.5h2.2v6h-2.2v-6z"/>
-        </svg>
-        <span class="sr-only">Info</span>
-      </button>
-    `;
+    header.innerHTML = `<h3 title="${displayName}">${displayName}</h3><button class="info-btn" type="button" aria-label="Info" title="Info"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm.001 5.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM10.9 11.5h2.2v6h-2.2v-6z"/></svg><span class="sr-only">Info</span></button>`;
     card.appendChild(header);
-
     const ul = document.createElement('ul');
     ul.className = 'file-list';
-
     if (files.length === 0) {
       ul.innerHTML = `<li class="empty">${DE.emptyFiles}</li>`;
     } else {
-      files.sort((a, b) => {
-        const da = new Date(a.uploadedAt || 0).getTime();
-        const db = new Date(b.uploadedAt || 0).getTime();
-        return db - da;
-      });
-
+      files.sort((a, b) => new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime());
       ul.innerHTML = files.map(f => {
         const when = f.uploadedAtDisplay ? formatDateDE(f.uploadedAtDisplay) : '';
         const label = `${f.folder ? f.folder + ' / ' : ''}<strong>${f.name}</strong>`;
-        return `
-          <li>
-            <span class="file-icon">📄</span>
-            <span class="file-name">${label}</span>
-            <span class="file-date">${when}</span>
-          </li>
-        `;
+        return `<li><span class="file-icon">📄</span><span class="file-name">${label}</span><span class="file-date">${when}</span></li>`;
       }).join('');
     }
     card.appendChild(ul);
-
     header.querySelector('.info-btn').addEventListener('click', () => openUserInfoModal(displayName));
     userListContainer.appendChild(card);
   });
@@ -234,9 +210,7 @@ function renderList(data) {
 function openUserInfoModal(displayName) {
   const meta = usersByName[normName(displayName)] || {};
   const phone = meta.phone || '';
-  const phoneHtml = phone
-    ? `<a href="tel:${phone}">${phone}</a>${E164.test(phone) ? '' : ' <span class="badge-warn" title="Vermutlich kein vollständiges internationales Format">⚠︎</span>'}`
-    : '—';
+  const phoneHtml = phone ? `<a href="tel:${phone}">${phone}</a>${E164.test(phone) ? '' : ' <span class="badge-warn" title="Vermutlich kein vollständiges internationales Format">⚠︎</span>'}` : '—';
   const email = meta.email || '';
   const emailHtml = email ? `<a href="mailto:${email}">${email}</a>` : '—';
   const lang = meta.userLang || '—';
@@ -244,49 +218,18 @@ function openUserInfoModal(displayName) {
 
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <h4 id="modalTitle">${DE.infoTitle}</h4>
-        <button class="modal-close" aria-label="${DE.close}">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-grid">
-          <div class="label">${DE.labels.name}:</div>
-          <div class="value">${displayName}</div>
-          
-          <!-- ÚJ --- Cég info a modálban -->
-          <div class="label">${DE.labels.company}:</div>
-          <div class="value">${company}</div>
-
-          <div class="label">${DE.labels.phone}:</div>
-          <div class="value">${phoneHtml}</div>
-
-          <div class="label">${DE.labels.email}:</div>
-          <div class="value">${emailHtml}</div>
-
-          <div class="label">${DE.labels.lang}:</div>
-          <div class="value">${lang}</div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-primary">${DE.close}</button>
-      </div>
-    </div>
-  `;
+  backdrop.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h4 id="modalTitle">${DE.infoTitle}</h4><button class="modal-close" aria-label="${DE.close}"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg></button></div><div class="modal-body"><div class="modal-grid"><div class="label">${DE.labels.name}:</div><div class="value">${displayName}</div><div class="label">${DE.labels.company}:</div><div class="value">${company}</div><div class="label">${DE.labels.phone}:</div><div class="value">${phoneHtml}</div><div class="label">${DE.labels.email}:</div><div class="value">${emailHtml}</div><div class="label">${DE.labels.lang}:</div><div class="value">${lang}</div></div></div><div class="modal-footer"><button class="modal-primary">${DE.close}</button></div></div>`;
   document.body.appendChild(backdrop);
-
-  const close = () => backdrop.remove();
+  
+  const escListener = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => {
+    backdrop.remove();
+    document.removeEventListener('keydown', escListener);
+  };
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
-  document.addEventListener('keydown', function esc(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
-  });
+  document.addEventListener('keydown', escListener);
 }
 
 //////////////////////////////
@@ -303,11 +246,15 @@ function openDeltaModal(diff) {
     backdrop.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="deltaTitle"><div class="modal-header"><h4 id="deltaTitle">${DE.deltaTitle} – ${DE.deltaCount(total)}</h4><button class="modal-close" aria-label="${DE.close}"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg></button></div><div class="modal-body"><div class="delta-info muted">${DE.updatedAtPrefix} ${formatDateDE(lastUpdatedAt)}</div>${Object.keys(diff).sort((a,b)=>a.localeCompare(b,'de-DE')).map(user => { const items = diff[user] || []; return `<section class="delta-user" style="margin:10px 0 14px"><h5 style="margin:0 0 6px">${user} <span class="count" style="color:var(--muted)">(${items.length})</span></h5><ul class="delta-files" style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:12px;overflow:hidden">${items.map(f => { const when = f.uploadedAtDisplay || f.uploadedAt; const whenText = when ? formatDateDE(when) : ''; const path = `${f.folder || ''} / ${f.name || ''}`; return `<li style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:10px 12px;border-bottom:1px dashed rgba(255,255,255,.06)"><span class="path" style="overflow-wrap:anywhere">${path}</span><span class="date" style="white-space:nowrap;color:var(--muted);font-size:.9rem">${whenText}</span></li>`; }).join('')}</ul></section>`; }).join('')}</div><div class="modal-footer"><button class="modal-primary">${DE.close}</button></div></div>`;
     document.body.appendChild(backdrop);
   }
-  const close = () => backdrop.remove();
+  const escListener = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => {
+    backdrop.remove();
+    document.removeEventListener('keydown', escListener);
+  };
   backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
-  document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', esc);} });
+  document.addEventListener('keydown', escListener);
 }
 
 //////////////////////////
@@ -369,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       userListContainer.innerHTML = `<p>${DE.loading}</p>`;
       const prevSnap = lastSnapshot || null;
       await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
-      renderList(allUploads);
+      // A renderList-et a fetchAllUploads már meghívja, itt nem kell újra
       lastUpdatedAt = Date.now();
       setLastUpdated(lastUpdatedAt);
       sessionStorage.setItem('admin_lastUpdated', String(lastUpdatedAt));
@@ -410,5 +357,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       refreshBtn?.click();
     }
   });
-});
 
+  // --- ÚJ: Vissza a tetejére gomb logikája ---
+  const backToTopButton = document.getElementById('backToTopBtn');
+  if (backToTopButton) {
+    window.addEventListener('scroll', () => {
+      // 300px görgetés után jelenik meg
+      if (window.scrollY > 300) {
+        backToTopButton.classList.add('show');
+      } else {
+        backToTopButton.classList.remove('show');
+      }
+    });
+    backToTopButton.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // Szép, animált görgetés
+      });
+    });
+  }
+});
