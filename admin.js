@@ -26,10 +26,11 @@ const DE = {
 let allUploads = {};
 let usersByName = {};
 let allUsers = [];
-
-// delta állapot
 let lastSnapshot = null;
 let lastUpdatedAt = null;
+
+let autoUpdateInterval = null;
+const AUTO_UPDATE_MS = 5 * 60 * 1000; // 20 perc
 
 const E164 = /^\+\d{7,15}$/;
 
@@ -274,6 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nameFilter = document.getElementById('nameFilter');
   const companyFilter = document.getElementById('companyFilter');
   const refreshBtn = document.getElementById('refreshBtn');
+  const autoUpdateToggle = document.getElementById('autoUpdateToggle');
 
   if (!userListContainer) {
     console.error('[admin] #userListContainer hiányzik – nincs hova renderelni.');
@@ -346,6 +348,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     backToTopButton.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+});
+
+ // --- ÚJ: Auto-update logika ---
+  const startAutoUpdate = () => {
+    if (autoUpdateInterval) return; // Már fut
+    console.log(`Auto-update elindítva (${AUTO_UPDATE_MS / 1000 / 60} percenként).`);
+    // Azonnal ne frissítsen, csak az intervallum lejárta után
+    autoUpdateInterval = setInterval(() => {
+      console.log('Automatikus frissítés...');
+      refreshBtn?.click();
+    }, AUTO_UPDATE_MS);
+  };
+
+  const stopAutoUpdate = () => {
+    if (!autoUpdateInterval) return; // Nem is fut
+    console.log('Auto-update leállítva.');
+    clearInterval(autoUpdateInterval);
+    autoUpdateInterval = null;
+  };
+  
+  if (autoUpdateToggle) {
+    // Betöltjük a mentett állapotot
+    const isEnabled = localStorage.getItem('autoUpdateEnabled') === 'true';
+    autoUpdateToggle.checked = isEnabled;
+    if (isEnabled) {
+      startAutoUpdate();
+    }
+
+    // Eseményfigyelő a kapcsolóra
+    autoUpdateToggle.addEventListener('change', () => {
+      if (autoUpdateToggle.checked) {
+        startAutoUpdate();
+        localStorage.setItem('autoUpdateEnabled', 'true');
+      } else {
+        stopAutoUpdate();
+        localStorage.setItem('autoUpdateEnabled', 'false');
+      }
     });
   }
 });
