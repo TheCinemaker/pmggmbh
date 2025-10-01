@@ -282,7 +282,7 @@ function setLastUpdated(ts) {
 //////////////////////////////
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const stored = sessionStorage.getItem('currentUser');
+    const stored = localStorage.getItem('currentUser'); // --- JAVÍTÁS: sessionStorage -> localStorage ---
     const user = stored ? JSON.parse(stored) : null;
     if (!user || (user.role || user.userRole) !== 'admin') {
       document.body.innerHTML = `<div class="app-container"><header class="app-header"><h1>${DE.accessDeniedTitle}</h1></header><main class="content"><a class="logout-button" href="index.html" title="${DE.backHome}">${DE.backHome}</a></main></div>`;
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ensureLastUpdatedEl();
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
-  const companyFilter = document.getElementById('companyFilter'); // --- ÚJ ---
+  const companyFilter = document.getElementById('companyFilter');
   const refreshBtn = document.getElementById('refreshBtn');
 
   if (!userListContainer) {
@@ -304,9 +304,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const savedSnap = safeJsonParse(sessionStorage.getItem('admin_lastSnapshot'));
+  // --- JAVÍTÁS: Átállás localStorage-ra a perzisztens tároláshoz ---
+  const savedSnap = safeJsonParse(localStorage.getItem('admin_lastSnapshot'));
   if (savedSnap) lastSnapshot = savedSnap;
-  const savedUpdated = sessionStorage.getItem('admin_lastUpdated');
+  const savedUpdated = localStorage.getItem('admin_lastUpdated');
   if (savedUpdated) { lastUpdatedAt = Number(savedUpdated) || Date.now(); setLastUpdated(lastUpdatedAt); }
 
   const doLoad = async (showDelta = false) => {
@@ -316,16 +317,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       userListContainer.innerHTML = `<p>${DE.loading}</p>`;
       const prevSnap = lastSnapshot || null;
       await Promise.all([fetchUsersMeta(), fetchAllUploads()]);
-      // A renderList-et a fetchAllUploads már meghívja, itt nem kell újra
       lastUpdatedAt = Date.now();
       setLastUpdated(lastUpdatedAt);
-      sessionStorage.setItem('admin_lastUpdated', String(lastUpdatedAt));
+      localStorage.setItem('admin_lastUpdated', String(lastUpdatedAt)); // --- JAVÍTÁS ---
       if (showDelta && prevSnap) {
         const delta = diffSnapshots(prevSnap, allUploads);
         openDeltaModal(delta);
       }
       lastSnapshot = buildSnapshot(allUploads);
-      sessionStorage.setItem('admin_lastSnapshot', JSON.stringify(lastSnapshot));
+      localStorage.setItem('admin_lastSnapshot', JSON.stringify(lastSnapshot)); // --- JAVÍTÁS ---
     } catch (err) {
       console.error('[admin] Betöltési hiba:', err);
       userListContainer.innerHTML = `<p class="status error">${DE.errorPrefix} ${err.message || 'Unbekannter Fehler'}</p>`;
@@ -335,17 +335,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  await doLoad(false);
+  // --- JAVÍTÁS: Első betöltésnél is mutassa a különbséget ---
+  await doLoad(true);
 
   nameFilter?.addEventListener('input', () => renderList(allUploads));
-  companyFilter?.addEventListener('change', () => renderList(allUploads)); // --- ÚJ ---
+  companyFilter?.addEventListener('change', () => renderList(allUploads));
 
   refreshBtn?.addEventListener('click', async () => {
     const savedNameFilter = nameFilter ? nameFilter.value : '';
-    const savedCompanyFilter = companyFilter ? companyFilter.value : ''; // --- ÚJ ---
+    const savedCompanyFilter = companyFilter ? companyFilter.value : '';
     await doLoad(true);
     if (nameFilter) nameFilter.value = savedNameFilter;
-    if (companyFilter) companyFilter.value = savedCompanyFilter; // --- ÚJ ---
+    if (companyFilter) companyFilter.value = savedCompanyFilter;
     renderList(allUploads);
   });
 
@@ -358,11 +359,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // --- ÚJ: Vissza a tetejére gomb logikája ---
   const backToTopButton = document.getElementById('backToTopBtn');
   if (backToTopButton) {
     window.addEventListener('scroll', () => {
-      // 300px görgetés után jelenik meg
       if (window.scrollY > 300) {
         backToTopButton.classList.add('show');
       } else {
@@ -370,10 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     backToTopButton.addEventListener('click', () => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth' // Szép, animált görgetés
-      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 });
