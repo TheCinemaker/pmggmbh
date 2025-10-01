@@ -403,3 +403,72 @@ html, body { background: var(--bg); color: var(--text); }
   height: 28px;
   transform: translateY(-1px); /* Kis vizuális korrekció */
 }
+
+/* --- Auto-update kapcsoló stílusai --- */
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto; /* Jobbra tolja a többi szűrőtől */
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: var(--muted, #aaa);
+  user-select: none; /* Ne lehessen kijelölni a szöveget */
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #555;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color, #2196F3);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--primary-color, #2196F3);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
