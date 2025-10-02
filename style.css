@@ -1,290 +1,217 @@
-:root {
-    --bg-color: #212529;
-    --surface-color: #343a40;
-    --primary-color: #0d6efd;
-    --primary-hover-color: #0b5ed7;
-    --text-color: #f8f9fa;
-    --text-muted-color: #adb5bd;
-    --border-color: #495057;
-    --success-color: #198754;
-    --error-color: #dc3545;
+:root{
+  --bg-color:#14181f;
+  --surface-color:#1a212c;
+  --surface-elev:#1f2733;
+  --primary-color:#4f8cff;
+  --primary-hover-color:#3f77da;
+  --text-color:#eaf0f7;
+  --text-muted-color:#9aacbd;
+  --border-color:rgba(255,255,255,.08);
+  --success-color:#29b36a;
+  --error-color:#ff6b6b;
+
+  /* kompakt ritmus */
+  --space-1: .35rem;
+  --space-2: .55rem;
+  --space-3: .8rem;
+  --radius-1: 10px;
+  --radius-2: 12px;
+
+  /* tipó */
+  --fz-1: .9rem;
+  --fz-2: 1rem;
+  --fz-3: 1.15rem;
 }
 
-* {
-    box-sizing: border-box;
+*{ box-sizing:border-box; }
+html{ color-scheme: dark; }
+body{
+  margin:0; min-height:100vh;
+  display:flex; align-items:flex-start; justify-content:center;
+  background: radial-gradient(1000px 600px at 70% -10%, #20304a 0%, transparent 60%) var(--bg-color);
+  color:var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  letter-spacing:.2px;
+  padding: var(--space-3);
 }
 
-html {
-    color-scheme: dark;
+.app-container{ width:100%; max-width:420px; }
+
+.screen{
+  background: linear-gradient(180deg, var(--surface-color), #161c25);
+  border:1px solid var(--border-color);
+  border-radius: var(--radius-2);
+  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  overflow:hidden;
+  display:flex; flex-direction:column;
 }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 1rem;
+/* ---------- HEADER ---------- */
+.app-header{
+  position:relative;
+  padding: var(--space-3);
+  border-bottom:1px solid var(--border-color);
+  display:flex; align-items:center; justify-content:center;
+  gap: .5rem;
+}
+.logo{
+  width:44px; height:44px; border-radius:50%;
+  border:1px solid var(--primary-color);
+  object-fit:cover; margin:0;
+}
+h1{
+  margin:0; font-size: var(--fz-3); font-weight:700;
 }
 
-.app-container {
-    width: 100%;
-    max-width: 420px;
-}
-
-.screen {
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.app-header {
-    text-align: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.logo {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 0.5rem;
-    border-radius: 50%;
-    border: 2px solid var(--primary-color);
-}
-
-h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.content {
-    padding: 1.5rem;
-}
-
-.app-form .form-group {
-    margin-bottom: 1.25rem;
-}
-
-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-muted-color);
-    font-size: 0.9rem;
-}
-
-input, select {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-color);
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-}
-
-button {
-    width: 100%;
-    padding: 0.8rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 1rem;
-}
-
-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-button:hover:not(:disabled) {
-    background-color: var(--primary-hover-color);
-}
-.admin-button {
-    position: absolute;
-    top: 1rem;
-    left: 1rem; 
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.logout-button {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.logout-button svg {
-    width: 20px;
-    height: 20px;
-    color: var(--text-muted-color);
-}
-.logout-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.logout-button:hover svg {
-    color: var(--text-color);
-}
-
-.welcome-text {
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.status {
-    margin-top: 1rem;
-    text-align: center;
-    font-weight: 500;
-    min-height: 1.2rem;
-    font-size: 0.9rem;
-}
-.status.success { color: var(--success-color); }
-.status.error { color: var(--error-color); }
-
-.hidden {
-    display: none;
-}
-
-.form-group-row {
-    display: flex;
-    gap: 1rem;
-}
-.form-group-row .form-group {
-    flex: 1;
-}
-
-.separator {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 2rem 0;
-}
-
-.section-title {
-    text-align: center;
-    font-size: 1.2rem;
-    color: var(--text-muted-color);
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-#fileListContainer { margin-top: 1rem; }
-.file-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--bg-color);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-}
-.file-item-name { font-weight: 500; }
-.view-button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    text-decoration: none;
-}
-.view-button:hover { background-color: var(--primary-hover-color); }
-
-/* === PIN visibility toggle === */
-.input-with-toggle {
-  position: relative;
-  width: 100%;
-}
-
-.input-with-toggle input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  padding-right: 52px !important; /* több hely a nagyobb gombnak */
-  box-sizing: border-box;
-}
-
-.eye-btn {
-  position: absolute;
-  right: 6px;
-  top: 1px !important; /* FELJEBB viszi */
-  width: 40px !important; /* NAGYOBB */
-  height: 40px !important; /* NAGYOBB */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 8px;
+/* admin / logout ikon gombok – kisebb, feszesebb */
+.admin-button,
+.logout-button{
+  position:absolute; top: .6rem; width:36px; height:36px;
+  display:flex; align-items:center; justify-content:center;
   background: transparent;
+  border:1px solid var(--border-color);
+  border-radius: 50%;
+  padding:0; margin:0;
+}
+.admin-button{ left:.6rem; }
+.logout-button{ right:.6rem; }
+.logout-button svg{ width:18px; height:18px; color: var(--text-muted-color); }
+.logout-button:hover{ background: rgba(255,255,255,.06); }
+.logout-button:hover svg{ color: var(--text-color); }
+
+/* ---------- CONTENT ---------- */
+.content{ padding: var(--space-3); }
+
+/* űrlapok kompakt ritmussal */
+.app-form .form-group{ margin-bottom: .8rem; }
+.form-group-row{ display:flex; gap: .6rem; }
+.form-group-row .form-group{ flex:1; }
+
+label{
+  display:block; margin:0 0 .35rem;
+  color:var(--text-muted-color); font-weight:600; font-size:.85rem;
+}
+input, select{
+  width:100%; padding: .6rem .75rem;
+  background: #111722;
+  border:1px solid var(--border-color);
+  border-radius: var(--radius-1);
+  color: var(--text-color); font-size: var(--fz-1);
+  transition: border-color .15s, box-shadow .15s, background .2s;
+}
+input:focus, select:focus{
+  outline:none;
+  border-color: rgba(79,140,255,.6);
+  box-shadow: 0 0 0 4px rgba(79,140,255,.15);
+  background:#0e1520;
+}
+input[type="date"]::-webkit-calendar-picker-indicator{ filter: invert(1); }
+
+/* gombok: kisebb padding, kisebb top-margin */
+button{
+  width:100%; padding: .64rem;
+  margin-top: .6rem;
+  background: var(--primary-color);
+  color:#fff; border:none; border-radius: var(--radius-1);
+  font-size: var(--fz-2); font-weight:700; cursor:pointer;
+  transition: filter .12s, background-color .12s;
+}
+button:hover:not(:disabled){ background: var(--primary-hover-color); }
+button:disabled{ background:#4a5568; opacity:.75; cursor:not-allowed; }
+
+/* státusz sor rövidebb helyet foglal */
+.status{
+  margin-top: .6rem; min-height: 1rem;
+  text-align:center; font-weight:600; font-size:.9rem;
+}
+.status.success{ color: var(--success-color); }
+.status.error{ color: var(--error-color); }
+
+.hidden{ display:none; }
+
+/* elválasztó – kisebb függőleges térköz */
+.separator{
+  border:none; border-top:1px solid var(--border-color);
+  margin: 1.1rem 0;
+}
+
+/* szekció cím kompakt */
+.section-title{
+  margin: 0 0 .9rem;
+  text-align:center; font-size:1.05rem;
+  color: var(--text-muted-color); font-weight:600;
+}
+
+/* ---------- FÁJLLISTA ---------- */
+#fileListContainer{ margin-top: .6rem; }
+
+.file-item{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: .6rem;
+  align-items:center;
+  background: var(--surface-elev);
+  border:1px solid var(--border-color);
+  border-radius: var(--radius-1);
+  padding: .55rem .7rem;
+  margin-bottom: .45rem;
+}
+.file-item-name{
+  min-width:0; font-weight:600; font-size:.95rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* „Megtekintés” – lehet <a> vagy <button> ugyanazzal az osztállyal */
+.view-button{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:.4rem;
+  padding: .45rem .7rem;
+  font-size: .85rem; line-height:1;
+  border-radius: 8px;
+  background: #263144;
+  border:1px solid var(--border-color);
+  color: #eaf0f7; text-decoration:none;
+  cursor:pointer;
+}
+.view-button:hover{ background:#2b3850; }
+.view-button[disabled], .view-button.disabled{
+  opacity:.6; cursor:not-allowed; pointer-events:none;
+}
+
+/* ---------- PIN visibility ---------- */
+.input-with-toggle{ position:relative; width:100%; }
+.input-with-toggle input{ padding-right: 46px !important; }
+
+.eye-btn{
+  position:absolute; right:6px; top:2px;
+  width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+  border:none; border-radius:8px; background:transparent;
   color: var(--text-muted-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 2;
-  margin: 0;
-  padding: 0;
+  cursor:pointer; transition: transform .1s, color .15s;
+}
+.eye-btn:hover{ color: var(--text-color); }
+.eye-btn:active{ transform: scale(.94); }
+.eye-btn svg{ width:22px; height:22px; fill: currentColor; }
+.eye-btn .eye-open{ display:none; }
+.eye-btn .eye-closed{ display:block; }
+.eye-btn.is-visible .eye-open{ display:block; }
+.eye-btn.is-visible .eye-closed{ display:none; }
+
+/* ---------- responsív finomhangolás ---------- */
+@media (max-width:420px){
+  .content{ padding: .9rem; }
+  .app-header{ padding: .9rem; }
+  .logo{ width:40px; height:40px; }
+  h1{ font-size:1.05rem; }
+  button{ padding:.6rem; }
 }
 
-.eye-btn:hover {
-  background: transparent !important;
-  color: var(--text-color);
+/* a11y fókusz */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.view-button:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 4px rgba(79,140,255,.18);
 }
-
-.eye-btn:active {
-  transform: scale(0.9);
-}
-
-.eye-btn svg {
-  width: 24px !important; /* NAGYOBB ikon */
-  height: 24px !important; /* NAGYOBB ikon */
-  fill: currentColor;
-}
-
-/* Ikon váltás */
-.eye-btn .eye-open { display: none; }
-.eye-btn .eye-closed { display: block; }
-
-.eye-btn.is-visible .eye-open { display: block; }
-.eye-btn.is-visible .eye-closed { display: none; }
