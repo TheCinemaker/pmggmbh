@@ -550,25 +550,84 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Az admin.js-ben, a DOMContentLoaded végén
-const weeklyReportBtn = document.getElementById('weeklyReportBtn');
-if (weeklyReportBtn) {
-  weeklyReportBtn.addEventListener('click', async () => {
-    weeklyReportBtn.disabled = true;
-    weeklyReportBtn.textContent = 'Lädt...';
+// Az admin.js-ben, cseréld le a teljes openWeeklyReportModal függvényt
 
-    try {
-      const response = await fetch('/.netlify/functions/checkWeeklyUploads');
-      if (!response.ok) throw new Error('A riport generálása sikertelen.');
+function openWeeklyReportModal(report, workWeek) {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  
+  // --- JAVÍTÁS: Német státuszok és színek ---
+  const statusMapping = {
+    'ABGEGEBEN': { text: 'Abgegeben', class: 'status-ok' },
+    'KRANK':     { text: 'Krank',     class: 'status-warn' },
+    'URLAUB':    { text: 'Urlaub',    class: 'status-info' },
+    'UNBEZAHLT': { text: 'Unbezahlt', class: 'status-info' },
+    'FEHLT':     { text: 'FEHLT',     class: 'status-missing' }
+  };
+
+  const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+  const tableHeader = workWeek.map((day, index) => 
+    `<th>${dayNames[index]}<br><small>${day.day}.</small></th>`
+  ).join('');
+
+  const tableRows = report
+    .filter(user => user.isMissing)
+    .map(user => {
+      const cells = workWeek.map(day => {
+        // Ha egy nap nem elvárt, hagyjuk üresen
+        if (user.weekStatus[day.day] === undefined) {
+            return `<td class="status-na"></td>`;
+        }
+        const statusKey = user.weekStatus[day.day] || 'FEHLT';
+        const statusInfo = statusMapping[statusKey];
+        return `<td class="${statusInfo.class}">${statusInfo.text}</td>`;
+      }).join('');
       
-      const { report, workWeek } = await response.json();
-      openWeeklyReportModal(report, workWeek);
+      const action = user.phone ? `<button class="sms-btn" data-phone="${user.phone}" data-name="${user.name}">SMS</button>` : '';
 
-    } catch (error) {
-      showToast(error.message, 'error');
-    } finally {
-      weeklyReportBtn.disabled = false;
-      weeklyReportBtn.textContent = 'Wochenbericht';
-    }
-  });
+      return `<tr>
+        <td>${user.name}</td>
+        ${cells}
+        <td>${action}</td>
+      </tr>`;
+  }).join('');
+  
+  const modalContent = `
+    <div class="modal large" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h4>Wochenbericht (Nur fehlende Einträge)</h4>
+        <button class="modal-close" aria-label="${DE.close}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="report-table-wrapper">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Mitarbeiter</th>
+                ${tableHeader}
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || `<tr><td colspan="7">Keine fehlenden Einträge für diese Woche gefunden!</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-primary">${DE.close}</button>
+      </div>
+    </div>`;
+
+  backdrop.innerHTML = modalContent;
+  document.body.appendChild(backdrop);
+  
+  // TODO: SMS küldő gombok bekötése
+  
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+  backdrop.querySelector('.modal-close').addEventListener('click', close);
+  backdrop.querySelector('.modal-primary').addEventListener('click', close);
 }
