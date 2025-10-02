@@ -246,8 +246,10 @@ function updateUiForUserRole(userRole) {
 }
 
 // --- Fájlok megjelenítése ---
+// --- Fájlok megjelenítése (végleges) ---
 async function fetchAndDisplayFiles() {
   if (!viewMonthSelect || !fileListContainer) return;
+
   const selectedMonth = viewMonthSelect.value;
   const lang = getCurrentLang();
 
@@ -255,78 +257,45 @@ async function fetchAndDisplayFiles() {
     fileListContainer.innerHTML = '';
     return;
   }
+
   fileListContainer.innerHTML = `<p>${getLangDict(lang).loadingFiles}</p>`;
 
   try {
     const resp = await fetch(
-  `/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`
-);
+      `/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`
+    );
     const text = await resp.text();
     if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingFiles);
+
     const files = text ? JSON.parse(text) : [];
 
-    fileListContainer.innerHTML = '';
-    if (!files.length) {
+    if (!Array.isArray(files) || files.length === 0) {
       fileListContainer.innerHTML = `<p>${getLangDict(lang).noFiles}</p>`;
       return;
     }
 
+    const frag = document.createDocumentFragment();
+
     files.forEach(file => {
       const row = document.createElement('div');
       row.className = 'file-item';
-
-      const actionHtml = isHttp(file.link)
-        ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
-        : `<button class="view-button"
-             data-file-id="${file.id || ''}"
-             data-path="${file.path_lower || file.path_display || ''}">
-             ${getLangDict(lang).viewButton}
-           </button>`;
-
       row.innerHTML = `
-  <span class="file-item-name">${file.name}</span>
-  ${file.link ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
-              : `<span class="view-button-disabled">Link nem elérhető</span>`}
-`;
+        <span class="file-item-name">${file.name}</span>
+        ${
+          isHttp(file.link)
+            ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
+            : `<span class="view-button view-button-disabled" aria-disabled="true">${getLangDict(lang).viewButton}</span>`
+        }
+      `;
+      frag.appendChild(row);
+    });
 
-if (fileListContainer && !fileListContainer._hasLinkHandler) {
-  fileListContainer._hasLinkHandler = true;
-
-  fileListContainer.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.view-button[data-file-id], .view-button[data-path]');
-    if (!btn || btn.tagName === 'A') return;
-
-    const fileId = btn.getAttribute('data-file-id')?.trim();
-    const path   = btn.getAttribute('data-path')?.trim();
-
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Megnyitás…';
-
-    try {
-      const resp = await fetch('/.netlify/functions/getFileLink', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ fileId, path })
-      });
-
-      const raw = await resp.text();
-      let data = null;
-      try { data = JSON.parse(raw); } catch {
-        throw new Error(`getFileLink nem JSON (HTTP ${resp.status}) — ${raw.slice(0,120)}`);
-      }
-      if (!resp.ok) throw new Error(data?.error || `getFileLink hiba (HTTP ${resp.status})`);
-
-      if (!data?.url || !isHttp(data.url)) throw new Error('Érvénytelen link érkezett a szervertől.');
-      window.open(data.url, '_blank', 'noopener');
-    } catch (err) {
-      console.error('Megtekintés hiba:', err);
-      showToast(err.message || getLangDict(getCurrentLang()).errorLoadingFiles, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = original;
-    }
-  });
+    fileListContainer.innerHTML = '';
+    fileListContainer.appendChild(frag);
+  } catch (error) {
+    console.error('fetchAndDisplayFiles hiba:', error);
+    fileListContainer.innerHTML = `<p class="status error">${getLangDict(lang).errorLoadingFiles}</p>`;
+  }
 }
 
 // --- Egyszeri delegált kattintáskezelő a „Megtekintés” gombokra ---
