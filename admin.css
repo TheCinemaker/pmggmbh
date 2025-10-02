@@ -472,3 +472,24 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+/* Az admin.css fájl végére */
+.action-button {
+  padding: 8px 15px;
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.action-button:hover {
+  background-color: var(--primary-hover-color, #0056b3);
+}
+
+.action-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
