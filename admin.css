@@ -493,3 +493,24 @@ input:checked + .slider:before {
   background-color: #555;
   cursor: not-allowed;
 }
+
+/* admin.css-be */
+.modal.large { max-width: 900px; }
+.report-table-wrapper { overflow-x: auto; }
+.report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.report-table th, .report-table td {
+  border: 1px solid #444;
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.report-table th { background-color: #333; }
+.report-table small { font-size: 0.7rem; color: #aaa; }
+
+/* Státusz színek */
+.report-table .status-ok { background-color: #2a5a2a; color: white; }
+.report-table .status-warn { background-color: #8a6d3b; color: white; }
+.report-table .status-info { background-color: #31708f; color: white; }
+.report-table .status-missing { background-color: #8a2a2a; color: white; font-weight: bold; }
+
+.sms-btn { padding: 4px 10px; font-size: 0.8rem; }
