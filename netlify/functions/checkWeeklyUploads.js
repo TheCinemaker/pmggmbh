@@ -51,7 +51,7 @@ exports.handler = async (event) => {
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
         // --- JAVÍTÁS: A keresés a teljes Stundenzettel mappában történik ---
         const allFilesResponse = await dbx.filesListFolder({
-            path: `/PMG Mindenes - PMG ALLES/Stundenzettel${today.getFullYear()}`,
+            path: `/PMG Mindenes - PMG ALLES/Stundenzettel ${today.getFullYear()}`,
             recursive: true,
             limit: 2000, // Több fájl engedélyezése
         });
