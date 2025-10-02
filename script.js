@@ -275,7 +275,11 @@ async function fetchAndDisplayFiles() {
 
       const actionHtml = isHttp(file.link)
         ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
-        : `<button class="view-button" data-file-id="${file.id}">${getLangDict(lang).viewButton}</button>`;
+        : `<button class="view-button"
+             data-file-id="${file.id || ''}"
+             data-path="${file.path_lower || file.path_display || ''}">
+             ${getLangDict(lang).viewButton}
+           </button>`;
 
       row.innerHTML = `
         <span class="file-item-name">${file.name}</span>
@@ -293,11 +297,11 @@ if (fileListContainer && !fileListContainer._hasLinkHandler) {
   fileListContainer._hasLinkHandler = true;
 
   fileListContainer.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.view-button[data-file-id]');
-    if (!btn) return;
+    const btn = e.target.closest('.view-button[data-file-id], .view-button[data-path]');
+    if (!btn || btn.tagName === 'A') return; // ha már <a>, nem kell semmi
 
-    const fileId = btn.getAttribute('data-file-id');
-    if (!fileId) return;
+    const fileId = btn.getAttribute('data-file-id')?.trim();
+    const path   = btn.getAttribute('data-path')?.trim();
 
     const original = btn.textContent;
     btn.disabled = true;
@@ -307,13 +311,22 @@ if (fileListContainer && !fileListContainer._hasLinkHandler) {
       const resp = await fetch('/.netlify/functions/getFileLink', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ fileId })
+        body: JSON.stringify({ fileId, path })
       });
-      const data = await resp.json();
-      if (!resp.ok || !isHttp(data?.url)) throw new Error(data?.error || 'Nincs link');
 
+      const raw = await resp.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch {
+        throw new Error(`getFileLink nem JSON (HTTP ${resp.status}) — ${raw.slice(0,120)}`);
+      }
+      if (!resp.ok) throw new Error(data?.error || `getFileLink hiba (HTTP ${resp.status})`);
+
+      if (!data?.url || !isHttp(data.url)) {
+        throw new Error('Érvénytelen link érkezett a szervertől.');
+      }
       window.open(data.url, '_blank', 'noopener');
     } catch (err) {
+      console.error('Megtekintés hiba:', err);
       showToast(err.message || getLangDict(getCurrentLang()).errorLoadingFiles, 'error');
     } finally {
       btn.disabled = false;
