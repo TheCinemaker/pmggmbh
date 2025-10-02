@@ -64,47 +64,20 @@ exports.handler = async (event) => {
     const files = entries.filter(e => e['.tag'] === 'file');
     if (!files.length) return { statusCode: 200, headers, body: JSON.stringify([]) };
 
-    // Elemenkénti link kérés – ne bukjon az egész, ha 1-2 hiba van
-const items = await Promise.all(files.map(async (f) => {
-  let link = null;
+    // getFiles.js – egyszerű items map (NINCS linkgyártás itt)
+const items = files.map((f) => {
+  const uploadedAt = f.server_modified || f.client_modified || null;
+  return {
+    id: f.id,
+    name: f.name,
+    uploadedAt,
+    uploadedAtDisplay: uploadedAt,
+    path_lower: f.path_lower,
+    path_display: f.path_display,
+    link: null
+  };
+});
 
-  if (wantLinks) {
-    // 1) első próbálkozás: ID-vel (stabil)
-    try {
-      const t = await dbx.filesGetTemporaryLink({ path: f.id });
-      link = t?.result?.link || null;
-    } catch (e1) {
-      console.warn('Temp link ID-vel bukott:', f.id, e1?.status, e1?.error?.error_summary || e1?.message);
-
-      // 2) fallback: path_display (ha ID-vel valami team-namespace anomália lenne)
-      try {
-        const t2 = await dbx.filesGetTemporaryLink({ path: f.path_display });
-        link = t2?.result?.link || null;
-      } catch (e2) {
-        console.warn('Temp link path_display-vel is bukott:', f.path_display, e2?.status, e2?.error?.error_summary || e2?.message);
-
-        // 3) utolsó fallback: megpróbálunk megosztási linket (tartós), majd abból "raw" URL-t csinálunk
-        try {
-          // van-e már megosztási link?
-          const ls = await dbx.sharingListSharedLinks({ path: f.path_lower, direct_only: true });
-          let sl = ls?.result?.links?.[0]?.url || null;
-
-          if (!sl) {
-            // ha nincs, létrehozunk egyet
-            const cr = await dbx.sharingCreateSharedLinkWithSettings({ path: f.path_lower });
-            sl = cr?.result?.url || null;
-          }
-
-          if (sl) {
-            // dropbox.com/s/… -> dl=1 / raw=1 direkt link
-            link = sl.includes('?') ? `${sl}&raw=1` : `${sl}?raw=1`;
-          }
-        } catch (e3) {
-          console.warn('Megosztási link létrehozás is bukott:', f.path_lower, e3?.status, e3?.error?.error_summary || e3?.message);
-        }
-      }
-    }
-  }
 
   const uploadedAt = f.server_modified || f.client_modified || null;
   return {
