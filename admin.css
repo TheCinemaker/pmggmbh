@@ -111,7 +111,7 @@ html, body { background: var(--bg); color: var(--text); }
 /* ===== Kártya ===== */
 .user-card{
   background:linear-gradient(180deg, #0d1520, #0a1019);
-  border:1px solid var(--border);
+  border:2px solid var(--border);
   border-radius:18px;padding:14px 14px 8px;margin-bottom:14px;
   box-shadow:var(--shadow);
 }
@@ -483,189 +483,146 @@ input:checked + .slider:before {
 }
 .toggle-all input { accent-color: var(--accent); }
 
-/* ============ Weekly Report Modal – facelift ============ */
-:root {
-  --surface: #121212;
-  --surface-2: #1a1a1a;
-  --text: #e6e6e6;
-  --muted: #a8a8a8;
-  --border: #2b2b2b;
-  --accent: #7aa2ff;
+/* ===== Weekly Report Modal – minimal, egységes, no-hover ===== */
 
-  /* status tokens */
-  --ok: #1f6f43;          /* abgegeben */
-  --warn: #8f6a20;        /* krank */
-  --info: #1d5b74;        /* urlaub/unbezahlt */
-  --missing: #8a2323;     /* fehlt */
-  --na: #2c2c2c;          /* nicht erwartet */
+:root {
+  --surface: #141414;
+  --surface-2: #1e1e1e;
+  --text: #e8e8e8;
+  --border: #2a2a2a;
+
+  /* Status színek */
+  --ok: #1f6f43;       /* Abgegeben */
+  --warn: #8a6d3b;     /* Krank */
+  --info: #1d5b74;     /* Urlaub / Unbezahlt */
+  --missing: #8a2a2a;  /* FEHLT */
+  --na: #2c2c2c;       /* Nem elvárt nap */
 }
 
-/* modal sizing */
+/* Modal doboz */
 .modal.large {
-  max-width: 980px;
+  max-width: 900px;
   width: calc(100% - 32px);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-/* header & footer */
 .modal .modal-header,
 .modal .modal-footer {
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
-  padding: 14px 16px;
+  padding: 12px 14px;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
-.modal .modal-footer { border-top: 1px solid var(--border); border-bottom: none; }
+.modal .modal-footer { border-top: 1px solid var(--border); border-bottom: 0; }
 
 .modal .modal-header h4 {
   margin: 0;
-  font-size: 1.05rem;
-  letter-spacing: .2px;
+  font-size: 1rem;
   color: var(--text);
 }
 
 .modal .modal-close {
-  background: transparent;
-  border: none;
-  padding: 6px;
-  border-radius: 10px;
   margin-left: auto;
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
-.modal .modal-close:hover { background: rgba(255,255,255,.06); }
 
-/* body */
-.modal .modal-body {
-  padding: 12px 16px 16px;
-}
-
-/* legend */
-.report-legend {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: .82rem;
-  color: var(--muted);
-}
-.report-legend .badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  line-height: 1;
-}
-.report-legend .status-ok      { background: color-mix(in oklab, var(--ok) 25%, black);      border-color: color-mix(in oklab, var(--ok) 55%, black); }
-.report-legend .status-warn    { background: color-mix(in oklab, var(--warn) 25%, black);    border-color: color-mix(in oklab, var(--warn) 55%, black); }
-.report-legend .status-info    { background: color-mix(in oklab, var(--info) 25%, black);    border-color: color-mix(in oklab, var(--info) 55%, black); }
-.report-legend .status-missing { background: color-mix(in oklab, var(--missing) 25%, black); border-color: color-mix(in oklab, var(--missing) 55%, black); }
-.report-legend .status-na      { background: var(--na); }
-
-/* table wrapper */
+/* Tábla wrapper */
 .report-table-wrapper {
   margin-top: 10px;
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 12px;
 }
 
-/* table */
+/* Tábla: egységes, no-hover, no-sticky */
 .report-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
   min-width: 720px;
-  background: var(--surface-2);
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--surface);
   color: var(--text);
-  font-size: .92rem;
 }
 
+/* Fejléc */
 .report-table thead th {
-  position: sticky;
-  top: 0;
-  background: #202020;
+  background: var(--surface-2) !important; /* felülírja az esetleges régi zebra/hovert */
   color: var(--text);
-  z-index: 2;
+  font-weight: 600;
+  border: 1px solid var(--border);
   padding: 10px 12px;
   text-align: center;
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
   white-space: nowrap;
-}
-.report-table thead th:first-child { text-align: left; }
-
-.report-table tbody td {
-  padding: 10px 12px;
-  border-top: 1px solid #222;
-  border-right: 1px solid #222;
-  text-align: center;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-.report-table tbody tr:nth-child(odd) td {
-  background: #171717;
-}
-.report-table tbody tr:hover td {
-  background: #1b1b1b;
-}
-.report-table td:first-child {
-  text-align: left;
-  font-weight: 600;
-  letter-spacing: .2px;
-  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
+  height: 44px; /* egységes magasság */
+  position: static !important; /* ha korábban sticky volt, kikapcsoljuk */
 }
 
-/* status cells */
-.report-table .status-ok      { background: var(--ok);      color: #fff; font-weight: 600; }
-.report-table .status-warn    { background: var(--warn);    color: #fff; font-weight: 600; }
-.report-table .status-info    { background: var(--info);    color: #fff; font-weight: 600; }
-.report-table .status-missing { background: var(--missing); color: #fff; font-weight: 700; }
-.report-table .status-na      { background: var(--na);      color: #bbb; }
+/* Cella-alap */
+.report-table th,
+.report-table td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.2;
+  height: 44px;               /* egységes sor-magasság */
+  white-space: nowrap;        /* ne törjön, így marad egységes a magasság */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
 
-/* SMS button */
+/* Első oszlop (név) balra rendezve, vastagabban */
+.report-table tbody td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+/* A többi oszlop középre */
+.report-table tbody td:not(:first-child) {
+  text-align: center;
+}
+
+/* Tilos a hover és zebra – mindent semlegesítünk */
+.report-table tbody tr:hover td { background: inherit !important; }
+.report-table tbody tr:nth-child(odd) td { background: inherit !important; }
+
+/* Státusz színek – egységes, erős kontraszt */
+.report-table .status-ok      { background: var(--ok) !important;      color: #fff; font-weight: 700; }
+.report-table .status-warn    { background: var(--warn) !important;    color: #fff; font-weight: 700; }
+.report-table .status-info    { background: var(--info) !important;    color: #fff; font-weight: 700; }
+.report-table .status-missing { background: var(--missing) !important; color: #fff; font-weight: 800; }
+.report-table .status-na      { background: var(--na) !important;      color: #c9c9c9; font-weight: 600; }
+
+/* SMS gomb – visszafogott, egységes */
 .sms-btn {
   padding: 6px 10px;
-  font-size: .85rem;
+  font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #222;
+  background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
 }
-.sms-btn:hover { background: #2a2a2a; }
-.sms-btn:active { transform: translateY(1px); }
+.sms-btn:hover, .sms-btn:active { background: var(--surface-2); } /* nincs vizuális hover */
+.sms-btn:disabled { opacity: .6; cursor: not-allowed; }
 
-/* action button (general) */
+/* Általános action button */
 .action-button {
   padding: 8px 14px;
-  background-color: var(--accent);
-  color: white;
+  background: #3e7bfa; /* egyszerű, fix kék */
+  color: #fff;
   border: none;
-  border-radius: 10px;
-  cursor: pointer;
+  border-radius: 8px;
   font-weight: 700;
-  transition: filter .15s ease, transform .05s ease;
+  cursor: pointer;
 }
-.action-button:hover { filter: brightness(1.05); }
-.action-button:active { transform: translateY(1px); }
-.action-button:disabled { background: #3c3c3c; cursor: not-allowed; }
-
-/* accessibility: focus rings */
-button:focus-visible, .sms-btn:focus-visible, .modal-close:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 10px;
-}
-
-/* small screens */
-@media (max-width: 640px) {
-  .modal .modal-body { padding: 10px 10px 12px; }
-  .report-table { font-size: .88rem; min-width: 560px; }
-  .report-legend { gap: 6px; }
-}
+.action-button:hover,
+.action-button:active { background: #3e7bfa; } /* nincs vizuális hover */
+.action-button:disabled { background: #555; cursor: not-allowed; }
