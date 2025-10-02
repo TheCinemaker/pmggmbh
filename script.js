@@ -26,12 +26,11 @@ const languageSelect          = document.getElementById('languageSelect'); // ha
 // --- Állapotkezelés ---
 let currentUser = null;
 
-// PIN show/hide
+// --- PIN show/hide ---
 const pinInput  = document.getElementById('pinCode');
 const eyeBtn    = document.getElementById('togglePinVisibility');
 
 if (pinInput && eyeBtn) {
-  // állapot beállító helper
   const setVisible = (visible) => {
     pinInput.type = visible ? 'text' : 'password';
     eyeBtn.classList.toggle('is-visible', visible);
@@ -40,14 +39,7 @@ if (pinInput && eyeBtn) {
     eyeBtn.setAttribute('aria-label', label);
     eyeBtn.title = label;
   };
-
-  // kattintásra vált
-  eyeBtn.addEventListener('click', () => {
-    const next = pinInput.type !== 'text'; // ha most nem látszik, tegyük láthatóvá
-    setVisible(next);
-  });
-
-  // biztos ami biztos: induláskor rejtve
+  eyeBtn.addEventListener('click', () => setVisible(pinInput.type !== 'text'));
   setVisible(false);
 }
 
@@ -183,8 +175,6 @@ const translations = {
   }
 };
 
-
-
 // --- I18N helper-ek ---
 function getCurrentLang() {
   const userLang = currentUser?.lang;
@@ -192,7 +182,6 @@ function getCurrentLang() {
   const lang     = (userLang || stored || 'hu').toLowerCase();
   return ['hu', 'de', 'pl'].includes(lang) ? lang : 'hu';
 }
-
 function getLangDict(lang) {
   const dict = translations[lang];
   return (dict && Object.keys(dict).length) ? dict : translations.hu;
@@ -239,13 +228,11 @@ function updateUiForUserType(userType) {
   if (type === 'nem_oralapos') oralapSection.classList.add('hidden');
   else oralapSection.classList.remove('hidden');
 }
-
 function updateUiForUserRole(userRole) {
   const isAdmin = (userRole || '').toLowerCase() === 'admin';
   if (adminButton) adminButton.classList.toggle('hidden', !isAdmin);
 }
 
-// --- Fájlok megjelenítése ---
 // --- Fájlok megjelenítése (végleges) ---
 async function fetchAndDisplayFiles() {
   if (!viewMonthSelect || !fileListContainer) return;
@@ -279,13 +266,23 @@ async function fetchAndDisplayFiles() {
     files.forEach(file => {
       const row = document.createElement('div');
       row.className = 'file-item';
+
+      const canOpenViaApi = !!(file?.id || file?.path_lower || file?.path_display);
+
+      const actionHtml = isHttp(file.link)
+        ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
+        : (canOpenViaApi
+            ? `<button class="view-button"
+                 data-file-id="${file.id || ''}"
+                 data-path="${file.path_lower || file.path_display || ''}">
+                 ${getLangDict(lang).viewButton}
+               </button>`
+            : `<span class="view-button view-button-disabled" aria-disabled="true">${getLangDict(lang).viewButton}</span>`
+          );
+
       row.innerHTML = `
         <span class="file-item-name">${file.name}</span>
-        ${
-          isHttp(file.link)
-            ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
-            : `<span class="view-button view-button-disabled" aria-disabled="true">${getLangDict(lang).viewButton}</span>`
-        }
+        ${actionHtml}
       `;
       frag.appendChild(row);
     });
@@ -303,11 +300,17 @@ if (fileListContainer && !fileListContainer._hasLinkHandler) {
   fileListContainer._hasLinkHandler = true;
 
   fileListContainer.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.view-button[data-file-id], .view-button[data-path]');
-    if (!btn || btn.tagName === 'A') return; // ha már <a>, nem kell semmi
+    const btn = e.target.closest('button.view-button[data-file-id], button.view-button[data-path]');
+    if (!btn) return;                // nem a gomb
+    if (btn.tagName === 'A') return; // anchorra nincs szükség
 
-    const fileId = btn.getAttribute('data-file-id')?.trim();
-    const path   = btn.getAttribute('data-path')?.trim();
+    const fileId = (btn.getAttribute('data-file-id') || '').trim();
+    const path   = (btn.getAttribute('data-path') || '').trim();
+
+    if (!fileId && !path) {
+      showToast('Nincs azonosító a fájlhoz.', 'error');
+      return;
+    }
 
     const original = btn.textContent;
     btn.disabled = true;
@@ -326,10 +329,8 @@ if (fileListContainer && !fileListContainer._hasLinkHandler) {
         throw new Error(`getFileLink nem JSON (HTTP ${resp.status}) — ${raw.slice(0,120)}`);
       }
       if (!resp.ok) throw new Error(data?.error || `getFileLink hiba (HTTP ${resp.status})`);
+      if (!data?.url || !isHttp(data.url)) throw new Error('Érvénytelen link érkezett a szervertől.');
 
-      if (!data?.url || !isHttp(data.url)) {
-        throw new Error('Érvénytelen link érkezett a szervertől.');
-      }
       window.open(data.url, '_blank', 'noopener');
     } catch (err) {
       console.error('Megtekintés hiba:', err);
@@ -352,25 +353,19 @@ function makeFolderNameFromDate(d = new Date()) {
 function selectBestMonth(sel, folders, targetName) {
   if (!sel || !folders.length) return;
 
-  // 1) direkt egyezés (ideális eset)
-  if (folders.includes(targetName)) {
-    sel.value = targetName;
-    return;
-  }
+  if (folders.includes(targetName)) { sel.value = targetName; return; }
 
-  // 2) robust: egyezés hónapszám alapján (vezető nullák, eltérő case, extra szóközök esetére)
   const targetNum = String(parseInt(targetName, 10)); // pl. "9"
   const found = folders.find(fn => String(parseInt(fn, 10)) === targetNum);
 
   sel.value = found || folders[0];
 }
 
-// --- Hónap lista betöltés (VÉGLEGES) ---
+// --- Hónap lista betöltés ---
 async function populateMonthList(userId) {
   const lang = getCurrentLang();
   const selects = [monthSelect, absenceMonthSelect, viewMonthSelect];
 
-  // ideiglenes "Betöltés..." opció
   selects.forEach(sel => {
     if (sel) sel.innerHTML = `<option value="" disabled selected>${getLangDict(lang).loadingMonths}</option>`;
   });
@@ -381,10 +376,8 @@ async function populateMonthList(userId) {
     if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingMonths);
     const folders = text ? JSON.parse(text) : [];
 
-    // pl. ["9. September","8. August", ...] – legújabb elöl
     folders.sort((a, b) => parseInt(b) - parseInt(a));
 
-    // feltöltjük a selecteket
     selects.forEach(sel => {
       if (!sel) return;
       sel.innerHTML = '';
@@ -400,13 +393,11 @@ async function populateMonthList(userId) {
       });
     });
 
-    // LÉNYEG: mindig az AKTUÁLIS hónapot állítsuk be (pl. "9. September")
     const currentMonthFolder = makeFolderNameFromDate(new Date());
     selectBestMonth(monthSelect,        folders, currentMonthFolder);
     selectBestMonth(absenceMonthSelect, folders, currentMonthFolder);
     selectBestMonth(viewMonthSelect,    folders, currentMonthFolder);
 
-    // Frissítsük a fájllistát a view-nál
     fetchAndDisplayFiles();
   } catch (error) {
     showToast(`Hiba: ${error.message}`, 'error');
@@ -706,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// --- Eseményfigyelők (defenzíven) ---
+// --- Eseményfigyelők ---
 if (loginForm)        loginForm.addEventListener('submit', handleLogin);
 if (uploadForm)       uploadForm.addEventListener('submit', handleUpload);
 if (logoutButton)     logoutButton.addEventListener('click', handleLogout);
