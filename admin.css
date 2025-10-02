@@ -547,8 +547,8 @@ input:checked + .slider:before {
 .report-table td {
   border: 1px solid var(--border-color);
   padding: 10px 14px;
-  font-size: 14px;
-  height: 48px;
+  font-size: 12px;
+  height: 35px;
   vertical-align: middle;
   text-align: center;
   white-space: nowrap;
