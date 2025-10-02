@@ -258,7 +258,7 @@ async function fetchAndDisplayFiles() {
   fileListContainer.innerHTML = `<p>${getLangDict(lang).loadingFiles}</p>`;
 
   try {
-    const resp = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`);
+    const resp = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}&links=0`);
     const text = await resp.text();
     if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingFiles);
     const files = text ? JSON.parse(text) : [];
@@ -290,6 +290,46 @@ async function fetchAndDisplayFiles() {
   } catch (error) {
     fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
   }
+}
+
+if (fileListContainer && !fileListContainer._hasLinkHandler) {
+  fileListContainer._hasLinkHandler = true;
+
+  fileListContainer.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.view-button[data-file-id], .view-button[data-path]');
+    if (!btn || btn.tagName === 'A') return;
+
+    const fileId = btn.getAttribute('data-file-id')?.trim();
+    const path   = btn.getAttribute('data-path')?.trim();
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Megnyitás…';
+
+    try {
+      const resp = await fetch('/.netlify/functions/getFileLink', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ fileId, path })
+      });
+
+      const raw = await resp.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch {
+        throw new Error(`getFileLink nem JSON (HTTP ${resp.status}) — ${raw.slice(0,120)}`);
+      }
+      if (!resp.ok) throw new Error(data?.error || `getFileLink hiba (HTTP ${resp.status})`);
+
+      if (!data?.url || !isHttp(data.url)) throw new Error('Érvénytelen link érkezett a szervertől.');
+      window.open(data.url, '_blank', 'noopener');
+    } catch (err) {
+      console.error('Megtekintés hiba:', err);
+      showToast(err.message || getLangDict(getCurrentLang()).errorLoadingFiles, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
 }
 
 // --- Egyszeri delegált kattintáskezelő a „Megtekintés” gombokra ---
