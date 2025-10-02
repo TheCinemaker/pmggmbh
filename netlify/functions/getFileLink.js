@@ -17,39 +17,42 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: baseHeaders };
   }
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: baseHeaders, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+  }
+
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch {}
+
+  const fileId = (body.fileId || '').trim();           // pl. "id:abcd1234"
+  const path   = (body.path   || '').trim();           // pl. "/pmg ... /file.pdf"
+
+  if (!fileId && !path) {
+    return { statusCode: 400, headers: baseHeaders, body: JSON.stringify({ error: 'fileId or path required' }) };
+  }
 
   try {
-    if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, headers: baseHeaders, body: JSON.stringify({ error: 'Method Not Allowed' }) };
-    }
-
-    let body = {};
-    try { body = JSON.parse(event.body || '{}'); } catch {}
-    const fileId = (body.fileId || '').trim();
-    const path   = (body.path || '').trim();
-
-    if (!fileId && !path) {
-      return { statusCode: 400, headers: baseHeaders, body: JSON.stringify({ error: 'fileId or path required' }) };
-    }
-
     const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
 
-    // Próbáljuk először temp linkkel
+    // 1) TEMP LINK – először path (ha van), aztán id
     try {
-      const t = await dbx.filesGetTemporaryLink({ path: fileId || path });
+      const p = path || fileId;
+      const t = await dbx.filesGetTemporaryLink({ path: p });
       return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t.result.link }) };
     } catch (e1) {
-      console.warn('Temp link bukott:', (fileId || path), e1?.status, e1?.error?.error_summary || e1?.message);
+      console.warn('Temp link bukott:', (path || fileId), e1?.status, e1?.error?.error_summary || e1?.message);
 
-      // Share link fallback – ha ID volt, kell path-ot szereznünk
+      // 2) Fallback: próbáljunk meg share linket készíteni (csak ha a tokennek van sharing scope-ja)
       try {
+        // kell path_lower; ha csak id van, kérjünk metát
         let usePath = path;
         if (!usePath) {
           const meta = await dbx.filesGetMetadata({ path: fileId });
-          usePath = meta?.result?.path_lower;
+          usePath = meta?.result?.path_lower || meta?.result?.path_display;
         }
         if (!usePath) throw new Error('No path available for share link');
 
+        // már létező share link?
         const ls = await dbx.sharingListSharedLinks({ path: usePath, direct_only: true });
         let sl = ls?.result?.links?.[0]?.url || null;
 
@@ -59,11 +62,15 @@ exports.handler = async (event) => {
         }
         if (!sl) throw new Error('No share link created');
 
+        // közvetlen letöltő link
         const direct = sl.includes('?') ? `${sl}&raw=1` : `${sl}?raw=1`;
         return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: direct }) };
       } catch (e2) {
         console.warn('Share link bukott:', e2?.status, e2?.error?.error_summary || e2?.message);
-        return { statusCode: 500, headers: baseHeaders, body: JSON.stringify({ error: e2?.error?.error_summary || e2?.message || 'Link create failed' }) };
+        // adjunk vissza normális hibát a kliensnek
+        const msg = e2?.error?.error_summary || e2?.message || 'Link create failed';
+        const code = /not_found|lookup_failed/i.test(msg) ? 404 : 500;
+        return { statusCode: code, headers: baseHeaders, body: JSON.stringify({ error: msg }) };
       }
     }
   } catch (e) {
