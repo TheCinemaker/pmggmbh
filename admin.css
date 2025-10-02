@@ -491,14 +491,6 @@ input:checked + .slider:before {
   --text: #e8e8e8;
   --border: #2a2a2a;
 
-  /* Status színek */
-  --ok: #1f6f43;       /* Abgegeben */
-  --warn: #8a6d3b;     /* Krank */
-  --info: #1d5b74;     /* Urlaub / Unbezahlt */
-  --missing: #8a2a2a;  /* FEHLT */
-  --na: #2c2c2c;       /* Nem elvárt nap */
-}
-
 /* Modal doboz */
 .modal.large {
   max-width: 900px;
@@ -626,3 +618,48 @@ input:checked + .slider:before {
 .action-button:hover,
 .action-button:active { background: #3e7bfa; } /* nincs vizuális hover */
 .action-button:disabled { background: #555; cursor: not-allowed; }
+
+  /* --- Kill zebra + hover (final, egységes háttér) --- */
+:root { --surface: #141414; } /* ha fent már van ilyen, ezt nyugodtan hagyhatod így */
+
+.report-table,
+.report-table > tbody,
+.report-table > tbody > tr,
+.report-table > tbody > tr > td,
+.report-table > tbody > tr > th {
+  background: var(--surface) !important;
+}
+
+/* bármely striped/hover minta kinullázása (pl. bootstrap) */
+.report-table > tbody > tr:nth-of-type(odd),
+.report-table > tbody > tr:nth-of-type(odd) > td,
+.report-table > tbody > tr:nth-of-type(odd) > th,
+.report-table.table-striped > tbody > tr:nth-of-type(odd),
+.report-table.table-striped > tbody > tr:nth-of-type(odd) > td,
+.report-table.table-striped > tbody > tr:nth-of-type(odd) > th,
+.report-table > tbody > tr:hover,
+.report-table > tbody > tr:hover > td,
+.report-table > tbody > tr:hover > th,
+.report-table.table-hover > tbody > tr:hover,
+.report-table.table-hover > tbody > tr:hover > td,
+.report-table.table-hover > tbody > tr:hover > th {
+  background: var(--surface) !important;
+}
+
+/* egységes magasság */
+.report-table th,
+.report-table td {
+  height: 44px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* státusz színek maradnak */
+.report-table .status-ok      { background: #1f6f43 !important; color:#fff; font-weight:700; }
+.report-table .status-warn    { background: #8a6d3b !important; color:#fff; font-weight:700; }
+.report-table .status-info    { background: #1d5b74 !important; color:#fff; font-weight:700; }
+.report-table .status-missing { background: #8a2a2a !important; color:#fff; font-weight:800; }
+.report-table .status-na      { background: #2c2c2c !important; color:#c9c9c9; font-weight:600; }
+
