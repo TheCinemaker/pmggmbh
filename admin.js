@@ -381,23 +381,12 @@ function openWeeklyReportModal(report, workWeek) {
     <div class="modal large" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h4>Wochenbericht (Nur fehlende Einträge)</h4>
-        <label class="toggle-all">
-          <input id="showAllToggle" type="checkbox">
-          <span>Alle anzeigen</span>
-          </label>
         <button class="modal-close" aria-label="${DE.close}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <div class="report-table-wrapper">
-        <div class="report-legend">
-        <span class="badge status-ok" title="Abgegeben">Abgegeben</span>
-        <span class="badge status-warn" title="Krank">Krank</span>
-        <span class="badge status-info" title="Urlaub/Unbezahlt">Urlaub/Unbezahlt</span>
-        <span class="badge status-missing" title="FEHLT">FEHLT</span>
-        <span class="badge status-na" title="Nicht erwartet">—</span>
-        </div>
           <table class="report-table">
             <thead>
               <tr>
