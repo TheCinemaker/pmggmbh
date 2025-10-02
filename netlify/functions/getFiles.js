@@ -65,24 +65,33 @@ exports.handler = async (event) => {
     if (!files.length) return { statusCode: 200, headers, body: JSON.stringify([]) };
 
     // Elemenkénti link kérés – ne bukjon az egész, ha 1-2 hiba van
-    const items = await Promise.all(files.map(async (f) => {
-      let link = null;
-      if (wantLinks) {
-        try {
-          const t = await dbx.filesGetTemporaryLink({ path: f.path_lower });
-          link = t?.result?.link || null;
-        } catch (e) {
-          console.warn('Temp link hiba:', f.path_lower, e?.status || e?.message);
-        }
-      }
-      const uploadedAt = f.server_modified || f.client_modified || null;
-      return {
-        name: f.name,
-        link,
-        uploadedAt,
-        uploadedAtDisplay: uploadedAt
-      };
-    }));
+const items = await Promise.all(files.map(async (f) => {
+  let link = null;
+  if (wantLinks) {
+    try {
+      // <-- EDDIG: { path: f.path_lower }
+      const t = await dbx.filesGetTemporaryLink({ path: f.id }); // <— EZ A STABIL
+      link = t?.result?.link || null;
+    } catch (e) {
+      // második próbálkozás: path_display (ha nagyon kell a fallback)
+      try {
+        const t2 = await dbx.filesGetTemporaryLink({ path: f.path_display });
+        link = t2?.result?.link || null;
+      } catch {}
+      console.warn('Temp link hiba:', f.id, e?.status || e?.message);
+    }
+  }
+
+  const uploadedAt = f.server_modified || f.client_modified || null;
+  return {
+    id: f.id,                     // <— add vissza!
+    name: f.name,
+    link,
+    uploadedAt,
+    uploadedAtDisplay: uploadedAt,
+    // path: f.path_display,      // ha kell debughoz
+  };
+}));
 
     // Legfrissebb elöl
     items.sort((a, b) => (new Date(b.uploadedAt || 0)) - (new Date(a.uploadedAt || 0)));
