@@ -51,7 +51,7 @@ if (pinInput && eyeBtn) {
   setVisible(false);
 }
 
-
+const isHttp = (u) => typeof u === 'string' && /^https?:\/\//i.test(u);
 
 // --- I18N SZÓTÁR ---
 const translations = {
@@ -183,6 +183,8 @@ const translations = {
   }
 };
 
+
+
 // --- I18N helper-ek ---
 function getCurrentLang() {
   const userLang = currentUser?.lang;
@@ -266,18 +268,58 @@ async function fetchAndDisplayFiles() {
       fileListContainer.innerHTML = `<p>${getLangDict(lang).noFiles}</p>`;
       return;
     }
+
     files.forEach(file => {
-      const fileItem = document.createElement('div');
-      fileItem.className = 'file-item';
-      fileItem.innerHTML = `
+      const row = document.createElement('div');
+      row.className = 'file-item';
+
+      const actionHtml = isHttp(file.link)
+        ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
+        : `<button class="view-button" data-file-id="${file.id}">${getLangDict(lang).viewButton}</button>`;
+
+      row.innerHTML = `
         <span class="file-item-name">${file.name}</span>
-        <a href="${file.link}" target="_blank" class="view-button">${getLangDict(lang).viewButton}</a>
+        ${actionHtml}
       `;
-      fileListContainer.appendChild(fileItem);
+      fileListContainer.appendChild(row);
     });
   } catch (error) {
     fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
   }
+}
+
+// --- Egyszeri delegált kattintáskezelő a „Megtekintés” gombokra ---
+if (fileListContainer && !fileListContainer._hasLinkHandler) {
+  fileListContainer._hasLinkHandler = true;
+
+  fileListContainer.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.view-button[data-file-id]');
+    if (!btn) return;
+
+    const fileId = btn.getAttribute('data-file-id');
+    if (!fileId) return;
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Megnyitás…';
+
+    try {
+      const resp = await fetch('/.netlify/functions/getFileLink', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ fileId })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !isHttp(data?.url)) throw new Error(data?.error || 'Nincs link');
+
+      window.open(data.url, '_blank', 'noopener');
+    } catch (err) {
+      showToast(err.message || getLangDict(getCurrentLang()).errorLoadingFiles, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
 }
 
 // --- Hónap név formázó: "9. September" az aktuális dátumból ---
