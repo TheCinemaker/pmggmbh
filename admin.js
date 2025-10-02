@@ -353,7 +353,7 @@ function openWeeklyReportModal(report, workWeek) {
   const modalContent = `
     <div class="modal large" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h4>Wochenbericht (Nur Mängel)</h4>
+        <h4>Wochenbericht (Nur fehlende Einträge)</h4>
         <button class="modal-close" aria-label="${DE.close}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
         </button>
@@ -369,7 +369,7 @@ function openWeeklyReportModal(report, workWeek) {
               </tr>
             </thead>
             <tbody>
-              ${tableRows || '<tr><td colspan="7">Keine Mängel für diese Woche gefunden!</td></tr>'}
+              ${tableRows || `<tr><td colspan="7">Keine fehlenden Einträge für diese Woche gefunden!</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -381,14 +381,14 @@ function openWeeklyReportModal(report, workWeek) {
 
   backdrop.innerHTML = modalContent;
   document.body.appendChild(backdrop);
-  
+
   // TODO: SMS küldő gombok bekötése
   
   const close = () => backdrop.remove();
   backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
   backdrop.querySelector('.modal-close').addEventListener('click', close);
   backdrop.querySelector('.modal-primary').addEventListener('click', close);
-}
+}  
 
 //////////////////////////////
 // Init + refresh logika    //
@@ -592,42 +592,6 @@ function openWeeklyReportModal(report, workWeek) {
       </tr>`;
   }).join('');
   
-  const modalContent = `
-    <div class="modal large" role="dialog" aria-modal="true">
-      <div class="modal-header">
-        <h4>Wochenbericht (Nur fehlende Einträge)</h4>
-        <button class="modal-close" aria-label="${DE.close}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="report-table-wrapper">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Mitarbeiter</th>
-                ${tableHeader}
-                <th>Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows || `<tr><td colspan="7">Keine fehlenden Einträge für diese Woche gefunden!</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-primary">${DE.close}</button>
-      </div>
-    </div>`;
-
-  backdrop.innerHTML = modalContent;
-  document.body.appendChild(backdrop);
   
-  // TODO: SMS küldő gombok bekötése
   
-  const close = () => backdrop.remove();
-  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-  backdrop.querySelector('.modal-close').addEventListener('click', close);
-  backdrop.querySelector('.modal-primary').addEventListener('click', close);
-}
+  
