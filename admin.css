@@ -483,183 +483,135 @@ input:checked + .slider:before {
 }
 .toggle-all input { accent-color: var(--accent); }
 
-/* ===== Weekly Report Modal – minimal, egységes, no-hover ===== */
+/* ===== Weekly Report Modal & Buttons (Letisztított Verzió) ===== */
 
+/* --- Színpaletta (könnyen módosítható) --- */
 :root {
-  --surface: #141414;
-  --surface-2: #1e1e1e;
-  --text: #e8e8e8;
-  --border: #2a2a2a;
+  --surface-1: #1a1a1a; /* Legalsó réteg, pl. a modál háttere */
+  --surface-2: #242424; /* Kiemelt réteg, pl. fejléc, gombok */
+  --border-color: #333333; /* Elválasztó vonalak */
+  --text-primary: #e0e0e0; /* Fő szövegszín */
+  --text-muted: #888888;   /* Halványabb szöveg, pl. dátum */
 
-/* Modal doboz */
+  /* Státusz színek */
+  --status-ok-bg: #166534;      /* Sötétzöld */
+  --status-warn-bg: #b45309;     /* Borostyán */
+  --status-info-bg: #1d4ed8;     /* Kék */
+  --status-missing-bg: #991b1b;  /* Sötétvörös */
+  --status-na-bg: #374151;       /* Semleges szürke */
+  --status-text-color: #ffffff; /* Szövegszín a státusz cellákban */
+}
+
+/* --- Modál Ablak Általános Stílusa --- */
 .modal.large {
-  max-width: 900px;
+  max-width: 950px; /* Egy kicsit szélesebb a jobb olvashatóságért */
   width: calc(100% - 32px);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
+  color: var(--text-primary);
 }
 
 .modal .modal-header,
 .modal .modal-footer {
-  padding: 12px 14px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-color);
 }
-.modal .modal-footer { border-top: 1px solid var(--border); border-bottom: 0; }
+
+.modal .modal-footer {
+  border-top: 1px solid var(--border-color);
+  border-bottom: 0;
+}
 
 .modal .modal-header h4 {
   margin: 0;
-  font-size: 1rem;
-  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
-.modal .modal-close {
-  margin-left: auto;
-  background: transparent;
-  border: 0;
-  padding: 6px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* Tábla wrapper */
+/* --- Riport Táblázat --- */
 .report-table-wrapper {
-  margin-top: 10px;
-  overflow-x: auto;
+  overflow-x: auto; /* Csak akkor van scrollbar, ha szükséges */
 }
 
-/* Tábla: egységes, no-hover, no-sticky */
 .report-table {
   width: 100%;
-  min-width: 720px;
+  min-width: 800px; /* Biztosítja, hogy ne zsugorodjon túl kicsire */
   border-collapse: collapse;
   table-layout: fixed;
-  background: var(--surface);
-  color: var(--text);
 }
 
-/* Fejléc */
-.report-table thead th {
-  background: var(--surface-2) !important; /* felülírja az esetleges régi zebra/hovert */
-  color: var(--text);
-  font-weight: 600;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
+.report-table th,
+.report-table td {
+  border: 1px solid var(--border-color);
+  padding: 10px 14px;
+  font-size: 14px;
+  height: 48px;
+  vertical-align: middle;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
-  height: 44px; /* egységes magasság */
-  position: static !important; /* ha korábban sticky volt, kikapcsoljuk */
 }
 
-/* Cella-alap */
-.report-table th,
-.report-table td {
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  font-size: 14px;
-  line-height: 1.2;
-  height: 44px;               /* egységes sor-magasság */
-  white-space: nowrap;        /* ne törjön, így marad egységes a magasság */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
+.report-table thead th {
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-/* Első oszlop (név) balra rendezve, vastagabban */
+.report-table thead th small {
+  font-weight: 400;
+}
+
 .report-table tbody td:first-child {
   text-align: left;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* A többi oszlop középre */
-.report-table tbody td:not(:first-child) {
-  text-align: center;
-}
+/* --- Státusz Színek --- */
+.report-table .status-ok      { background: var(--status-ok-bg);      color: var(--status-text-color); }
+.report-table .status-warn    { background: var(--status-warn-bg);    color: var(--status-text-color); }
+.report-table .status-info    { background: var(--status-info-bg);    color: var(--status-text-color); }
+.report-table .status-missing { background: var(--status-missing-bg); color: var(--status-text-color); font-weight: 700; }
+.report-table .status-na      { background: var(--status-na-bg);      color: var(--text-muted); }
 
-/* Tilos a hover és zebra – mindent semlegesítünk */
-.report-table tbody tr:hover td { background: inherit !important; }
-.report-table tbody tr:nth-child(odd) td { background: inherit !important; }
-
-/* Státusz színek – egységes, erős kontraszt */
-.report-table .status-ok      { background: var(--ok) !important;      color: #fff; font-weight: 700; }
-.report-table .status-warn    { background: var(--warn) !important;    color: #fff; font-weight: 700; }
-.report-table .status-info    { background: var(--info) !important;    color: #fff; font-weight: 700; }
-.report-table .status-missing { background: var(--missing) !important; color: #fff; font-weight: 800; }
-.report-table .status-na      { background: var(--na) !important;      color: #c9c9c9; font-weight: 600; }
-
-/* SMS gomb – visszafogott, egységes */
+/* --- Gombok --- */
 .sms-btn {
-  padding: 6px 10px;
+  padding: 5px 12px;
   font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   background: var(--surface-2);
-  color: var(--text);
+  color: var(--text-primary);
   cursor: pointer;
+  transition: background-color 0.2s;
 }
-.sms-btn:hover, .sms-btn:active { background: var(--surface-2); } /* nincs vizuális hover */
-.sms-btn:disabled { opacity: .6; cursor: not-allowed; }
 
-/* Általános action button */
+.sms-btn:hover {
+  background-color: #383838; /* Finom hover effektus */
+}
+
 .action-button {
-  padding: 8px 14px;
-  background: #3e7bfa; /* egyszerű, fix kék */
+  padding: 8px 15px;
+  background: #3e7bfa;
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-weight: 700;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
-}
-.action-button:hover,
-.action-button:active { background: #3e7bfa; } /* nincs vizuális hover */
-.action-button:disabled { background: #555; cursor: not-allowed; }
-
-  /* --- Kill zebra + hover (final, egységes háttér) --- */
-:root { --surface: #141414; } /* ha fent már van ilyen, ezt nyugodtan hagyhatod így */
-
-.report-table,
-.report-table > tbody,
-.report-table > tbody > tr,
-.report-table > tbody > tr > td,
-.report-table > tbody > tr > th {
-  background: var(--surface) !important;
+  transition: background-color 0.2s;
 }
 
-/* bármely striped/hover minta kinullázása (pl. bootstrap) */
-.report-table > tbody > tr:nth-of-type(odd),
-.report-table > tbody > tr:nth-of-type(odd) > td,
-.report-table > tbody > tr:nth-of-type(odd) > th,
-.report-table.table-striped > tbody > tr:nth-of-type(odd),
-.report-table.table-striped > tbody > tr:nth-of-type(odd) > td,
-.report-table.table-striped > tbody > tr:nth-of-type(odd) > th,
-.report-table > tbody > tr:hover,
-.report-table > tbody > tr:hover > td,
-.report-table > tbody > tr:hover > th,
-.report-table.table-hover > tbody > tr:hover,
-.report-table.table-hover > tbody > tr:hover > td,
-.report-table.table-hover > tbody > tr:hover > th {
-  background: var(--surface) !important;
+.action-button:hover {
+  background: #528dff;
 }
 
-/* egységes magasság */
-.report-table th,
-.report-table td {
-  height: 44px;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.action-button:disabled,
+.sms-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-
-/* státusz színek maradnak */
-.report-table .status-ok      { background: #1f6f43 !important; color:#fff; font-weight:700; }
-.report-table .status-warn    { background: #8a6d3b !important; color:#fff; font-weight:700; }
-.report-table .status-info    { background: #1d5b74 !important; color:#fff; font-weight:700; }
-.report-table .status-missing { background: #8a2a2a !important; color:#fff; font-weight:800; }
-.report-table .status-na      { background: #2c2c2c !important; color:#c9c9c9; font-weight:600; }
-
