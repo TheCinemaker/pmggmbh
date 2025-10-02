@@ -1,3 +1,5 @@
+// /netlify/functions/logAbsence.js
+
 const { Dropbox } = require('dropbox');
 
 // --- Konfiguráció ---
@@ -8,30 +10,44 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
 
 exports.handler = async (event) => {
-    const headers = { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Access-Control-Allow-Headers': 'Content-Type' };
+    const headers = { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Content-Type': 'application/json' };
     if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {
         const { userId, absenceType, selectedMonth, startDate, endDate } = JSON.parse(event.body);
-        if (!userId || !absenceType || !selectedMonth || !startDate || !endDate) {
-            throw new Error('Hiányzó adatok a távollét jelentéséhez.');
+
+        if (!userId || !absenceType || !selectedMonth || !startDate) {
+            throw new Error('Hiányzó adatok a távollét rögzítéséhez.');
         }
 
-        // Fájlnév és tartalom generálása
-        const startDay = new Date(startDate).getDate().toString().padStart(2, '0');
-        const fileName = `${absenceType}_vom_${startDay}.txt`;
-        const fileContent = `${startDate.replace(/-/g, '.')} - ${endDate.replace(/-/g, '.')}`;
+        if (absenceType !== 'URLAUB' && absenceType !== 'UNBEZAHLT') {
+            throw new Error('Érvénytelen távollét típus.');
+        }
 
-        const currentYear = new Date().getFullYear();
-        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${fileName}`;
+        const start = new Date(startDate);
+        // Ha nincs endDate, akkor az megegyezik a startDate-szel
+        const end = endDate ? new Date(endDate) : start;
+
+        // --- JAVÍTÁS: Fájlnév generálása a teljes időtartammal ---
+        const startDay = start.getDate();
+        const endDay = end.getDate();
+        const dateRange = (startDay === endDay) ? `${startDay}` : `${startDay}-${endDay}`;
+        
+        const newFileName = `${absenceType}_${dateRange}.txt`; // Eredmény: URLAUB_1-3.txt vagy UNBEZAHLT_5.txt
+
+        // A fájl tartalma maradhat a régi, informatív formátumban
+        const fileContent = `Abwesenheit gemeldet:\nTyp: ${absenceType}\nVon: ${startDate}\nBis: ${endDate || startDate}`;
+        
+        const currentYear = start.getFullYear();
+        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
 
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
 
         await dbx.filesUpload({
             path: dropboxPath,
             contents: fileContent,
-            mode: 'add', // 'add' módban hibát dob, ha már létezik a fájl
-            autorename: true // Ha mégis létezne, átnevezi (pl. KRANK_vom_05 (1).txt)
+            mode: { '.tag': 'overwrite' }, // 'overwrite' jobb, mert ha módosítják, felülírja a régit
+            autorename: false
         });
 
         return {
