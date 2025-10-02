@@ -546,7 +546,7 @@ input:checked + .slider:before {
 .report-table th,
 .report-table td {
   border: 1px solid var(--border-color);
-  padding: 10px 14px;
+  padding: 0px 14px;
   font-size: 12px;
   height: 35px;
   vertical-align: middle;
@@ -581,7 +581,8 @@ input:checked + .slider:before {
 
 /* --- Gombok --- */
 .sms-btn {
-  padding: 5px 12px;
+  padding: 0px 12px;
+  height: 28px;
   font-size: 13px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
