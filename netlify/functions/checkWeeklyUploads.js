@@ -11,31 +11,30 @@ const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
 const APP_KEY = process.env.DROPBOX_APP_KEY;
 const APP_SECRET = process.env.DROPBOX_APP_SECRET;
 
-// --- Kivételek (case/ékezet-insensitive lesz belőlük) ---
+// --- Kivételek (case/ékezet-insensitive) ---
 const EXCLUDED_USERS = ['AVAR Szilveszter', 'ADMIN Admin'];
 
-// ---------- Segéd: dátumok, normalizálás, parse ----------
+// ---------- Helper: dátumok, normalizálás, parse ----------
 function getWorkWeek(date) {
   const startOfWeek = new Date(date);
-  // Hétfő legyen a kezdete
-  const dayOfWeek = startOfWeek.getDay(); // 0=vas
-  const diff = startOfWeek.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  const dayOfWeek = startOfWeek.getDay(); // 0=vasárnap
+  const diff = startOfWeek.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // hétfő
   startOfWeek.setDate(diff);
   const week = [];
   for (let i = 0; i < 5; i++) {
-    const currentDay = new Date(startOfWeek);
-    currentDay.setDate(startOfWeek.getDate() + i);
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
     week.push({
-      year: currentDay.getFullYear(),
-      month: currentDay.getMonth() + 1,
-      day: currentDay.getDate(),
-      dayOfWeek: i + 1, // 1..5 (H..P)
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+      dayOfWeek: i + 1, // 1..5
     });
   }
   return week;
 }
 
-// ékezetelt betűk eldobása, kis-nagy egyenlősítése
+// ékezet kidobása, kisbetű, trim
 function fold(s) {
   return String(s || '')
     .normalize('NFD')
@@ -44,25 +43,23 @@ function fold(s) {
     .trim();
 }
 
-// fájlnévben szereplő nap(ok) kinyerése (1..31)
+// napok kinyerése a fájlnévből (ranges + singlek)
 function extractDaysFromFilename(filename) {
   const name = String(filename || '').split('.')[0];
-
   const days = new Set();
 
-  // range-ek: 29-30, 29_30, 29–30, 29 — 30
+  // 29-30 / 29_30 / 29–30 / 29 — 30
   const rangeRe = /(^|[\s_\-\.])(\d{1,2})\s*[-–—_]\s*(\d{1,2})(?=($|[\s_\-\.]))/g;
   let m;
   while ((m = rangeRe.exec(name)) !== null) {
     const a = Number(m[2]), b = Number(m[3]);
     if (a >= 1 && a <= 31 && b >= 1 && b <= 31) {
-      const start = Math.min(a, b);
-      const end = Math.max(a, b);
-      for (let d = start; d <= end; d++) days.add(d);
+      const s = Math.min(a, b), e = Math.max(a, b);
+      for (let d = s; d <= e; d++) days.add(d);
     }
   }
 
-  // egyedi napok: " 29 ", "_29", ".29", "29.", "29_"
+  // egyedi napok: " 29 " / "_29" / ".29" / "29." / "29_"
   const singleRe = /(^|[\s_\-\.])(\d{1,2})(?=($|[\s_\-\.]))/g;
   while ((m = singleRe.exec(name)) !== null) {
     const d = Number(m[2]);
@@ -72,32 +69,31 @@ function extractDaysFromFilename(filename) {
   return days;
 }
 
-// státusz detektálása: ha bárhol szerepel a kulcsszó
 function getEntryType(filename) {
-  const upper = String(filename || '').toUpperCase();
-  if (upper.includes('KRANK'))     return 'KRANK';
-  if (upper.includes('URLAUB'))    return 'URLAUB';
-  if (upper.includes('UNBEZAHLT')) return 'UNBEZAHLT';
+  const up = String(filename || '').toUpperCase();
+  if (up.includes('KRANK'))     return 'KRANK';
+  if (up.includes('URLAUB'))    return 'URLAUB';
+  if (up.includes('UNBEZAHLT')) return 'UNBEZAHLT';
   return 'ABGEGEBEN';
 }
 
-// adott (év, hónap) lehetséges mappanév-variánsai
-function monthFolderVariants(year, month) {
+// hónap mappanév variánsok (szegmens egyezéshez)
+function monthSegmentVariants(year, month) {
   const date = new Date(year, month - 1, 1);
-  const deName = date.toLocaleString('de-DE', { month: 'long' }).toLowerCase(); // pl. "september"
+  const de = date.toLocaleString('de-DE', { month: 'long' }).toLowerCase(); // "oktober"
   const mm = String(month).padStart(2, '0');
   const m_ = String(month);
-  // csak minták — ha pontos konvenciótok van, ide drótozható
+  // szegmens-szintű egyezésre készülünk; equality vagy startsWith
   return [
-    `/${m_}. ${deName}/`,
-    `/${mm}. ${deName}/`,
-    `/${m_}_${deName}/`,
-    `/${mm}_${deName}/`,
-    `/${deName}/`,
-  ];
+    `${m_}. ${de}`,
+    `${mm}. ${de}`,
+    `${m_}_${de}`,
+    `${mm}_${de}`,
+    `${de}`,
+  ].map(fold);
 }
 
-// Dropbox: teljes rekurzív listázás paginációval
+// Dropbox: rekurzív listázás paginációval
 async function listAllEntries(dbx, path) {
   let res = await dbx.filesListFolder({ path, recursive: true });
   const out = [...res.result.entries];
@@ -108,14 +104,29 @@ async function listAllEntries(dbx, path) {
   return out;
 }
 
+// detektáld, melyik hónap mappájában van a fájl (a weekMonths közül)
+// segs: a könyvtár-szegmensek (foldolt), filename nélkül
+function detectFileMonthFromDir(segs, weekMonthsMap) {
+  // weekMonthsMap: { 9: Set(variánsok), 10: Set(variánsok), ... }
+  for (const [month, variants] of weekMonthsMap.entries()) {
+    for (const seg of segs) {
+      // pontos egyezés vagy startsWith (ha suffix van a szegmensben)
+      if ([...variants].some(v => seg === v || seg.startsWith(v))) {
+        return month;
+      }
+    }
+  }
+  return null;
+}
+
 exports.handler = async (event) => {
   try {
     // 0) Tárgyhét
     const today = new Date();
     const workWeek = getWorkWeek(today);
-    const weekYear = workWeek[0].year; // a hét első napjának éve
+    const weekYear = workWeek[0].year;
 
-    // 1) Felhasználók a Google Sheet-ből
+    // 1) Felhasználók
     const auth = new google.auth.GoogleAuth({
       credentials: { client_email: CLIENT_EMAIL, private_key: PRIVATE_KEY },
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
@@ -132,72 +143,91 @@ exports.handler = async (event) => {
     const users = userRows
       .map(r => ({
         name: (r[0] || '').trim(),
-        type: (r[2] || 'oralapos').toLowerCase().trim(), // C oszlop: userType
+        type: (r[2] || 'oralapos').toLowerCase().trim(),
         phone: (r[5] || '').trim(),
         workSchedule: (r[8] || '1,2,3,4,5').split(',').map(s => Number(String(s).trim())).filter(n => !isNaN(n)),
       }))
       .filter(u =>
         u.name &&
-        u.type === 'oralapos' &&                // csak "óralapos"
-        !excludedSet.has(fold(u.name))          // nincs a kivételek között
+        u.type === 'oralapos' &&
+        !excludedSet.has(fold(u.name))
       );
 
-    // 2) Dropbox fájlok lekérése (év nincs beégetve)
+    // 2) Dropbox
     const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
     const rootPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${weekYear}`;
     const allEntries = await listAllEntries(dbx, rootPath);
     const allFiles = allEntries.filter(e => e['.tag'] === 'file');
 
-    // A hét hónapjai (ha átnyúlik, mindkettő) -> minták
-    const monthPatterns = [...new Set(
-      workWeek.flatMap(d => monthFolderVariants(d.year, d.month))
-    )];
+    // A hét napjai → set (gyors lookup) és day->month map a héten
+    const weekDaysSet = new Set(workWeek.map(d => d.day));
+    const dayToMonth = new Map(workWeek.map(d => [d.day, d.month]));
 
-    // 3) Riport generálása
+    // A hét hónapjai és azok elfogadott könyvtár-szegmens variánsai
+    const uniqueMonths = [...new Set(workWeek.map(d => d.month))];
+    const weekMonthsMap = new Map(uniqueMonths.map(m => [m, new Set(monthSegmentVariants(weekYear, m))]));
+
+    // 3) Riport
     const prio = { 'FEHLT': 0, 'ABGEGEBEN': 1, 'UNBEZAHLT': 2, 'URLAUB': 3, 'KRANK': 4 };
     const report = [];
 
     for (const user of users) {
-      const userReport = {
-        name: user.name,
-        phone: user.phone,
-        weekStatus: {}, // pl. {29:'ABGEGEBEN', 30:'FEHLT', ...}
-      };
+      const userReport = { name: user.name, phone: user.phone, weekStatus: {} };
 
-      // alapértelmezés: csak a beosztott napokra FEHLT
-      const expectedDays = workWeek.filter(day => user.workSchedule.includes(day.dayOfWeek));
-      expectedDays.forEach(day => { userReport.weekStatus[day.day] = 'FEHLT'; });
+      // csak a beosztott napokra (workSchedule) inicializálunk FEHLT-re
+      const expectedDays = workWeek.filter(d => user.workSchedule.includes(d.dayOfWeek));
+      expectedDays.forEach(d => { userReport.weekStatus[d.day] = 'FEHLT'; });
 
-      // --- Felhasználó fájljainak kiválasztása ---
       const userKey = fold(user.name);
-      const candidatesByMonth = allFiles.filter(file => {
-        const p = fold(file.path_display || '');
-        // felhasználói "mappa-szegmens" lazán
-        const segs = p.split('/').filter(Boolean);
-        const inUserFolder = segs.includes(userKey) || p.includes(`/${userKey}/`);
-        if (!inUserFolder) return false;
-        // legalább egy hónap-minta szerepeljen az útvonalban
-        return monthPatterns.some(v => p.includes(fold(v)));
+
+      // csak azokat a fájlokat vesszük figyelembe, amelyek:
+      // - a user mappáján belül vannak (szegmens-egyezés),
+      // - és a KÖNYVTÁR szegmensei között szerepel a hét valamelyik hónapja,
+      // - a fájlnév napjai csak az adott hónaphoz írnak (29-30 -> szepti mappában, 1-3 -> októberi mappában)
+      const userFiles = allFiles.filter(file => {
+        const full = fold(file.path_display || '');
+        const parts = full.split('/').filter(Boolean);
+        if (parts.length === 0) return false;
+
+        const filename = parts[parts.length - 1];      // pl. "KRANK_29-30.pdf"
+        const dirSegs  = parts.slice(0, -1);           // csak könyvtárszegmensek
+
+        // user szegmens kötelező
+        const hasUserSeg = dirSegs.includes(userKey);
+        if (!hasUserSeg) return false;
+
+        // melyik hónap-mintát tartalmazza a könyvtár?
+        const fileMonth = detectFileMonthFromDir(dirSegs, weekMonthsMap);
+        if (!fileMonth) return false; // ha nem a héthez tartozó hónap mappában van, ne számítson
+
+        // itt még nem szűrünk napra — azt a lenti feldolgozásnál tesszük, fileMonth alapján
+        return true;
       });
 
-      // ha hónap-mintával nem találtunk semmit, essünk vissza: user összes fájlja év alatt
-      const userFiles = (candidatesByMonth.length ? candidatesByMonth : allFiles).filter(file => {
-        const p = fold(file.path_display || '');
-        const segs = p.split('/').filter(Boolean);
-        return segs.includes(userKey) || p.includes(`/${userKey}/`);
-      });
-
-      // --- Lefedettség jelölése a fájlnevek alapján ---
+      // napok beállítása a fájlok alapján
       for (const file of userFiles) {
+        const full = fold(file.path_display || '');
+        const parts = full.split('/').filter(Boolean);
+        const dirSegs = parts.slice(0, -1);
+        const fileMonth = detectFileMonthFromDir(dirSegs, weekMonthsMap);
+        if (!fileMonth) continue;
+
         const days = extractDaysFromFilename(file.name);
-        if (days.size === 0) continue; // ha a fájlnévben nincs nap, nem tudjuk hova rakni
-        const entryType = getEntryType(file.name); // KRANK | URLAUB | UNBEZAHLT | ABGEGEBEN
+        if (days.size === 0) continue;
+
+        const entryType = getEntryType(file.name);
+
         days.forEach(d => {
-          if (userReport.weekStatus[d] !== undefined) {
-            const cur = userReport.weekStatus[d];
-            if (prio[entryType] > prio[cur]) {
-              userReport.weekStatus[d] = entryType;
-            }
+          // csak a tárgyhét napjai érdekesek
+          if (!weekDaysSet.has(d)) return;
+          // és csak akkor, ha az adott nap hónapja megegyezik a fájl mappa-hónapjával
+          if (dayToMonth.get(d) !== fileMonth) return;
+          // csak a beosztott napokra írunk (ahol már FEHLT volt)
+          if (userReport.weekStatus[d] === undefined) return;
+
+          const cur = userReport.weekStatus[d];
+          if (prio[entryType] > prio[cur]) {
+            userReport.weekStatus[d] = entryType;
           }
         });
       }
