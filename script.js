@@ -258,7 +258,9 @@ async function fetchAndDisplayFiles() {
   fileListContainer.innerHTML = `<p>${getLangDict(lang).loadingFiles}</p>`;
 
   try {
-    const resp = await fetch(`/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}&links=0`);
+    const resp = await fetch(
+  `/.netlify/functions/getFiles?userId=${encodeURIComponent(currentUser.id)}&selectedMonth=${encodeURIComponent(selectedMonth)}`
+);
     const text = await resp.text();
     if (!resp.ok) throw new Error(text || getLangDict(lang).errorLoadingFiles);
     const files = text ? JSON.parse(text) : [];
@@ -282,15 +284,10 @@ async function fetchAndDisplayFiles() {
            </button>`;
 
       row.innerHTML = `
-        <span class="file-item-name">${file.name}</span>
-        ${actionHtml}
-      `;
-      fileListContainer.appendChild(row);
-    });
-  } catch (error) {
-    fileListContainer.innerHTML = `<p class="status error">${error.message}</p>`;
-  }
-}
+  <span class="file-item-name">${file.name}</span>
+  ${file.link ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
+              : `<span class="view-button-disabled">Link nem elérhető</span>`}
+`;
 
 if (fileListContainer && !fileListContainer._hasLinkHandler) {
   fileListContainer._hasLinkHandler = true;
