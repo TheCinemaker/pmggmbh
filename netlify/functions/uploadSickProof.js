@@ -61,6 +61,9 @@ exports.handler = async (event) => {
         }
 
         // Fájlnév generálása a dátumokból
+        const start = new Date(startDate);
+
+        const end = endDate ? new Date(endDate) : start;
         const startDay = new Date(startDate).getDate();
         const endDay = new Date(endDate).getDate();
         const dateRange = (startDay === endDay) ? `${startDay}` : `${startDay}-${endDay}`;
