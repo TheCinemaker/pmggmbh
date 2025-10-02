@@ -473,49 +473,199 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/* Az admin.css fájl végére */
+.toggle-all {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: .85rem;
+  color: var(--muted);
+}
+.toggle-all input { accent-color: var(--accent); }
+
+/* ============ Weekly Report Modal – facelift ============ */
+:root {
+  --surface: #121212;
+  --surface-2: #1a1a1a;
+  --text: #e6e6e6;
+  --muted: #a8a8a8;
+  --border: #2b2b2b;
+  --accent: #7aa2ff;
+
+  /* status tokens */
+  --ok: #1f6f43;          /* abgegeben */
+  --warn: #8f6a20;        /* krank */
+  --info: #1d5b74;        /* urlaub/unbezahlt */
+  --missing: #8a2323;     /* fehlt */
+  --na: #2c2c2c;          /* nicht erwartet */
+}
+
+/* modal sizing */
+.modal.large {
+  max-width: 980px;
+  width: calc(100% - 32px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* header & footer */
+.modal .modal-header,
+.modal .modal-footer {
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal .modal-footer { border-top: 1px solid var(--border); border-bottom: none; }
+
+.modal .modal-header h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: .2px;
+  color: var(--text);
+}
+
+.modal .modal-close {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 10px;
+  margin-left: auto;
+  cursor: pointer;
+}
+.modal .modal-close:hover { background: rgba(255,255,255,.06); }
+
+/* body */
+.modal .modal-body {
+  padding: 12px 16px 16px;
+}
+
+/* legend */
+.report-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: .82rem;
+  color: var(--muted);
+}
+.report-legend .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  line-height: 1;
+}
+.report-legend .status-ok      { background: color-mix(in oklab, var(--ok) 25%, black);      border-color: color-mix(in oklab, var(--ok) 55%, black); }
+.report-legend .status-warn    { background: color-mix(in oklab, var(--warn) 25%, black);    border-color: color-mix(in oklab, var(--warn) 55%, black); }
+.report-legend .status-info    { background: color-mix(in oklab, var(--info) 25%, black);    border-color: color-mix(in oklab, var(--info) 55%, black); }
+.report-legend .status-missing { background: color-mix(in oklab, var(--missing) 25%, black); border-color: color-mix(in oklab, var(--missing) 55%, black); }
+.report-legend .status-na      { background: var(--na); }
+
+/* table wrapper */
+.report-table-wrapper {
+  margin-top: 10px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* table */
+.report-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 720px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: .92rem;
+}
+
+.report-table thead th {
+  position: sticky;
+  top: 0;
+  background: #202020;
+  color: var(--text);
+  z-index: 2;
+  padding: 10px 12px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.report-table thead th:first-child { text-align: left; }
+
+.report-table tbody td {
+  padding: 10px 12px;
+  border-top: 1px solid #222;
+  border-right: 1px solid #222;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.report-table tbody tr:nth-child(odd) td {
+  background: #171717;
+}
+.report-table tbody tr:hover td {
+  background: #1b1b1b;
+}
+.report-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: .2px;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* status cells */
+.report-table .status-ok      { background: var(--ok);      color: #fff; font-weight: 600; }
+.report-table .status-warn    { background: var(--warn);    color: #fff; font-weight: 600; }
+.report-table .status-info    { background: var(--info);    color: #fff; font-weight: 600; }
+.report-table .status-missing { background: var(--missing); color: #fff; font-weight: 700; }
+.report-table .status-na      { background: var(--na);      color: #bbb; }
+
+/* SMS button */
+.sms-btn {
+  padding: 6px 10px;
+  font-size: .85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #222;
+  color: var(--text);
+  cursor: pointer;
+}
+.sms-btn:hover { background: #2a2a2a; }
+.sms-btn:active { transform: translateY(1px); }
+
+/* action button (general) */
 .action-button {
-  padding: 8px 15px;
-  background-color: var(--primary-color, #007bff);
+  padding: 8px 14px;
+  background-color: var(--accent);
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
+  font-weight: 700;
+  transition: filter .15s ease, transform .05s ease;
+}
+.action-button:hover { filter: brightness(1.05); }
+.action-button:active { transform: translateY(1px); }
+.action-button:disabled { background: #3c3c3c; cursor: not-allowed; }
+
+/* accessibility: focus rings */
+button:focus-visible, .sms-btn:focus-visible, .modal-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 10px;
 }
 
-.action-button:hover {
-  background-color: var(--primary-hover-color, #0056b3);
-}
-
-.action-button:disabled {
-  background-color: #555;
-  cursor: not-allowed;
-}
-
-/* admin.css-be */
-.modal.large { max-width: 900px; }
-.report-table-wrapper { overflow-x: auto; }
-.report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-.report-table th, .report-table td {
-  border: 1px solid #444;
-  padding: 8px 10px;
-  text-align: center;
-  font-size: 0.9rem;
-}
-.report-table th { background-color: #333; }
-.report-table small { font-size: 0.7rem; color: #aaa; }
-
-/* Státusz színek */
-.report-table .status-ok { background-color: #2a5a2a; color: white; }
-.report-table .status-warn { background-color: #8a6d3b; color: white; }
-.report-table .status-info { background-color: #31708f; color: white; }
-.report-table .status-missing { background-color: #8a2a2a; color: white; font-weight: bold; }
-
-.sms-btn { padding: 4px 10px; font-size: 0.8rem; }
-
-/* admin.css-be */
-.report-table .status-na {
-  background-color: #2c2c2c; /* Sötétszürke háttér a nem munkanapoknak */
+/* small screens */
+@media (max-width: 640px) {
+  .modal .modal-body { padding: 10px 10px 12px; }
+  .report-table { font-size: .88rem; min-width: 560px; }
+  .report-legend { gap: 6px; }
 }
