@@ -636,258 +636,237 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function openAdminUploadModal() {
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
 
-  backdrop.innerHTML = `
-    <div class="modal modal-wide" role="dialog" aria-modal="true">
-      <div class="modal-header">
-        <h4>Admin-Upload</h4>
-        <button class="modal-close" aria-label="Schließen">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div id="adminUploadStatus" class="status"></div>
+    backdrop.innerHTML = `
+      <div class="modal modal-wide" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h4>Admin feltöltés</h4>
+          <button class="modal-close" aria-label="Bezárás">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="adminUploadStatus" class="status"></div>
 
-        <div class="modal-grid admin-upload-grid">
-          <div class="label">Mitarbeiter</div>
-          <div class="value">
-            <select id="adminUserSelect" required></select>
-          </div>
+          <div class="modal-grid admin-upload-grid">
+            <div class="label">Munkatárs</div>
+            <div class="value">
+              <select id="adminUserSelect" required></select>
+            </div>
 
-          <div class="label">Typ</div>
-          <div class="value">
-            <select id="adminTypeSelect" required>
-              <option value="TIMESHEET">Stundenzettel</option>
-              <option value="KRANK">Krank</option>
-              <option value="URLAUB">Urlaub</option>
-              <option value="UNBEZAHLT">Unbezahlt</option>
-            </select>
-          </div>
+            <div class="label">Típus</div>
+            <div class="value">
+              <select id="adminTypeSelect" required>
+                <option value="TIMESHEET">Óralap</option>
+                <option value="KRANK">Krank</option>
+                <option value="URLAUB">Urlaub</option>
+                <option value="UNBEZAHLT">Unbezahlt</option>
+              </select>
+            </div>
 
-          <div class="label">Monat</div>
-          <div class="value">
-            <select id="adminMonthSelect" required></select>
-          </div>
+            <div class="label">Hónap</div>
+            <div class="value">
+              <select id="adminMonthSelect" required></select>
+            </div>
 
-          <!-- Stundenzettel-spezifisch -->
-          <div class="label admin-row row-timesheet">Stundenzettel-Datum (z. B. 5–9 oder 30)</div>
-          <div class="value admin-row row-timesheet">
-            <input id="adminWeekRange" type="text" inputmode="numeric" pattern="^[0-9]+(-[0-9]+)?$" placeholder="z. B. 1–5 oder 30">
-          </div>
+            <!-- Óralap-specifikus -->
+            <div class="label admin-row row-timesheet">Óralap dátum (pl. 5-9 vagy 30)</div>
+            <div class="value admin-row row-timesheet">
+              <input id="adminWeekRange" type="text" inputmode="numeric" pattern="^[0-9]+(-[0-9]+)?$" placeholder="pl. 1-5 vagy 30">
+            </div>
 
-          <!-- Abwesenheit-spezifisch -->
-          <div class="label admin-row row-absence">Zeitraum</div>
-          <div class="value admin-row row-absence">
-            <div class="form-group-row">
-              <input id="adminStartDate" type="date">
-              <input id="adminEndDate"   type="date">
+            <!-- Abwesenheit-specifikus -->
+            <div class="label admin-row row-absence">Időszak</div>
+            <div class="value admin-row row-absence">
+              <div class="form-group-row">
+                <input id="adminStartDate" type="date">
+                <input id="adminEndDate" type="date">
+              </div>
+            </div>
+
+            <!-- File mindenhez, KRANK-nál kötelező -->
+            <div class="label">Fájl</div>
+            <div class="value">
+              <input id="adminUploadFile" type="file" accept="image/*,application/pdf">
+              <small class="muted" id="adminFileHint"></small>
             </div>
           </div>
+        </div>
 
-          <!-- Datei: bei KRANK Pflicht -->
-          <div class="label">Datei</div>
-          <div class="value">
-            <input id="adminUploadFile" type="file" accept="image/*,application/pdf">
-            <small class="muted" id="adminFileHint"></small>
-          </div>
+        <div class="modal-footer">
+          <button class="modal-primary" id="adminUploadSubmit">Feltöltés</button>
         </div>
       </div>
+    `;
 
-      <div class="modal-footer">
-        <button class="modal-primary" id="adminUploadSubmit">Hochladen</button>
-      </div>
-    </div>
-  `;
+    document.body.appendChild(backdrop);
 
-  document.body.appendChild(backdrop);
+    const closeBtn   = backdrop.querySelector('.modal-close');
+    const submitBtn  = byId('adminUploadSubmit');
+    const userSel    = byId('adminUserSelect');
+    const typeSel    = byId('adminTypeSelect');
+    const monthSel   = byId('adminMonthSelect');
+    const weekRange  = byId('adminWeekRange');
+    const startDate  = byId('adminStartDate');
+    const endDate    = byId('adminEndDate');
+    const fileInput  = byId('adminUploadFile');
+    const fileHint   = byId('adminFileHint');
+    const statusBox  = byId('adminUploadStatus');
 
-  const closeBtn   = backdrop.querySelector('.modal-close');
-  const submitBtn  = byId('adminUploadSubmit');
-  const userSel    = byId('adminUserSelect');
-  const typeSel    = byId('adminTypeSelect');
-  const monthSel   = byId('adminMonthSelect');
-  const weekRange  = byId('adminWeekRange');
-  const startDate  = byId('adminStartDate');
-  const endDate    = byId('adminEndDate');
-  const fileInput  = byId('adminUploadFile');
-  const fileHint   = byId('adminFileHint');
-  const statusBox  = byId('adminUploadStatus');
+    function setRowsForType(type){
+      const isTimesheet = (type === 'TIMESHEET');
+      backdrop.querySelectorAll('.row-timesheet').forEach(el => el.style.display = isTimesheet ? '' : 'none');
+      backdrop.querySelectorAll('.row-absence').forEach(el => el.style.display = !isTimesheet ? '' : 'none');
 
-  function setRowsForType(type){
-    const isTimesheet = (type === 'TIMESHEET');
-    backdrop.querySelectorAll('.row-timesheet').forEach(el => el.style.display = isTimesheet ? '' : 'none');
-    backdrop.querySelectorAll('.row-absence').forEach(el => el.style.display = !isTimesheet ? '' : 'none');
+      // kötelezők
+      weekRange.required = isTimesheet;
+      startDate.required = !isTimesheet;
+      endDate.required   = !isTimesheet;
 
-    // Pflichtfelder
-    weekRange.required = isTimesheet;
-    startDate.required = !isTimesheet;
-    endDate.required   = !isTimesheet;
-
-    // Bei KRANK ist die Bescheinigung Pflicht
-    if (type === 'KRANK') {
-      fileInput.required = true;
-      fileHint.textContent = 'Bei KRANK ist eine Bescheinigung erforderlich.';
-    } else {
-      fileInput.required = false;
-      fileHint.textContent = '';
-    }
-  }
-
-  setRowsForType(typeSel.value);
-  typeSel.addEventListener('change', () => setRowsForType(typeSel.value));
-
-  // Schließen (Button, Click auf Backdrop, ESC)
-  function close() {
-    document.removeEventListener('keydown', escListener);
-    backdrop.remove();
-  }
-  function escListener(e){ if (e.key === 'Escape') close(); }
-  document.addEventListener('keydown', escListener);
-
-  closeBtn.addEventListener('click', close);
-  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
-
-  // Upload
-  submitBtn.addEventListener('click', async () => {
-    statusBox.classList.remove('error');
-    statusBox.textContent = '';
-
-    const userId = userSel.value;
-    const kind   = typeSel.value;
-    const month  = monthSel.value;
-
-    // Validierung
-    if (!userId) { notify('Bitte Mitarbeiter wählen!', 'error'); return; }
-    if (!month)  { notify('Bitte Monat wählen!', 'error'); return; }
-
-    try {
-      submitBtn.disabled = true; submitBtn.textContent = 'Hochladen…';
-
-      let resp, result;
-
-      if (kind === 'TIMESHEET') {
-        if (!weekRange.value.trim()) throw new Error('Bitte Stundenzettel-Datum angeben (z. B. 5–9 oder 30).');
-        if (!fileInput.files.length)  throw new Error('Bitte eine Datei auswählen.');
-
-        // ---- Dateiname umbenennen: + _ADMIN (ohne neues File-Objekt) ----
-        const orig = fileInput.files[0];
-        const ext  = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
-        const base = orig.name.replace(/\.[^.]+$/,'');
-        let newBase = base;
-        if (!/_ADMIN(\b|$)/i.test(newBase)) newBase += '_ADMIN';
-
-        const fd = new FormData();
-        fd.append('employeeName', userId);
-        fd.append('selectedMonth', month);
-        fd.append('weekRange', weekRange.value.trim());
-        fd.append('uploadedByAdmin', '1'); // Flag für Backend
-        fd.append('file', orig, `${newBase}${ext}`);
-
-        resp = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
-        result = await resp.json();
-        if (!resp.ok) throw new Error(result.message || 'Upload-Fehler (Stundenzettel).');
-
-      } else if (kind === 'KRANK') {
-        if (!startDate.value) throw new Error('Bitte Startdatum angeben.');
-        if (!endDate.value)   throw new Error('Bitte Enddatum angeben.');
-        if (!fileInput.files.length) throw new Error('Bei KRANK muss eine Bescheinigung hochgeladen werden.');
-
-        // ---- Dateiname umbenennen: + _ADMIN (ohne neues File-Objekt) ----
-        const orig = fileInput.files[0];
-        const ext  = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
-        const base = orig.name.replace(/\.[^.]+$/,'');
-        let newBase = base;
-        if (!/_ADMIN(\b|$)/i.test(newBase)) newBase += '_ADMIN';
-
-        const fd = new FormData();
-        fd.append('userId', userId);
-        fd.append('selectedMonth', month);
-        fd.append('startDate', startDate.value);
-        fd.append('endDate',   endDate.value);
-        fd.append('uploadedByAdmin', '1'); // Flag für Backend
-        fd.append('file', orig, `${newBase}${ext}`);
-
-        resp = await fetch('/.netlify/functions/uploadSickProof', { method: 'POST', body: fd });
-        result = await resp.json();
-        if (!resp.ok) throw new Error(result.message || 'Upload-Fehler (Krank).');
-
+      // KRANK esetén a fájl kötelező (igazolás), másnál opcionális
+      if (type === 'KRANK') {
+        fileInput.required = true;
+        fileHint.textContent = 'KRANK esetén az igazolás kötelező.';
       } else {
-        // URLAUB / UNBEZAHLT – Datei optional
-        if (!startDate.value) throw new Error('Bitte Startdatum angeben.');
-        if (!endDate.value)   throw new Error('Bitte Enddatum angeben.');
-
-        resp = await fetch('/.netlify/functions/logAbsence', {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({
-            userId,
-            absenceType: kind,
-            selectedMonth: month,
-            startDate: startDate.value,
-            endDate:   endDate.value,
-            uploadedByAdmin: true // Flag für Backend (Marker-Datei)
-          })
-        });
-        result = await resp.json();
-        if (!resp.ok) throw new Error(result.message || 'Speicherfehler (Abwesenheit).');
+        fileInput.required = false;
+        fileHint.textContent = '';
       }
-
-      notify('Fertig! ✅', 'success');
-      close();
-
-      // signalisiere dem Hauptscreen, dass neu geladen werden soll
-      window.dispatchEvent(new CustomEvent('admin:upload:done'));
-
-    } catch (err) {
-      console.error('Admin-Upload Fehler:', err);
-      statusBox.classList.add('error');
-      statusBox.textContent = err.message || 'Es ist ein Fehler aufgetreten.';
-      notify(err.message || 'Es ist ein Fehler aufgetreten.', 'error');
-    } finally {
-      submitBtn.disabled = false; submitBtn.textContent = 'Hochladen';
     }
-  });
 
-  // init – Mitarbeiter & Monate laden
-  (async () => {
-    const userSelEl = userSel;
-    userSelEl.innerHTML = `<option value="" disabled selected>Mitarbeiter werden geladen…</option>`;
-    try {
-      const users = await fetchUsers();
-      userSelEl.innerHTML = `<option value="" disabled selected>Bitte wählen…</option>` +
-        users.map(u => `<option value="${u.id}">${u.displayName}</option>`).join('');
+    setRowsForType(typeSel.value);
 
-      async function loadMonthsFor(uid) {
-        const monthEl = monthSel;
-        monthEl.innerHTML = `<option value="" disabled selected>Monate werden geladen…</option>`;
-        try {
-          const folders = await fetchFolders(uid);
-          if (!folders.length) {
-            monthEl.innerHTML = `<option value="" disabled selected>Kein Ordner</option>`;
-            return;
-          }
-          monthEl.innerHTML = folders.map(f => `<option value="${f}">${f}</option>`).join('');
-          // aktuellen Monat vorauswählen, wenn vorhanden
-          const cur = currentMonthFolder();
-          const direct = Array.from(monthEl.options).find(o => o.value === cur);
-          if (direct) monthEl.value = cur;
-        } catch (e) {
-          monthEl.innerHTML = `<option value="" disabled selected>Fehler beim Laden der Monate</option>`;
+    typeSel.addEventListener('change', () => setRowsForType(typeSel.value));
+
+    // bezárás
+    function close() { backdrop.remove(); }
+    closeBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) close();
+    });
+
+    // feltöltés
+    submitBtn.addEventListener('click', async () => {
+      statusBox.textContent = '';
+      const userId = userSel.value;
+      const kind   = typeSel.value;
+      const month  = monthSel.value;
+
+      // validáció
+      if (!userId) { notify('Válassz munkatársat!', 'error'); return; }
+      if (!month)  { notify('Válassz hónapot!', 'error'); return; }
+
+      try {
+        submitBtn.disabled = true; submitBtn.textContent = 'Feltöltés…';
+
+        let resp, result;
+
+        if (kind === 'TIMESHEET') {
+          if (!weekRange.value.trim()) { throw new Error('Add meg az óralap dátumát (pl. 5-9 vagy 30).'); }
+          if (!fileInput.files.length) { throw new Error('Válassz feltöltendő fájlt!'); }
+
+          const fd = new FormData();
+          fd.append('employeeName', userId);
+          fd.append('selectedMonth', month);
+          fd.append('weekRange', weekRange.value.trim());
+          fd.append('file', fileInput.files[0]);
+
+          resp = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Feltöltési hiba (óralap).');
+
+        } else if (kind === 'KRANK') {
+          if (!startDate.value) { throw new Error('Add meg a kezdő dátumot.'); }
+          if (!endDate.value)   { throw new Error('Add meg a záró dátumot.'); }
+          if (!fileInput.files.length) { throw new Error('KRANK esetén kötelező igazolást feltölteni.'); }
+
+          const fd = new FormData();
+          fd.append('userId', userId);
+          fd.append('selectedMonth', month);
+          fd.append('startDate', startDate.value);
+          fd.append('endDate', endDate.value);
+          fd.append('file', fileInput.files[0]);
+
+          resp = await fetch('/.netlify/functions/uploadSickProof', { method: 'POST', body: fd });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Feltöltési hiba (krank).');
+
+        } else {
+          // URLAUB / UNBEZAHLT – fájl NEM kötelező
+          if (!startDate.value) { throw new Error('Add meg a kezdő dátumot.'); }
+          if (!endDate.value)   { throw new Error('Add meg a záró dátumot.'); }
+
+          resp = await fetch('/.netlify/functions/logAbsence', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({
+              userId, absenceType: kind, selectedMonth: month,
+              startDate: startDate.value, endDate: endDate.value
+            })
+          });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Mentési hiba (távollét).');
         }
+
+        notify('Kész! ✅', 'success');
+        close();
+
+        // ha szeretnéd: frissítsd a heti riportot / listákat itt
+        // pl. refreshWeeklyReport();
+      } catch (err) {
+        console.error('Admin upload hiba:', err);
+        statusBox.classList.add('error');
+        statusBox.textContent = err.message || 'Hiba történt.';
+        notify(err.message || 'Hiba történt.', 'error');
+      } finally {
+        submitBtn.disabled = false; submitBtn.textContent = 'Feltöltés';
       }
+    });
 
-      userSelEl.addEventListener('change', e => {
-        const uid = e.target.value;
-        if (uid) loadMonthsFor(uid);
-      });
+    // init – felhasználók + hónapok betöltése
+    (async () => {
+      const userSelEl = userSel;
+      userSelEl.innerHTML = `<option value="" disabled selected>Felhasználók betöltése…</option>`;
+      try {
+        const users = await fetchUsers();
+        userSelEl.innerHTML = `<option value="" disabled selected>Válassz…</option>` + 
+          users.map(u=>`<option value="${u.id}">${u.displayName}</option>`).join('');
 
-      const first = userSelEl.querySelector('option[value]:not([value=""])');
-      if (first) { userSelEl.value = first.value; await loadMonthsFor(first.value); }
-    } catch (e) {
-      userSelEl.innerHTML = `<option value="" disabled selected>Konnte nicht geladen werden</option>`;
-    }
-  })();
-}
+        // ha kiválasztunk egy usert → hónapok
+        async function loadMonthsFor(uid) {
+          const monthEl = monthSel;
+          monthEl.innerHTML = `<option value="" disabled selected>Hónapok betöltése…</option>`;
+          try {
+            const folders = await fetchFolders(uid);
+            if (!folders.length) {
+              monthEl.innerHTML = `<option value="" disabled selected>Nincs mappa</option>`;
+              return;
+            }
+            monthEl.innerHTML = folders.map(f=>`<option value="${f}">${f}</option>`).join('');
+            // állítsuk be az aktuális hónapot, ha van
+            const cur = currentMonthFolder();
+            const direct = Array.from(monthEl.options).find(o=>o.value === cur);
+            if (direct) monthEl.value = cur;
+          } catch (e) {
+            monthEl.innerHTML = `<option value="" disabled selected>Hiba a hónapoknál</option>`;
+          }
+        }
 
+        userSelEl.addEventListener('change', e => {
+          const uid = e.target.value;
+          if (uid) loadMonthsFor(uid);
+        });
+
+        // ha van első használható user, töltsük hozzá a hónapokat
+        const first = userSelEl.querySelector('option[value]:not([value=""])');
+        if (first) { userSelEl.value = first.value; await loadMonthsFor(first.value); }
+      } catch (e) {
+        userSelEl.innerHTML = `<option value="" disabled selected>Nem sikerült betölteni</option>`;
+      }
+    })();
+  }
+
+  const btn = document.getElementById('openAdminUpload');
+  if (btn) btn.addEventListener('click', openAdminUploadModal);
+})();
