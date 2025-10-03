@@ -595,3 +595,279 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
+// ===== Admin feltöltés modal =====
+(function(){
+  const byId = (id) => document.getElementById(id);
+
+  function notify(msg, type='success') {
+    if (window.Swal) {
+      Swal.fire({ toast:true, position:'top', timer:2500, showConfirmButton:false, icon:type, title:msg });
+    } else {
+      alert(msg);
+    }
+  }
+
+  async function fetchUsers() {
+    const r = await fetch('/.netlify/functions/getUsers');
+    const t = await r.text();
+    if (!r.ok) throw new Error(t || 'User letöltési hiba');
+    const users = t ? JSON.parse(t) : [];
+    // ABC
+    users.sort((a,b)=>a.displayName.localeCompare(b.displayName,'hu'));
+    return users;
+  }
+
+  async function fetchFolders(userId) {
+    const r = await fetch(`/.netlify/functions/getFolders?userId=${encodeURIComponent(userId)}`);
+    const t = await r.text();
+    if (!r.ok) throw new Error(t || 'Hónapok letöltési hiba');
+    const folders = t ? JSON.parse(t) : [];
+    // legújabb elöl
+    folders.sort((a,b)=>parseInt(b)-parseInt(a));
+    return folders;
+  }
+
+  function currentMonthFolder() {
+    const d = new Date();
+    const m = d.getMonth()+1;
+    const nameDe = d.toLocaleString('de-DE',{month:'long'});
+    return `${m}. ${nameDe}`;
+  }
+
+  function openAdminUploadModal() {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+
+    backdrop.innerHTML = `
+      <div class="modal modal-wide" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h4>Admin feltöltés</h4>
+          <button class="modal-close" aria-label="Bezárás">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="adminUploadStatus" class="status"></div>
+
+          <div class="modal-grid admin-upload-grid">
+            <div class="label">Munkatárs</div>
+            <div class="value">
+              <select id="adminUserSelect" required></select>
+            </div>
+
+            <div class="label">Típus</div>
+            <div class="value">
+              <select id="adminTypeSelect" required>
+                <option value="TIMESHEET">Óralap</option>
+                <option value="KRANK">Krank</option>
+                <option value="URLAUB">Urlaub</option>
+                <option value="UNBEZAHLT">Unbezahlt</option>
+              </select>
+            </div>
+
+            <div class="label">Hónap</div>
+            <div class="value">
+              <select id="adminMonthSelect" required></select>
+            </div>
+
+            <!-- Óralap-specifikus -->
+            <div class="label admin-row row-timesheet">Óralap dátum (pl. 5-9 vagy 30)</div>
+            <div class="value admin-row row-timesheet">
+              <input id="adminWeekRange" type="text" inputmode="numeric" pattern="^[0-9]+(-[0-9]+)?$" placeholder="pl. 1-5 vagy 30">
+            </div>
+
+            <!-- Abwesenheit-specifikus -->
+            <div class="label admin-row row-absence">Időszak</div>
+            <div class="value admin-row row-absence">
+              <div class="form-group-row">
+                <input id="adminStartDate" type="date">
+                <input id="adminEndDate" type="date">
+              </div>
+            </div>
+
+            <!-- File mindenhez, KRANK-nál kötelező -->
+            <div class="label">Fájl</div>
+            <div class="value">
+              <input id="adminUploadFile" type="file" accept="image/*,application/pdf">
+              <small class="muted" id="adminFileHint"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="modal-primary" id="adminUploadSubmit">Feltöltés</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const closeBtn   = backdrop.querySelector('.modal-close');
+    const submitBtn  = byId('adminUploadSubmit');
+    const userSel    = byId('adminUserSelect');
+    const typeSel    = byId('adminTypeSelect');
+    const monthSel   = byId('adminMonthSelect');
+    const weekRange  = byId('adminWeekRange');
+    const startDate  = byId('adminStartDate');
+    const endDate    = byId('adminEndDate');
+    const fileInput  = byId('adminUploadFile');
+    const fileHint   = byId('adminFileHint');
+    const statusBox  = byId('adminUploadStatus');
+
+    function setRowsForType(type){
+      const isTimesheet = (type === 'TIMESHEET');
+      backdrop.querySelectorAll('.row-timesheet').forEach(el => el.style.display = isTimesheet ? '' : 'none');
+      backdrop.querySelectorAll('.row-absence').forEach(el => el.style.display = !isTimesheet ? '' : 'none');
+
+      // kötelezők
+      weekRange.required = isTimesheet;
+      startDate.required = !isTimesheet;
+      endDate.required   = !isTimesheet;
+
+      // KRANK esetén a fájl kötelező (igazolás), másnál opcionális
+      if (type === 'KRANK') {
+        fileInput.required = true;
+        fileHint.textContent = 'KRANK esetén az igazolás kötelező.';
+      } else {
+        fileInput.required = false;
+        fileHint.textContent = '';
+      }
+    }
+
+    setRowsForType(typeSel.value);
+
+    typeSel.addEventListener('change', () => setRowsForType(typeSel.value));
+
+    // bezárás
+    function close() { backdrop.remove(); }
+    closeBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) close();
+    });
+
+    // feltöltés
+    submitBtn.addEventListener('click', async () => {
+      statusBox.textContent = '';
+      const userId = userSel.value;
+      const kind   = typeSel.value;
+      const month  = monthSel.value;
+
+      // validáció
+      if (!userId) { notify('Válassz munkatársat!', 'error'); return; }
+      if (!month)  { notify('Válassz hónapot!', 'error'); return; }
+
+      try {
+        submitBtn.disabled = true; submitBtn.textContent = 'Feltöltés…';
+
+        let resp, result;
+
+        if (kind === 'TIMESHEET') {
+          if (!weekRange.value.trim()) { throw new Error('Add meg az óralap dátumát (pl. 5-9 vagy 30).'); }
+          if (!fileInput.files.length) { throw new Error('Válassz feltöltendő fájlt!'); }
+
+          const fd = new FormData();
+          fd.append('employeeName', userId);
+          fd.append('selectedMonth', month);
+          fd.append('weekRange', weekRange.value.trim());
+          fd.append('file', fileInput.files[0]);
+
+          resp = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Feltöltési hiba (óralap).');
+
+        } else if (kind === 'KRANK') {
+          if (!startDate.value) { throw new Error('Add meg a kezdő dátumot.'); }
+          if (!endDate.value)   { throw new Error('Add meg a záró dátumot.'); }
+          if (!fileInput.files.length) { throw new Error('KRANK esetén kötelező igazolást feltölteni.'); }
+
+          const fd = new FormData();
+          fd.append('userId', userId);
+          fd.append('selectedMonth', month);
+          fd.append('startDate', startDate.value);
+          fd.append('endDate', endDate.value);
+          fd.append('file', fileInput.files[0]);
+
+          resp = await fetch('/.netlify/functions/uploadSickProof', { method: 'POST', body: fd });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Feltöltési hiba (krank).');
+
+        } else {
+          // URLAUB / UNBEZAHLT – fájl NEM kötelező
+          if (!startDate.value) { throw new Error('Add meg a kezdő dátumot.'); }
+          if (!endDate.value)   { throw new Error('Add meg a záró dátumot.'); }
+
+          resp = await fetch('/.netlify/functions/logAbsence', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({
+              userId, absenceType: kind, selectedMonth: month,
+              startDate: startDate.value, endDate: endDate.value
+            })
+          });
+          result = await resp.json();
+          if (!resp.ok) throw new Error(result.message || 'Mentési hiba (távollét).');
+        }
+
+        notify('Kész! ✅', 'success');
+        close();
+
+        // ha szeretnéd: frissítsd a heti riportot / listákat itt
+        // pl. refreshWeeklyReport();
+      } catch (err) {
+        console.error('Admin upload hiba:', err);
+        statusBox.classList.add('error');
+        statusBox.textContent = err.message || 'Hiba történt.';
+        notify(err.message || 'Hiba történt.', 'error');
+      } finally {
+        submitBtn.disabled = false; submitBtn.textContent = 'Feltöltés';
+      }
+    });
+
+    // init – felhasználók + hónapok betöltése
+    (async () => {
+      const userSelEl = userSel;
+      userSelEl.innerHTML = `<option value="" disabled selected>Felhasználók betöltése…</option>`;
+      try {
+        const users = await fetchUsers();
+        userSelEl.innerHTML = `<option value="" disabled selected>Válassz…</option>` + 
+          users.map(u=>`<option value="${u.id}">${u.displayName}</option>`).join('');
+
+        // ha kiválasztunk egy usert → hónapok
+        async function loadMonthsFor(uid) {
+          const monthEl = monthSel;
+          monthEl.innerHTML = `<option value="" disabled selected>Hónapok betöltése…</option>`;
+          try {
+            const folders = await fetchFolders(uid);
+            if (!folders.length) {
+              monthEl.innerHTML = `<option value="" disabled selected>Nincs mappa</option>`;
+              return;
+            }
+            monthEl.innerHTML = folders.map(f=>`<option value="${f}">${f}</option>`).join('');
+            // állítsuk be az aktuális hónapot, ha van
+            const cur = currentMonthFolder();
+            const direct = Array.from(monthEl.options).find(o=>o.value === cur);
+            if (direct) monthEl.value = cur;
+          } catch (e) {
+            monthEl.innerHTML = `<option value="" disabled selected>Hiba a hónapoknál</option>`;
+          }
+        }
+
+        userSelEl.addEventListener('change', e => {
+          const uid = e.target.value;
+          if (uid) loadMonthsFor(uid);
+        });
+
+        // ha van első használható user, töltsük hozzá a hónapokat
+        const first = userSelEl.querySelector('option[value]:not([value=""])');
+        if (first) { userSelEl.value = first.value; await loadMonthsFor(first.value); }
+      } catch (e) {
+        userSelEl.innerHTML = `<option value="" disabled selected>Nem sikerült betölteni</option>`;
+      }
+    })();
+  }
+
+  const btn = document.getElementById('openAdminUpload');
+  if (btn) btn.addEventListener('click', openAdminUploadModal);
+})();
+
