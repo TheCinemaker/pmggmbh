@@ -616,3 +616,128 @@ input:checked + .slider:before {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ===== File Gallery (Thumbnail View) ===== */
+.file-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.file-card {
+  background: linear-gradient(180deg, #0f1722, #0c141f);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.file-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 140, 255, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.file-thumbnail {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #0a0f18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbnail-img.loading {
+  opacity: 0.6;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.4; }
+}
+
+.file-icon-large {
+  font-size: 48px;
+  opacity: 0.5;
+  user-select: none;
+}
+
+.file-info {
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #0d1520, #0a1019);
+}
+
+.file-name-small {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.file-folder {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.file-date-small {
+  white-space: nowrap;
+}
+
+.file-gallery .empty {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  padding: 20px;
+  text-align: center;
+}
+
+/* Mobil optimalizálás */
+@media (max-width: 560px) {
+  .file-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  
+  .file-name-small {
+    font-size: 0.8rem;
+  }
+  
+  .file-meta {
+    font-size: 0.7rem;
+  }
+  
+  .file-icon-large {
+    font-size: 36px;
+  }
+}
+
+/* Tablet méret */
+@media (min-width: 561px) and (max-width: 900px) {
+  .file-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+

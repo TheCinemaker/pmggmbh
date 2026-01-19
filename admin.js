@@ -48,12 +48,12 @@ function safeJsonParse(text) { try { return JSON.parse(text); } catch { return n
 
 function escapeHtml(s) {
   return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-function showToast(msg, type='info') {
+function showToast(msg, type = 'info') {
   try {
     let el = document.getElementById('miniToast');
     if (!el) {
@@ -203,22 +203,69 @@ function renderList(data) {
        </button>`;
     card.appendChild(header);
 
-    const ul = document.createElement('ul');
-    ul.className = 'file-list';
+    const ul = document.createElement('div');
+    ul.className = 'file-gallery';
     if (files.length === 0) {
-      ul.innerHTML = `<li class="empty">${DE.emptyFiles}</li>`;
+      ul.innerHTML = `<p class="empty">${DE.emptyFiles}</p>`;
     } else {
       files.sort((a, b) => new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime());
-      ul.innerHTML = files.map(f => {
+
+      files.forEach(f => {
         const when = f.uploadedAtDisplay ? formatDateDE(f.uploadedAtDisplay) : '';
-        const folder = f.folder ? `${escapeHtml(f.folder)} / ` : '';
-        const name = `<strong>${escapeHtml(f.name)}</strong>`;
-        return `<li>
-          <span class="file-icon">📄</span>
-          <span class="file-name">${folder}${name}</span>
-          <span class="file-date">${when}</span>
-        </li>`;
-      }).join('');
+        const folder = f.folder || '';
+        const name = f.name || '';
+        const ext = name.toLowerCase().split('.').pop();
+
+        const fileCard = document.createElement('div');
+        fileCard.className = 'file-card';
+
+        // Thumbnail container
+        const thumbContainer = document.createElement('div');
+        thumbContainer.className = 'file-thumbnail';
+
+        // Fájl típus alapján ikon vagy thumbnail
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
+          const img = document.createElement('img');
+          img.className = 'thumbnail-img loading';
+          img.alt = name;
+          img.dataset.path = f.path;
+
+          // Placeholder amíg tölt
+          img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23374151" width="100" height="100"/%3E%3Ctext x="50" y="50" text-anchor="middle" dominant-baseline="middle" fill="%239ca3af" font-size="40"%3E📷%3C/text%3E%3C/svg%3E';
+
+          thumbContainer.appendChild(img);
+
+          // Lazy load thumbnail
+          loadThumbnail(f.path).then(dataUrl => {
+            if (dataUrl) {
+              img.src = dataUrl;
+              img.classList.remove('loading');
+            }
+          }).catch(() => {
+            img.classList.remove('loading');
+          });
+        } else if (ext === 'pdf') {
+          thumbContainer.innerHTML = `<div class="file-icon-large">📄</div>`;
+        } else {
+          thumbContainer.innerHTML = `<div class="file-icon-large">📎</div>`;
+        }
+
+        fileCard.appendChild(thumbContainer);
+
+        // File info
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'file-info';
+        fileInfo.innerHTML = `
+          <div class="file-name-small" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+          <div class="file-meta">
+            ${folder ? `<span class="file-folder">${escapeHtml(folder)}</span>` : ''}
+            <span class="file-date-small">${when}</span>
+          </div>
+        `;
+        fileCard.appendChild(fileInfo);
+
+        ul.appendChild(fileCard);
+      });
     }
     card.appendChild(ul);
 
@@ -230,6 +277,30 @@ function renderList(data) {
 
   if (users.length === 0) {
     userListContainer.innerHTML = `<p class="status">${DE.noResults}</p>`;
+  }
+}
+
+// Thumbnail betöltés cache-eléssel
+const thumbnailCache = new Map();
+
+async function loadThumbnail(path) {
+  if (thumbnailCache.has(path)) {
+    return thumbnailCache.get(path);
+  }
+
+  try {
+    const resp = await fetch(`/.netlify/functions/getThumbnail?path=${encodeURIComponent(path)}`);
+    if (!resp.ok) return null;
+
+    const data = await resp.json();
+    if (data.thumbnail) {
+      thumbnailCache.set(path, data.thumbnail);
+      return data.thumbnail;
+    }
+    return null;
+  } catch (err) {
+    console.error('Thumbnail load error:', err);
+    return null;
   }
 }
 
@@ -292,24 +363,24 @@ function openDeltaModal(diff) {
     </div>
     <div class="modal-body">
       <div class="delta-info muted">${DE.updatedAtPrefix} ${formatDateDE(lastUpdatedAt)}</div>
-      ${Object.keys(diff).sort((a,b)=>a.localeCompare(b,'de-DE')).map(user => {
-        const items = diff[user] || [];
-        return `
+      ${Object.keys(diff).sort((a, b) => a.localeCompare(b, 'de-DE')).map(user => {
+    const items = diff[user] || [];
+    return `
           <section class="delta-user" style="margin:10px 0 14px">
             <h5 style="margin:0 0 6px">${escapeHtml(user)} <span class="count" style="color:var(--muted)">(${items.length})</span></h5>
             <ul class="delta-files" style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:12px;overflow:hidden">
               ${items.map(f => {
-                const when = f.uploadedAtDisplay || f.uploadedAt;
-                const whenText = when ? formatDateDE(when) : '';
-                const path = `${f.folder || ''} / ${f.name || ''}`;
-                return `<li style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:10px 12px;border-bottom:1px dashed rgba(255,255,255,.06)">
+      const when = f.uploadedAtDisplay || f.uploadedAt;
+      const whenText = when ? formatDateDE(when) : '';
+      const path = `${f.folder || ''} / ${f.name || ''}`;
+      return `<li style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:10px 12px;border-bottom:1px dashed rgba(255,255,255,.06)">
                   <span class="path" style="overflow-wrap:anywhere">${escapeHtml(path)}</span>
                   <span class="date" style="white-space:nowrap;color:var(--muted);font-size:.9rem">${whenText}</span>
                 </li>`;
-              }).join('')}
+    }).join('')}
             </ul>
           </section>`;
-      }).join('')}
+  }).join('')}
     </div>
     <div class="modal-footer"><button class="modal-primary">${DE.close}</button></div>
   </div>`;
@@ -348,10 +419,10 @@ function openWeeklyReportModal(report, workWeek) {
 
   const statusMapping = {
     'ABGEGEBEN': { text: 'Abgegeben', class: 'status-ok' },
-    'KRANK':     { text: 'Krank',     class: 'status-warn' },
-    'URLAUB':    { text: 'Urlaub',    class: 'status-info' },
+    'KRANK': { text: 'Krank', class: 'status-warn' },
+    'URLAUB': { text: 'Urlaub', class: 'status-info' },
     'UNBEZAHLT': { text: 'Unbezahlt', class: 'status-info' },
-    'FEHLT':     { text: 'FEHLT',     class: 'status-missing' }
+    'FEHLT': { text: 'FEHLT', class: 'status-missing' }
   };
 
   const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
@@ -370,9 +441,9 @@ function openWeeklyReportModal(report, workWeek) {
       return `<td class="${info.class}">${info.text}</td>`;
     }).join('');
     const action = user.phone
-      ? `<button class="sms-btn" data-phone="${escapeHtml(String(user.phone))}" data-name="${escapeHtml(String(user.name||''))}">SMS</button>`
+      ? `<button class="sms-btn" data-phone="${escapeHtml(String(user.phone))}" data-name="${escapeHtml(String(user.name || ''))}">SMS</button>`
       : '';
-    return `<tr><td>${escapeHtml(String(user.name||'—'))}</td>${cells}<td>${action}</td></tr>`;
+    return `<tr><td>${escapeHtml(String(user.name || '—'))}</td>${cells}<td>${action}</td></tr>`;
   }).join('');
 
   const colspan = 1 + (workWeek?.length || 0) + 1;
@@ -416,7 +487,7 @@ function openWeeklyReportModal(report, workWeek) {
   backdrop.querySelectorAll('.sms-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const phone = btn.getAttribute('data-phone');
-      const name  = btn.getAttribute('data-name');
+      const name = btn.getAttribute('data-name');
       console.log('SMS:', { phone, name });
       showToast(`SMS küldés (teszt): ${name} – ${phone}`, 'info');
     });
@@ -716,16 +787,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.body.appendChild(backdrop);
 
-    const closeBtn  = backdrop.querySelector('.modal-close');
+    const closeBtn = backdrop.querySelector('.modal-close');
     const submitBtn = byId('adminUploadSubmit');
-    const userSel   = byId('adminUserSelect');
-    const typeSel   = byId('adminTypeSelect');
-    const monthSel  = byId('adminMonthSelect');
+    const userSel = byId('adminUserSelect');
+    const typeSel = byId('adminTypeSelect');
+    const monthSel = byId('adminMonthSelect');
     const weekRange = byId('adminWeekRange');
     const startDate = byId('adminStartDate');
-    const endDate   = byId('adminEndDate');
+    const endDate = byId('adminEndDate');
     const fileInput = byId('adminUploadFile');
-    const fileHint  = byId('adminFileHint');
+    const fileHint = byId('adminFileHint');
     const statusBox = byId('adminUploadStatus');
 
     function setRowsForType(type) {
@@ -736,7 +807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Pflichtfelder
       weekRange.required = isTimesheet;
       startDate.required = !isTimesheet;
-      endDate.required   = !isTimesheet;
+      endDate.required = !isTimesheet;
 
       // Bei KRANK ist die Bescheinigung Pflicht
       if (type === 'KRANK') {
@@ -767,12 +838,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       statusBox.textContent = '';
 
       const userId = userSel.value;
-      const kind   = typeSel.value;
-      const month  = monthSel.value;
+      const kind = typeSel.value;
+      const month = monthSel.value;
 
       // Validierung
       if (!userId) { notify('Bitte Mitarbeiter wählen!', 'error'); return; }
-      if (!month)  { notify('Bitte Monat wählen!', 'error'); return; }
+      if (!month) { notify('Bitte Monat wählen!', 'error'); return; }
 
       try {
         submitBtn.disabled = true;
@@ -782,11 +853,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (kind === 'TIMESHEET') {
           if (!weekRange.value.trim()) throw new Error('Bitte Stundenzettel-Datum angeben (z. B. 5–9 oder 30).');
-          if (!fileInput.files.length)  throw new Error('Bitte eine Datei auswählen.');
+          if (!fileInput.files.length) throw new Error('Bitte eine Datei auswählen.');
 
           // Dateiname: + _ADMIN (FormData-ben, új File nélkül)
           const orig = fileInput.files[0];
-          const ext  = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
+          const ext = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
           const base = orig.name.replace(/\.[^.]+$/, '');
           const newBase = /_ADMIN(\b|$)/i.test(base) ? base : `${base}_ADMIN`;
 
@@ -803,11 +874,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } else if (kind === 'KRANK') {
           if (!startDate.value) throw new Error('Bitte Startdatum angeben.');
-          if (!endDate.value)   throw new Error('Bitte Enddatum angeben.');
+          if (!endDate.value) throw new Error('Bitte Enddatum angeben.');
           if (!fileInput.files.length) throw new Error('Bei KRANK muss eine Bescheinigung hochgeladen werden.');
 
           const orig = fileInput.files[0];
-          const ext  = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
+          const ext = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
           const base = orig.name.replace(/\.[^.]+$/, '');
           const newBase = /_ADMIN(\b|$)/i.test(base) ? base : `${base}_ADMIN`;
 
@@ -815,7 +886,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           fd.append('userId', userId);
           fd.append('selectedMonth', month);
           fd.append('startDate', startDate.value);
-          fd.append('endDate',   endDate.value);
+          fd.append('endDate', endDate.value);
           fd.append('uploadedByAdmin', '1');
           fd.append('file', orig, `${newBase}${ext}`);
 
@@ -826,7 +897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           // URLAUB / UNBEZAHLT – Datei optional
           if (!startDate.value) throw new Error('Bitte Startdatum angeben.');
-          if (!endDate.value)   throw new Error('Bitte Enddatum angeben.');
+          if (!endDate.value) throw new Error('Bitte Enddatum angeben.');
 
           resp = await fetch('/.netlify/functions/logAbsence', {
             method: 'POST',
