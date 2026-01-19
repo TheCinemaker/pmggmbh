@@ -45,10 +45,35 @@ async function listFolderAll(dbx, path) {
     resp = await dbx.filesListFolder({ path });
   } catch (err) {
     // Ha a mappa nem létezik, üres listát adunk vissza, nem hibát
-    const tag = err?.error?.error?.path?.reason?.['.tag'];
-    if (err?.status === 409 && (tag === 'not_found' || tag === 'path')) {
-      return []; // Üres lista, ha a mappa nem található
+    console.log('listFolderAll error for path:', path, 'Status:', err?.status);
+    console.log('Error object:', JSON.stringify(err?.error || err, null, 2));
+    
+    // Dropbox 409 hibák kezelése (általában "not found" vagy path hiba)
+    if (err?.status === 409) {
+      // Több lehetséges hibaobjektum struktúra kezelése
+      const tag = err?.error?.error?.path?.['.tag']
+               || err?.error?.error?.path?.reason?.['.tag'] 
+               || err?.error?.error?.['.tag']
+               || err?.error?.['.tag'];
+      
+      const errorSummary = err?.error?.error_summary || '';
+      
+      // Ha "not_found" vagy "path" tag, vagy az error_summary tartalmazza a "not_found"-ot
+      const isNotFound = tag === 'not_found' 
+                      || tag === 'path' 
+                      || errorSummary.includes('not_found')
+                      || errorSummary.includes('path/not_found');
+      
+      if (isNotFound) {
+        console.log(`Mappa nem található: ${path}, üres listát adunk vissza`);
+        return []; // Üres lista, ha a mappa nem található
+      }
+      
+      // Bármilyen más 409-es hiba esetén is próbáljuk meg kezelni
+      console.warn(`409-es hiba a következő mappánál: ${path}, üres listát adunk vissza. Error summary: ${errorSummary}`);
+      return [];
     }
+    
     throw err; // Más hiba esetén dobjuk tovább
   }
 
