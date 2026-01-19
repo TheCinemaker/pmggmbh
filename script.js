@@ -1,34 +1,34 @@
 // --- DOM Elemek ---
-const loginSection            = document.getElementById('loginSection');
-const uploadSection           = document.getElementById('uploadSection');
-const loginForm               = document.getElementById('loginForm');
-const uploadForm              = document.getElementById('uploadForm');
-const absenceForm             = document.getElementById('absenceForm');
-const loginEmployeeSelect     = document.getElementById('loginEmployeeName');
-const pinCodeInput            = document.getElementById('pinCode');
-const loginButton             = document.getElementById('loginButton');
-const logoutButton            = document.getElementById('logoutButton');
-const loginStatus             = document.getElementById('loginStatus');
-const uploadStatus            = document.getElementById('uploadStatus');
-const absenceStatus           = document.getElementById('absenceStatus');
-const welcomeMessage          = document.getElementById('welcomeMessage');
-const monthSelect             = document.getElementById('monthSelect');
-const absenceMonthSelect      = document.getElementById('absenceMonthSelect');
-const viewMonthSelect         = document.getElementById('viewMonthSelect');
-const fileListContainer       = document.getElementById('fileListContainer');
-const oralapSection           = document.getElementById('oralapSection');
-const sickProofUploadGroup    = document.getElementById('sickProofUploadGroup');
-const sickProofFile           = document.getElementById('sickProofFile');
-const absenceTypeSelect       = document.getElementById('absenceType');
-const adminButton             = document.getElementById('adminButton');
-const languageSelect          = document.getElementById('languageSelect'); // ha van
+const loginSection = document.getElementById('loginSection');
+const uploadSection = document.getElementById('uploadSection');
+const loginForm = document.getElementById('loginForm');
+const uploadForm = document.getElementById('uploadForm');
+const absenceForm = document.getElementById('absenceForm');
+const loginEmployeeSelect = document.getElementById('loginEmployeeName');
+const pinCodeInput = document.getElementById('pinCode');
+const loginButton = document.getElementById('loginButton');
+const logoutButton = document.getElementById('logoutButton');
+const loginStatus = document.getElementById('loginStatus');
+const uploadStatus = document.getElementById('uploadStatus');
+const absenceStatus = document.getElementById('absenceStatus');
+const welcomeMessage = document.getElementById('welcomeMessage');
+const monthSelect = document.getElementById('monthSelect');
+const absenceMonthSelect = document.getElementById('absenceMonthSelect');
+const viewMonthSelect = document.getElementById('viewMonthSelect');
+const fileListContainer = document.getElementById('fileListContainer');
+const oralapSection = document.getElementById('oralapSection');
+const sickProofUploadGroup = document.getElementById('sickProofUploadGroup');
+const sickProofFile = document.getElementById('sickProofFile');
+const absenceTypeSelect = document.getElementById('absenceType');
+const adminButton = document.getElementById('adminButton');
+const languageSelect = document.getElementById('languageSelect'); // ha van
 
 // --- Állapotkezelés ---
 let currentUser = null;
 
 // --- PIN show/hide ---
-const pinInput  = document.getElementById('pinCode');
-const eyeBtn    = document.getElementById('togglePinVisibility');
+const pinInput = document.getElementById('pinCode');
+const eyeBtn = document.getElementById('togglePinVisibility');
 
 if (pinInput && eyeBtn) {
   const setVisible = (visible) => {
@@ -178,8 +178,8 @@ const translations = {
 // --- I18N helper-ek ---
 function getCurrentLang() {
   const userLang = currentUser?.lang;
-  const stored   = localStorage.getItem('appLang');
-  const lang     = (userLang || stored || 'hu').toLowerCase();
+  const stored = localStorage.getItem('appLang');
+  const lang = (userLang || stored || 'hu').toLowerCase();
   return ['hu', 'de', 'pl'].includes(lang) ? lang : 'hu';
 }
 function getLangDict(lang) {
@@ -216,9 +216,9 @@ function setLanguage(lang = 'hu') {
 }
 
 function showScreen(screenName) {
-  if (loginSection)  loginSection.classList.add('hidden');
+  if (loginSection) loginSection.classList.add('hidden');
   if (uploadSection) uploadSection.classList.add('hidden');
-  if (screenName === 'login' && loginSection)  loginSection.classList.remove('hidden');
+  if (screenName === 'login' && loginSection) loginSection.classList.remove('hidden');
   if (screenName === 'upload' && uploadSection) uploadSection.classList.remove('hidden');
 }
 
@@ -267,22 +267,9 @@ async function fetchAndDisplayFiles() {
       const row = document.createElement('div');
       row.className = 'file-item';
 
-      const canOpenViaApi = !!(file?.id || file?.path_lower || file?.path_display);
-
-      const actionHtml = isHttp(file.link)
-        ? `<a href="${file.link}" target="_blank" rel="noopener" class="view-button">${getLangDict(lang).viewButton}</a>`
-        : (canOpenViaApi
-            ? `<button class="view-button"
-                 data-file-id="${file.id || ''}"
-                 data-path="${file.path_lower || file.path_display || ''}">
-                 ${getLangDict(lang).viewButton}
-               </button>`
-            : `<span class="view-button view-button-disabled" aria-disabled="true">${getLangDict(lang).viewButton}</span>`
-          );
-
+      // Csak a fájl neve, gomb nélkül
       row.innerHTML = `
         <span class="file-item-name">${file.name}</span>
-        ${actionHtml}
       `;
       frag.appendChild(row);
     });
@@ -295,52 +282,7 @@ async function fetchAndDisplayFiles() {
   }
 }
 
-// --- Egyszeri delegált kattintáskezelő a „Megtekintés” gombokra ---
-if (fileListContainer && !fileListContainer._hasLinkHandler) {
-  fileListContainer._hasLinkHandler = true;
-
-  fileListContainer.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button.view-button[data-file-id], button.view-button[data-path]');
-    if (!btn) return;                // nem a gomb
-    if (btn.tagName === 'A') return; // anchorra nincs szükség
-
-    const fileId = (btn.getAttribute('data-file-id') || '').trim();
-    const path   = (btn.getAttribute('data-path') || '').trim();
-
-    if (!fileId && !path) {
-      showToast('Nincs azonosító a fájlhoz.', 'error');
-      return;
-    }
-
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Megnyitás…';
-
-    try {
-      const resp = await fetch('/.netlify/functions/getFileLink', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ fileId, path })
-      });
-
-      const raw = await resp.text();
-      let data = null;
-      try { data = JSON.parse(raw); } catch {
-        throw new Error(`getFileLink nem JSON (HTTP ${resp.status}) — ${raw.slice(0,120)}`);
-      }
-      if (!resp.ok) throw new Error(data?.error || `getFileLink hiba (HTTP ${resp.status})`);
-      if (!data?.url || !isHttp(data.url)) throw new Error('Érvénytelen link érkezett a szervertől.');
-
-      window.open(data.url, '_blank', 'noopener');
-    } catch (err) {
-      console.error('Megtekintés hiba:', err);
-      showToast(err.message || getLangDict(getCurrentLang()).errorLoadingFiles, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = original;
-    }
-  });
-}
+// --- (A Megtekintés gomb eseménykezelőjét eltávolítottuk) ---
 
 // --- Hónap név formázó: "9. September" az aktuális dátumból ---
 function makeFolderNameFromDate(d = new Date()) {
@@ -394,9 +336,9 @@ async function populateMonthList(userId) {
     });
 
     const currentMonthFolder = makeFolderNameFromDate(new Date());
-    selectBestMonth(monthSelect,        folders, currentMonthFolder);
+    selectBestMonth(monthSelect, folders, currentMonthFolder);
     selectBestMonth(absenceMonthSelect, folders, currentMonthFolder);
-    selectBestMonth(viewMonthSelect,    folders, currentMonthFolder);
+    selectBestMonth(viewMonthSelect, folders, currentMonthFolder);
 
     fetchAndDisplayFiles();
   } catch (error) {
@@ -455,7 +397,7 @@ async function handleLogin(event) {
   if (loginStatus) loginStatus.textContent = '';
 
   const userId = loginEmployeeSelect?.value;
-  const pin    = pinCodeInput?.value;
+  const pin = pinCodeInput?.value;
 
   if (!userId || !pin) {
     if (loginStatus) loginStatus.textContent = getLangDict(lang).errorMissingPin;
@@ -479,13 +421,13 @@ async function handleLogin(event) {
       id: userId,
       displayName: result.displayName,
       type: result.userType,
-      lang: (['hu','de','pl'].includes((result.userLang || '').toLowerCase()) ? result.userLang.toLowerCase() : getCurrentLang()),
+      lang: (['hu', 'de', 'pl'].includes((result.userLang || '').toLowerCase()) ? result.userLang.toLowerCase() : getCurrentLang()),
       role: result.userRole
     };
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
     const uiLang = getCurrentLang();
-    const dict   = getLangDict(uiLang);
+    const dict = getLangDict(uiLang);
     setLanguage(uiLang);
     if (welcomeMessage && dict.welcome) {
       welcomeMessage.textContent = `${dict.welcome} ${currentUser.displayName}!`;
@@ -518,8 +460,8 @@ async function handleUpload(event) {
   if (uploadStatus) uploadStatus.textContent = '';
 
   const targetMonth = monthSelect && monthSelect.value;
-  const fileInput   = document.getElementById('fileInput');
-  const file        = fileInput && fileInput.files && fileInput.files[0];
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput && fileInput.files && fileInput.files[0];
 
   if (!targetMonth) {
     showToast('Válassz cél hónapot!', 'error');
@@ -584,14 +526,14 @@ async function handleAbsenceSubmit(event) {
     return;
   }
 
-  const startDate   = new Date(startDateValue);
-  const month       = startDate.getMonth() + 1;
-  const monthName   = startDate.toLocaleString('de-DE', { month: 'long' });
+  const startDate = new Date(startDateValue);
+  const month = startDate.getMonth() + 1;
+  const monthName = startDate.toLocaleString('de-DE', { month: 'long' });
   const selectedMonth = `${month}. ${monthName}`;
   const absenceType = absenceTypeSelect?.value;
 
   let endpoint = '';
-  let options  = { method: 'POST' };
+  let options = { method: 'POST' };
   let successMessageKey = 'absenceSuccess';
 
   if (absenceType === 'KRANK') {
@@ -698,12 +640,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Eseményfigyelők ---
-if (loginForm)        loginForm.addEventListener('submit', handleLogin);
-if (uploadForm)       uploadForm.addEventListener('submit', handleUpload);
-if (logoutButton)     logoutButton.addEventListener('click', handleLogout);
-if (absenceForm)      absenceForm.addEventListener('submit', handleAbsenceSubmit);
-if (viewMonthSelect)  viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
-if (absenceTypeSelect)absenceTypeSelect.addEventListener('change', handleAbsenceTypeChange);
+if (loginForm) loginForm.addEventListener('submit', handleLogin);
+if (uploadForm) uploadForm.addEventListener('submit', handleUpload);
+if (logoutButton) logoutButton.addEventListener('click', handleLogout);
+if (absenceForm) absenceForm.addEventListener('submit', handleAbsenceSubmit);
+if (viewMonthSelect) viewMonthSelect.addEventListener('change', fetchAndDisplayFiles);
+if (absenceTypeSelect) absenceTypeSelect.addEventListener('change', handleAbsenceTypeChange);
 
 /*
 // =======================================================
