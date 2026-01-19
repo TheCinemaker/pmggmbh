@@ -1,7 +1,7 @@
 // netlify/functions/getFiles.js
 const { Dropbox } = require('dropbox');
 
-const REQUIRED = ['ALLOWED_ORIGIN','DROPBOX_APP_KEY','DROPBOX_APP_SECRET','DROPBOX_REFRESH_TOKEN'];
+const REQUIRED = ['ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN'];
 function assertEnv() {
   const miss = REQUIRED.filter(k => !process.env[k]);
   if (miss.length) throw new Error(`Hiányzó környezeti változók: ${miss.join(', ')}`);
@@ -58,30 +58,20 @@ exports.handler = async (event) => {
     const entries = await listAll(dbx, folderPath);
     const files = (entries || []).filter(e => e['.tag'] === 'file');
 
-    // Mindig gyártunk ideiglenes linket (ID-vel), path fallback-kel
-    const items = await Promise.all(files.map(async (f) => {
-      let link = null;
-      try {
-        const t = await dbx.filesGetTemporaryLink({ path: f.id });          // stabil: id:...
-        link = t?.result?.link || null;
-      } catch (e1) {
-        try {
-          const t2 = await dbx.filesGetTemporaryLink({ path: f.path_lower || f.path_display });
-          link = t2?.result?.link || null;
-        } catch (e2) {
-          console.warn('Temp link hiba:', f.id, e2?.status, e2?.error?.error_summary || e2?.message);
-        }
-      }
-
+    // Nem generálunk ideiglenes linket listázáskor (lassú és felesleges API hívás)
+    // A frontend "Megtekintés" gombja majd lekéri on-demand a getFileLink-en keresztül
+    const items = files.map(f => {
       const uploadedAt = f.server_modified || f.client_modified || null;
       return {
         id: f.id,
         name: f.name,
+        path_lower: f.path_lower,
+        path_display: f.path_display,
         uploadedAt,
         uploadedAtDisplay: uploadedAt,
-        link
+        link: null // Mindig null, hogy a frontend gombot jelenítsen meg
       };
-    }));
+    });
 
     // legfrissebb elöl
     items.sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
