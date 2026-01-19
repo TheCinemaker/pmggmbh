@@ -225,25 +225,7 @@ function renderList(data) {
 
         // Fájl típus alapján ikon vagy thumbnail
         if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
-          const img = document.createElement('img');
-          img.className = 'thumbnail-img loading';
-          img.alt = name;
-          img.dataset.path = f.path;
-
-          // Placeholder amíg tölt
-          img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23374151" width="100" height="100"/%3E%3Ctext x="50" y="50" text-anchor="middle" dominant-baseline="middle" fill="%239ca3af" font-size="40"%3E📷%3C/text%3E%3C/svg%3E';
-
-          thumbContainer.appendChild(img);
-
-          // Lazy load thumbnail
-          loadThumbnail(f.path).then(dataUrl => {
-            if (dataUrl) {
-              img.src = dataUrl;
-              img.classList.remove('loading');
-            }
-          }).catch(() => {
-            img.classList.remove('loading');
-          });
+          thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
         } else if (ext === 'pdf') {
           thumbContainer.innerHTML = `<div class="file-icon-large">📄</div>`;
         } else {
@@ -280,29 +262,7 @@ function renderList(data) {
   }
 }
 
-// Thumbnail betöltés cache-eléssel
-const thumbnailCache = new Map();
 
-async function loadThumbnail(path) {
-  if (thumbnailCache.has(path)) {
-    return thumbnailCache.get(path);
-  }
-
-  try {
-    const resp = await fetch(`/.netlify/functions/getThumbnail?path=${encodeURIComponent(path)}`);
-    if (!resp.ok) return null;
-
-    const data = await resp.json();
-    if (data.thumbnail) {
-      thumbnailCache.set(path, data.thumbnail);
-      return data.thumbnail;
-    }
-    return null;
-  } catch (err) {
-    console.error('Thumbnail load error:', err);
-    return null;
-  }
-}
 
 function openUserInfoModal(displayName) {
   const meta = usersByName[normName(displayName)] || {};
