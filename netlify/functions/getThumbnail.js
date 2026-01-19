@@ -34,33 +34,11 @@ exports.handler = async (event) => {
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif'];
 
         if (imageExtensions.includes(ext)) {
-            // Kép esetén thumbnail-t kérünk
-            console.log('[getThumbnail] Requesting thumbnail for:', path);
-            const response = await dbx.filesGetThumbnail({
-                path: path,
-                format: { '.tag': 'jpeg' },
-                size: { '.tag': 'w256h256' },
-                mode: { '.tag': 'bestfit' }
-            });
+            // Kép esetén temporary link-et kérünk (egyszerűbb és gyorsabb)
+            console.log('[getThumbnail] Requesting temporary link for:', path);
+            const response = await dbx.filesGetTemporaryLink({ path: path });
 
-            console.log('[getThumbnail] Response received, fileBlob type:', typeof response.result.fileBlob);
-
-            // A thumbnail binary adatot base64-re konvertáljuk
-            // A fileBlob egy Blob vagy Buffer objektum
-            let base64;
-            if (response.result.fileBlob) {
-                // Node.js környezetben Buffer-ként jön
-                if (Buffer.isBuffer(response.result.fileBlob)) {
-                    base64 = response.result.fileBlob.toString('base64');
-                } else {
-                    // Ha Blob, akkor átalakítjuk Buffer-ré
-                    base64 = Buffer.from(response.result.fileBlob).toString('base64');
-                }
-            } else {
-                throw new Error('No fileBlob in response');
-            }
-
-            console.log('[getThumbnail] Base64 length:', base64.length);
+            console.log('[getThumbnail] Temporary link received:', response.result.link);
 
             return {
                 statusCode: 200,
@@ -69,7 +47,7 @@ exports.handler = async (event) => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    thumbnail: `data:image/jpeg;base64,${base64}`,
+                    thumbnail: response.result.link,
                     type: 'image'
                 })
             };
@@ -103,11 +81,16 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error('Thumbnail error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return {
             statusCode: 500,
-            headers,
+            headers: {
+                ...headers,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 message: error.message || 'Error getting thumbnail',
+                error: error.error?.error_summary || 'Unknown error',
                 thumbnail: null,
                 type: 'error'
             })
