@@ -25,8 +25,8 @@ catch (err) {
 }
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
-const APP_KEY       = process.env.DROPBOX_APP_KEY;
-const APP_SECRET    = process.env.DROPBOX_APP_SECRET;
+const APP_KEY = process.env.DROPBOX_APP_KEY;
+const APP_SECRET = process.env.DROPBOX_APP_SECRET;
 const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
 
@@ -42,38 +42,46 @@ async function listFolderAll(dbx, path) {
   let entries = [];
   let resp;
   try {
+    console.log(`[DEBUG] Attempting to list folder: "${path}"`);
     resp = await dbx.filesListFolder({ path });
+    console.log(`[DEBUG] Successfully listed folder: "${path}", found ${resp.result.entries?.length || 0} entries`);
   } catch (err) {
-    // Ha a mappa nem létezik, üres listát adunk vissza, nem hibát
-    console.log('listFolderAll error for path:', path, 'Status:', err?.status);
-    console.log('Error object:', JSON.stringify(err?.error || err, null, 2));
-    
+    // Részletes hibainformáció naplózása
+    console.error('=== DROPBOX API ERROR ===');
+    console.error('Path:', path);
+    console.error('Status:', err?.status);
+    console.error('Error summary:', err?.error?.error_summary);
+    console.error('Full error object:', JSON.stringify(err, null, 2));
+    console.error('Error.error structure:', JSON.stringify(err?.error, null, 2));
+
     // Dropbox 409 hibák kezelése (általában "not found" vagy path hiba)
     if (err?.status === 409) {
       // Több lehetséges hibaobjektum struktúra kezelése
       const tag = err?.error?.error?.path?.['.tag']
-               || err?.error?.error?.path?.reason?.['.tag'] 
-               || err?.error?.error?.['.tag']
-               || err?.error?.['.tag'];
-      
+        || err?.error?.error?.path?.reason?.['.tag']
+        || err?.error?.error?.['.tag']
+        || err?.error?.['.tag'];
+
       const errorSummary = err?.error?.error_summary || '';
-      
+
+      console.warn(`[409 ERROR] Tag: ${tag}, Error summary: ${errorSummary}`);
+
       // Ha "not_found" vagy "path" tag, vagy az error_summary tartalmazza a "not_found"-ot
-      const isNotFound = tag === 'not_found' 
-                      || tag === 'path' 
-                      || errorSummary.includes('not_found')
-                      || errorSummary.includes('path/not_found');
-      
+      const isNotFound = tag === 'not_found'
+        || tag === 'path'
+        || errorSummary.includes('not_found')
+        || errorSummary.includes('path/not_found');
+
       if (isNotFound) {
         console.log(`Mappa nem található: ${path}, üres listát adunk vissza`);
         return []; // Üres lista, ha a mappa nem található
       }
-      
+
       // Bármilyen más 409-es hiba esetén is próbáljuk meg kezelni
       console.warn(`409-es hiba a következő mappánál: ${path}, üres listát adunk vissza. Error summary: ${errorSummary}`);
       return [];
     }
-    
+
     throw err; // Más hiba esetén dobjuk tovább
   }
 
@@ -128,54 +136,54 @@ exports.handler = async (event) => {
 
     const now = new Date();
     const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    
+
     const currentYear = String(now.getFullYear());
     const currentMonthLabel = getMonthLabel(now);
-    
+
     const prevYear = String(prevMonthDate.getFullYear());
     const prevMonthLabel = getMonthLabel(prevMonthDate);
 
     const relevantMonthLabels = [currentMonthLabel];
     if (currentMonthLabel !== prevMonthLabel) {
-        relevantMonthLabels.push(prevMonthLabel);
+      relevantMonthLabels.push(prevMonthLabel);
     }
-    
+
     const yearsToScan = [currentYear];
     if (currentYear !== prevYear && !yearsToScan.includes(prevYear)) {
-        yearsToScan.push(prevYear);
+      yearsToScan.push(prevYear);
     }
-    
+
     const result = {};
 
     for (const year of yearsToScan) {
-        const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
-        const userFolders = (await listFolderAll(dbx, basePath)).filter(e => e['.tag'] === 'folder');
+      const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
+      const userFolders = (await listFolderAll(dbx, basePath)).filter(e => e['.tag'] === 'folder');
 
-        for (const uf of userFolders) {
-            const userName = uf.name;
-            if (!result[userName]) { result[userName] = []; }
+      for (const uf of userFolders) {
+        const userName = uf.name;
+        if (!result[userName]) { result[userName] = []; }
 
-            const monthFolders = (await listFolderAll(dbx, uf.path_lower)).filter(e => e['.tag'] === 'folder');
+        const monthFolders = (await listFolderAll(dbx, uf.path_lower)).filter(e => e['.tag'] === 'folder');
 
-            for (const mf of monthFolders) {
-                if (relevantMonthLabels.includes(mf.name)) {
-                    const files = (await listFolderAll(dbx, mf.path_lower)).filter(e => e['.tag'] === 'file');
-                    
-                    files.forEach(f => {
-                        const uploadedAt = f.server_modified || f.client_modified || null;
-                        result[userName].push({
-                            folder: mf.name,
-                            name: f.name,
-                            path: f.path_lower,
-                            uploadedAt,
-                            uploadedAtDisplay: formatHu(uploadedAt)
-                        });
-                    });
-                }
-            }
+        for (const mf of monthFolders) {
+          if (relevantMonthLabels.includes(mf.name)) {
+            const files = (await listFolderAll(dbx, mf.path_lower)).filter(e => e['.tag'] === 'file');
+
+            files.forEach(f => {
+              const uploadedAt = f.server_modified || f.client_modified || null;
+              result[userName].push({
+                folder: mf.name,
+                name: f.name,
+                path: f.path_lower,
+                uploadedAt,
+                uploadedAtDisplay: formatHu(uploadedAt)
+              });
+            });
+          }
         }
+      }
     }
-    
+
     for (const user in result) {
       result[user].sort((a, b) => {
         const da = a.uploadedAt ? Date.parse(a.uploadedAt) : 0;
