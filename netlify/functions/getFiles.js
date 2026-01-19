@@ -42,8 +42,10 @@ exports.handler = async (event) => {
     const userId = (qs.userId || '').trim();
     const selectedMonth = (qs.selectedMonth || qs.selectedFolder || qs.month || '').trim();
 
+    console.log(`[getFiles] Request: userId="${userId}", selectedMonth="${selectedMonth}"`);
+
     if (!userId || !selectedMonth) {
-      return { statusCode: 400, headers, body: JSON.stringify({ message: 'Hiányzó felhasználó vagy hónap.' }) };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Hiányzó felhasználó vagy hónap.' }) };
     }
 
     const dbx = new Dropbox({
@@ -53,7 +55,10 @@ exports.handler = async (event) => {
     });
 
     const year = new Date().getFullYear();
-    const folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}/${userId}/${selectedMonth}`;
+    // Fontos: NFC normalizáció a speciális karakterek (ä, á, ő) miatt!
+    const folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}/${userId}/${selectedMonth}`.normalize('NFC');
+
+    console.log(`[getFiles] Listing folder: "${folderPath}"`);
 
     const entries = await listAll(dbx, folderPath);
     const files = (entries || []).filter(e => e['.tag'] === 'file');
@@ -79,6 +84,21 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(items) };
   } catch (error) {
     console.error('getFiles.js fatális hiba:', error);
-    return { statusCode: 500, headers, body: JSON.stringify({ message: error.message || 'Szerver oldali hiba történt.' }) };
+    // Részletesebb logolás Dropbox hibákhoz
+    if (error.error) {
+      console.error('Dropbox hiba részletek:', JSON.stringify(error.error));
+    }
+
+    const statusCode = error.status || 500;
+    const errorMsg = error.error?.error_summary || error.message || 'Szerver oldali hiba történt.';
+
+    return {
+      statusCode: statusCode,
+      headers,
+      body: JSON.stringify({
+        error: errorMsg,
+        details: error.error // Opcionális, de segít a debugban
+      })
+    };
   }
 };
