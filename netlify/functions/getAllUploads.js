@@ -93,14 +93,6 @@ async function listFolderAll(dbx, path) {
   return entries;
 }
 
-// ---- Helper: "9. September" (de-DE, nagy kezdőbetű) ----
-function getMonthLabel(date) {
-  const n = date.getMonth() + 1;
-  let name = date.toLocaleString('de-DE', { month: 'long' });
-  name = name.charAt(0).toUpperCase() + name.slice(1);
-  return `${n}. ${name}`;
-}
-
 // ---- Helper: biztonságos HU dátum string ----
 function formatHu(dtIso) {
   try {
@@ -138,20 +130,24 @@ exports.handler = async (event) => {
     const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const currentYear = String(now.getFullYear());
-    const currentMonthLabel = getMonthLabel(now);
+    const currentMonth = now.getMonth() + 1; // 1-12
 
     const prevYear = String(prevMonthDate.getFullYear());
-    const prevMonthLabel = getMonthLabel(prevMonthDate);
+    const prevMonth = prevMonthDate.getMonth() + 1; // 1-12
 
-    const relevantMonthLabels = [currentMonthLabel];
-    if (currentMonthLabel !== prevMonthLabel) {
-      relevantMonthLabels.push(prevMonthLabel);
+    // Releváns hónapok számai (pl. [1, 12] ha január van és az előző hónap december)
+    const relevantMonths = [currentMonth];
+    if (currentMonth !== prevMonth) {
+      relevantMonths.push(prevMonth);
     }
 
     const yearsToScan = [currentYear];
     if (currentYear !== prevYear && !yearsToScan.includes(prevYear)) {
       yearsToScan.push(prevYear);
     }
+
+    console.log('[DEBUG] Relevant months:', relevantMonths);
+    console.log('[DEBUG] Years to scan:', yearsToScan);
 
     const result = {};
 
@@ -166,19 +162,28 @@ exports.handler = async (event) => {
         const monthFolders = (await listFolderAll(dbx, uf.path_lower)).filter(e => e['.tag'] === 'folder');
 
         for (const mf of monthFolders) {
-          if (relevantMonthLabels.includes(mf.name)) {
-            const files = (await listFolderAll(dbx, mf.path_lower)).filter(e => e['.tag'] === 'file');
+          // Mappa név formátum: "1. Jänner" vagy "1. Januar" vagy "12. Dezember"
+          // Csak a szám prefix-et nézzük (pl. "1.", "12.")
+          const monthMatch = mf.name.match(/^(\d+)\./);
+          if (monthMatch) {
+            const folderMonth = parseInt(monthMatch[1], 10);
+            console.log(`[DEBUG] Checking folder "${mf.name}" (month: ${folderMonth}) for user "${userName}"`);
 
-            files.forEach(f => {
-              const uploadedAt = f.server_modified || f.client_modified || null;
-              result[userName].push({
-                folder: mf.name,
-                name: f.name,
-                path: f.path_lower,
-                uploadedAt,
-                uploadedAtDisplay: formatHu(uploadedAt)
+            if (relevantMonths.includes(folderMonth)) {
+              const files = (await listFolderAll(dbx, mf.path_lower)).filter(e => e['.tag'] === 'file');
+              console.log(`[DEBUG] Found ${files.length} files in "${mf.name}" for "${userName}"`);
+
+              files.forEach(f => {
+                const uploadedAt = f.server_modified || f.client_modified || null;
+                result[userName].push({
+                  folder: mf.name,
+                  name: f.name,
+                  path: f.path_lower,
+                  uploadedAt,
+                  uploadedAtDisplay: formatHu(uploadedAt)
+                });
               });
-            });
+            }
           }
         }
       }
