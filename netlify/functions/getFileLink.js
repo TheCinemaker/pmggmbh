@@ -34,10 +34,14 @@ exports.handler = async (event) => {
 
   // Body parse (védetten)
   let body = {};
-  try { body = JSON.parse(event.body || '{}'); } catch {}
+  try { body = JSON.parse(event.body || '{}'); } catch { }
 
   const fileId = (body.fileId || '').trim();   // pl. "id:abc123"
-  const path   = (body.path   || '').trim();   // pl. "/PMG ... /file.pdf"
+  // Normalizáljuk a path-ot is!
+  const rawPath = (body.path || '').trim();  // pl. "/PMG ... /file.pdf"
+  const path = rawPath.normalize('NFC');
+
+  console.log(`[getFileLink] Request: fileId="${fileId}", path="${path}"`);
 
   if (!fileId && !path) {
     return { statusCode: 400, headers: baseHeaders, body: JSON.stringify({ error: 'fileId vagy path kötelező' }) };
@@ -54,14 +58,17 @@ exports.handler = async (event) => {
     // Dropbox 'path' paramja elfogad "id:..." és tényleges útvonalat is.
     const firstTry = fileId || path;
     try {
+      console.log(`[getFileLink] Trying temporary link with: "${firstTry}"`);
       const t = await dbx.filesGetTemporaryLink({ path: firstTry });
       return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t.result.link }) };
     } catch (e1) {
       console.warn('Temp link bukott (first):', firstTry, e1?.status, e1?.error?.error_summary || e1?.message);
+      if (e1?.error) console.warn('Dropbox error detail:', JSON.stringify(e1.error));
 
       // ha elsőre ID-vel próbáltunk és bukott, próbáljuk path-szal is (ha van)
       if (fileId && path) {
         try {
+          console.log(`[getFileLink] Trying fallback with path: "${path}"`);
           const t2 = await dbx.filesGetTemporaryLink({ path });
           return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t2.result.link }) };
         } catch (e2) {
@@ -108,6 +115,18 @@ exports.handler = async (event) => {
     }
   } catch (e) {
     console.error('getFileLink fatális:', e);
-    return { statusCode: 500, headers: baseHeaders, body: JSON.stringify({ error: e.message || 'Server error' }) };
+
+    // Részletesebb hibaüzenet visszaküldése
+    const errMsg = e.error?.error_summary || e.message || 'Server error';
+    const statusCode = e.status || 500;
+
+    return {
+      statusCode: statusCode,
+      headers: baseHeaders,
+      body: JSON.stringify({
+        error: errMsg,
+        details: e.error
+      })
+    };
   }
 };
