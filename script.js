@@ -447,6 +447,90 @@ async function handleLogin(event) {
   }
 }
 
+// --- Fájl Előnézet és Tömörítés State ---
+let compressedTimesheetFile = null;
+let compressedSickProofFile = null;
+
+async function setupFilePreview(inputEl, previewEl, fileType) {
+  if (!inputEl || !previewEl) return;
+
+  inputEl.addEventListener('change', async (e) => {
+    const origFile = e.target.files && e.target.files[0];
+    if (!origFile) {
+      previewEl.innerHTML = '';
+      previewEl.classList.add('hidden');
+      if (fileType === 'timesheet') compressedTimesheetFile = null;
+      if (fileType === 'sick') compressedSickProofFile = null;
+      return;
+    }
+
+    previewEl.classList.remove('hidden');
+    previewEl.innerHTML = '<div class="preview-loading">⏳ Kép feldolgozása és tömörítése…</div>';
+
+    const isImage = origFile.type?.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|bmp)$/i.test(origFile.name);
+    let processedFile = origFile;
+
+    if (isImage && typeof window.compressImageFile === 'function') {
+      try {
+        processedFile = await window.compressImageFile(origFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+      } catch (err) {
+        console.warn('Tömörítési hiba, eredeti fájl használata:', err);
+        processedFile = origFile;
+      }
+    }
+
+    if (fileType === 'timesheet') compressedTimesheetFile = processedFile;
+    if (fileType === 'sick') compressedSickProofFile = processedFile;
+
+    const origSizeStr = window.formatFileSize ? window.formatFileSize(origFile.size) : `${Math.round(origFile.size / 1024)} KB`;
+    const newSizeStr = window.formatFileSize ? window.formatFileSize(processedFile.size) : `${Math.round(processedFile.size / 1024)} KB`;
+
+    const isCompressed = processedFile.size < origFile.size;
+    const badgeText = isCompressed
+      ? `Eredeti: ${origSizeStr} ➔ Tömörítve: ${newSizeStr}`
+      : `Fájlméret: ${newSizeStr}`;
+
+    let thumbHtml = '';
+    if (isImage) {
+      const url = URL.createObjectURL(processedFile);
+      thumbHtml = `<img src="${url}" class="preview-thumb" alt="Előnézet" />`;
+    } else {
+      thumbHtml = `<div class="preview-pdf-icon">📄 PDF</div>`;
+    }
+
+    previewEl.innerHTML = `
+      <div class="preview-card">
+        ${thumbHtml}
+        <div class="preview-info">
+          <div class="preview-filename">${processedFile.name}</div>
+          <div class="preview-size-badge ${isCompressed ? 'saved' : ''}">${badgeText}</div>
+        </div>
+        <button type="button" class="preview-remove-btn" title="Fájl törlése">❌</button>
+      </div>
+    `;
+
+    const removeBtn = previewEl.querySelector('.preview-remove-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        inputEl.value = '';
+        previewEl.innerHTML = '';
+        previewEl.classList.add('hidden');
+        if (fileType === 'timesheet') compressedTimesheetFile = null;
+        if (fileType === 'sick') compressedSickProofFile = null;
+      });
+    }
+  });
+}
+
+function clearPreviews() {
+  compressedTimesheetFile = null;
+  compressedSickProofFile = null;
+  const tPreview = document.getElementById('timesheetPreview');
+  const sPreview = document.getElementById('sickProofPreview');
+  if (tPreview) { tPreview.innerHTML = ''; tPreview.classList.add('hidden'); }
+  if (sPreview) { sPreview.innerHTML = ''; sPreview.classList.add('hidden'); }
+}
+
 // --- Feltöltés ---
 async function handleUpload(event) {
   event.preventDefault();
@@ -461,7 +545,8 @@ async function handleUpload(event) {
 
   const targetMonth = monthSelect && monthSelect.value;
   const fileInput = document.getElementById('fileInput');
-  const file = fileInput && fileInput.files && fileInput.files[0];
+  const origFile = fileInput && fileInput.files && fileInput.files[0];
+  const fileToUpload = compressedTimesheetFile || origFile;
 
   if (!targetMonth) {
     showToast('Válassz cél hónapot!', 'error');
@@ -471,7 +556,7 @@ async function handleUpload(event) {
     }
     return;
   }
-  if (!file) {
+  if (!fileToUpload) {
     showToast('Válassz fájlt a feltöltéshez!', 'error');
     if (submitButton) {
       submitButton.disabled = false;
@@ -484,15 +569,16 @@ async function handleUpload(event) {
   formData.append('employeeName', currentUser.id);
   formData.append('selectedMonth', targetMonth);
   formData.append('weekRange', document.getElementById('weekRange')?.value || '');
-  formData.append('file', file);
+  formData.append('file', fileToUpload);
 
   try {
     const resp = await fetch('/.netlify/functions/upload', { method: 'POST', body: formData });
     const result = await resp.json();
-    if (!resp.ok) throw new Error(result.message);
+    if (!resp.ok) throw new Error(result.message || 'Szerveroldali hiba történt a feltöltés során.');
 
     showToast(getLangDict(lang).uploadSuccess, 'success');
     if (uploadForm) uploadForm.reset();
+    clearPreviews();
     fetchAndDisplayFiles(); // lista frissítése
   } catch (error) {
     showToast(`Hiba: ${error.message}`, 'error');
@@ -537,7 +623,10 @@ async function handleAbsenceSubmit(event) {
   let successMessageKey = 'absenceSuccess';
 
   if (absenceType === 'KRANK') {
-    if (!sickProofFile?.files || !sickProofFile.files.length) {
+    const origSickFile = sickProofFile?.files && sickProofFile.files[0];
+    const fileToUpload = compressedSickProofFile || origSickFile;
+
+    if (!fileToUpload) {
       showToast(getLangDict(lang).errorMissingSickProof, 'error');
       if (submitButton) {
         submitButton.disabled = false;
@@ -552,7 +641,7 @@ async function handleAbsenceSubmit(event) {
     formData.append('selectedMonth', selectedMonth);
     formData.append('startDate', startDateValue);
     formData.append('endDate', document.getElementById('endDate')?.value || '');
-    formData.append('file', sickProofFile.files[0]);
+    formData.append('file', fileToUpload);
     options.body = formData;
   } else {
     endpoint = '/.netlify/functions/logAbsence';
@@ -569,11 +658,12 @@ async function handleAbsenceSubmit(event) {
   try {
     const resp = await fetch(endpoint, options);
     const result = await resp.json();
-    if (!resp.ok) throw new Error(result.message);
+    if (!resp.ok) throw new Error(result.message || 'Szerveroldali hiba történt.');
 
     const successMsg = getLangDict(lang)[successMessageKey];
     showToast(successMsg, 'success');
     if (absenceForm) absenceForm.reset();
+    clearPreviews();
     handleAbsenceTypeChange();
     fetchAndDisplayFiles();
   } catch (error) {
@@ -594,6 +684,7 @@ function handleAbsenceTypeChange() {
   } else {
     sickProofUploadGroup.classList.add('hidden');
     sickProofFile.required = false;
+    clearPreviews();
   }
 }
 
@@ -637,6 +728,15 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('login');
     populateEmployeeList();
   }
+
+  // Fájl előnézet és tömörítő regisztrációja
+  const tInput = document.getElementById('fileInput');
+  const tPreview = document.getElementById('timesheetPreview');
+  setupFilePreview(tInput, tPreview, 'timesheet');
+
+  const sInput = document.getElementById('sickProofFile');
+  const sPreview = document.getElementById('sickProofPreview');
+  setupFilePreview(sInput, sPreview, 'sick');
 });
 
 // --- Eseményfigyelők ---

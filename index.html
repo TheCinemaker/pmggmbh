@@ -98,6 +98,7 @@
                         <div class="form-group">
                             <label for="fileInput" data-translate-key="timesheetFileLabel">Óralap (kép vagy PDF):</label>
                             <input type="file" id="fileInput" accept="image/*,application/pdf" required>
+                            <div id="timesheetPreview" class="preview-container hidden"></div>
                         </div>
                         <button type="submit" id="submitButton" data-translate-key="uploadButton">Feltöltés</button>
                     </form>
@@ -130,6 +131,7 @@
                         <div id="sickProofUploadGroup" class="form-group hidden">
                             <label for="sickProofFile" data-translate-key="sickProofLabel">Orvosi igazolás feltöltése:</label>
                             <input type="file" id="sickProofFile" accept="image/*,application/pdf">
+                            <div id="sickProofPreview" class="preview-container hidden"></div>
                         </div>
                         <button type="submit" id="absenceSubmitButton" data-translate-key="reportButton">Jelentés elküldése</button>
                     </form>
@@ -151,6 +153,7 @@
             </main>
         </div>
     </div>
+    <script src="imageCompressor.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

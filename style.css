@@ -178,6 +178,122 @@ button:disabled{ background:#4a5568; opacity:.75; cursor:not-allowed; }
   opacity:.6; cursor:not-allowed; pointer-events:none;
 }
 
+/* ---------- PREVIEW & TÖMÖRÍTÉS STÍLUSOK ---------- */
+.preview-container {
+  margin-top: .6rem;
+}
+.preview-loading {
+  padding: .6rem .8rem;
+  background: rgba(79, 140, 255, .1);
+  border: 1px dashed var(--primary-color);
+  border-radius: var(--radius-1);
+  font-size: .85rem;
+  color: var(--primary-color);
+  text-align: center;
+  font-weight: 600;
+  animation: pulse-border 1.5s infinite alternate;
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(79, 140, 255, .4); }
+  100% { border-color: rgba(79, 140, 255, 1); }
+}
+
+.preview-card {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: #111722;
+  border: 1px solid rgba(41, 179, 106, .4);
+  border-radius: var(--radius-1);
+  padding: .6rem .75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  animation: fadeIn .2s ease-out;
+}
+
+.preview-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: #000;
+  flex-shrink: 0;
+}
+
+.preview-pdf-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: #232c3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-filename {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-size-badge {
+  display: inline-block;
+  margin-top: .25rem;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .15rem .4rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .08);
+  color: var(--text-muted-color);
+}
+
+.preview-size-badge.saved {
+  background: rgba(41, 179, 106, .15);
+  color: #29b36a;
+  border: 1px solid rgba(41, 179, 106, .3);
+}
+
+.preview-remove-btn {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 50% !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+}
+
+.preview-remove-btn:hover {
+  background: rgba(255, 107, 107, .2) !important;
+  border-color: var(--error-color) !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ---------- PIN visibility ---------- */
 .input-with-toggle{ position:relative; width:100%; }
 .input-with-toggle input{ padding-right: 46px !important; }

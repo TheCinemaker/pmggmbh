@@ -815,10 +815,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (!weekRange.value.trim()) throw new Error('Bitte Stundenzettel-Datum angeben (z. B. 5–9 oder 30).');
           if (!fileInput.files.length) throw new Error('Bitte eine Datei auswählen.');
 
-          // Dateiname: + _ADMIN (FormData-ben, új File nélkül)
-          const orig = fileInput.files[0];
-          const ext = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
-          const base = orig.name.replace(/\.[^.]+$/, '');
+          let fileToUpload = fileInput.files[0];
+          if (typeof window.compressImageFile === 'function') {
+            submitBtn.textContent = 'Komprimieren…';
+            fileToUpload = await window.compressImageFile(fileToUpload);
+            submitBtn.textContent = 'Hochladen…';
+          }
+
+          const ext = fileToUpload.name.includes('.') ? fileToUpload.name.slice(fileToUpload.name.lastIndexOf('.')) : '';
+          const base = fileToUpload.name.replace(/\.[^.]+$/, '');
           const newBase = /_ADMIN(\b|$)/i.test(base) ? base : `${base}_ADMIN`;
 
           const fd = new FormData();
@@ -826,7 +831,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           fd.append('selectedMonth', month);
           fd.append('weekRange', weekRange.value.trim());
           fd.append('uploadedByAdmin', '1');
-          fd.append('file', orig, `${newBase}${ext}`);
+          fd.append('file', fileToUpload, `${newBase}${ext}`);
 
           resp = await fetch('/.netlify/functions/upload', { method: 'POST', body: fd });
           result = await resp.json();
@@ -837,9 +842,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (!endDate.value) throw new Error('Bitte Enddatum angeben.');
           if (!fileInput.files.length) throw new Error('Bei KRANK muss eine Bescheinigung hochgeladen werden.');
 
-          const orig = fileInput.files[0];
-          const ext = orig.name.includes('.') ? orig.name.slice(orig.name.lastIndexOf('.')) : '';
-          const base = orig.name.replace(/\.[^.]+$/, '');
+          let fileToUpload = fileInput.files[0];
+          if (typeof window.compressImageFile === 'function') {
+            submitBtn.textContent = 'Komprimieren…';
+            fileToUpload = await window.compressImageFile(fileToUpload);
+            submitBtn.textContent = 'Hochladen…';
+          }
+
+          const ext = fileToUpload.name.includes('.') ? fileToUpload.name.slice(fileToUpload.name.lastIndexOf('.')) : '';
+          const base = fileToUpload.name.replace(/\.[^.]+$/, '');
           const newBase = /_ADMIN(\b|$)/i.test(base) ? base : `${base}_ADMIN`;
 
           const fd = new FormData();
@@ -848,7 +859,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           fd.append('startDate', startDate.value);
           fd.append('endDate', endDate.value);
           fd.append('uploadedByAdmin', '1');
-          fd.append('file', orig, `${newBase}${ext}`);
+          fd.append('file', fileToUpload, `${newBase}${ext}`);
 
           resp = await fetch('/.netlify/functions/uploadSickProof', { method: 'POST', body: fd });
           result = await resp.json();
