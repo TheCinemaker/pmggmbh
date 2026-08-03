@@ -1,23 +1,26 @@
 // netlify/functions/getFileLink.js
 const { Dropbox } = require('dropbox');
 
-const REQUIRED = ['DROPBOX_REFRESH_TOKEN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'ALLOWED_ORIGIN'];
+const REQUIRED = ['DROPBOX_REFRESH_TOKEN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET'];
 function assertEnv() {
   const miss = REQUIRED.filter((k) => !process.env[k]);
   if (miss.length) throw new Error(`Hiányzó környezeti változók: ${miss.join(', ')}`);
 }
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
-
-const baseHeaders = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Cache-Control': 'no-store',
-};
+function getCorsHeaders(event) {
+  const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': 'no-store',
+  };
+}
 
 exports.handler = async (event) => {
+  const baseHeaders = getCorsHeaders(event);
+
   // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: baseHeaders };

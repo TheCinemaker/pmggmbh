@@ -7,10 +7,12 @@ const APP_SECRET = process.env.DROPBOX_APP_SECRET;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 
 exports.handler = async (event) => {
+    const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
     const headers = {
-        'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'no-store'
     };
 
     if (event.httpMethod === 'OPTIONS') {

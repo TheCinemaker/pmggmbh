@@ -1,7 +1,7 @@
 // netlify/functions/getFiles.js
 const { Dropbox } = require('dropbox');
 
-const REQUIRED = ['ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN'];
+const REQUIRED = ['DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN'];
 function assertEnv() {
   const miss = REQUIRED.filter(k => !process.env[k]);
   if (miss.length) throw new Error(`Hiányzó környezeti változók: ${miss.join(', ')}`);

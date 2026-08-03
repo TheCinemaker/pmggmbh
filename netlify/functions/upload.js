@@ -2,7 +2,7 @@ const { Dropbox } = require('dropbox');
 const Busboy = require('busboy');
 
 // --- Konfiguráció és Ellenőrzés ---
-const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN' ];
+const requiredEnvVars = [ 'DROPBOX_APP_KEY', 'DROPBOX_APP_SECRET', 'DROPBOX_REFRESH_TOKEN' ];
 
 function checkEnvVars() {
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -24,7 +24,6 @@ try {
 const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
 const APP_KEY = process.env.DROPBOX_APP_KEY;
 const APP_SECRET = process.env.DROPBOX_APP_SECRET;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
 
 const parseMultipartForm = (event) => {
@@ -49,7 +48,8 @@ const parseMultipartForm = (event) => {
 };
 
 exports.handler = async (event) => {
-    const headers = { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Access-Control-Allow-Headers': 'Content-Type' };
+    const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
+    const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'Content-Type' };
     if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {
