@@ -6,6 +6,15 @@ const PRIVATE_KEY    = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\
 const SHEET_ID       = process.env.GOOGLE_SHEET_ID;
 const SHEET_NAME     = process.env.GOOGLE_SHEET_NAME_USERS;
 
+// Laza normalizálás: mindenből csinálunk +… formátumot, ország-függetlenül
+function normalizePhoneLoose(raw) {
+  if (!raw) return '';
+  let s = String(raw).trim().replace(/[^\d+]/g, '');
+  if (s.startsWith('+')) return s;
+  if (s.startsWith('00')) return '+' + s.slice(2);
+  return '+' + s;
+}
+
 exports.handler = async (event) => {
   const reqOrigin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
   const headers = {

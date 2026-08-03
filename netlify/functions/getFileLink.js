@@ -57,26 +57,17 @@ exports.handler = async (event) => {
   });
 
   try {
-    // --- 1) TEMP LINK elsőre ID-vel (ha van), aztán path-szal ---
-    // Dropbox 'path' paramja elfogad "id:..." és tényleges útvonalat is.
-    const firstTry = fileId || path;
-    try {
-      console.log(`[getFileLink] Trying temporary link with: "${firstTry}"`);
-      const t = await dbx.filesGetTemporaryLink({ path: firstTry });
-      return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t.result.link }) };
-    } catch (e1) {
-      console.warn('Temp link bukott (first):', firstTry, e1?.status, e1?.error?.error_summary || e1?.message);
-      if (e1?.error) console.warn('Dropbox error detail:', JSON.stringify(e1.error));
-
-      // ha elsőre ID-vel próbáltunk és bukott, próbáljuk path-szal is (ha van)
-      if (fileId && path) {
-        try {
-          console.log(`[getFileLink] Trying fallback with path: "${path}"`);
-          const t2 = await dbx.filesGetTemporaryLink({ path });
-          return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t2.result.link }) };
-        } catch (e2) {
-          console.warn('Temp link bukott (path fallback):', path, e2?.status, e2?.error?.error_summary || e2?.message);
+    // --- 1) TEMP LINK próbálkozások több elérési úttal ---
+    const candidates = [fileId, path, rawPath, rawPath ? rawPath.normalize('NFC') : '', rawPath ? rawPath.normalize('NFD') : ''].filter(Boolean);
+    for (const candidate of candidates) {
+      try {
+        console.log(`[getFileLink] Trying temporary link with: "${candidate}"`);
+        const t = await dbx.filesGetTemporaryLink({ path: candidate });
+        if (t?.result?.link) {
+          return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t.result.link, link: t.result.link }) };
         }
+      } catch (e1) {
+        console.warn('Temp link candidate bukott:', candidate, e1?.status, e1?.error?.error_summary || e1?.message);
       }
     }
 
