@@ -253,9 +253,9 @@ button:disabled{ background:#4a5568; opacity:.75; cursor:not-allowed; }
   font-size: .85rem;
   font-weight: 600;
   color: var(--text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
 }
 
 .preview-size-badge {

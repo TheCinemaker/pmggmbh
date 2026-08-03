@@ -1109,9 +1109,9 @@ input:checked+.slider:before {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
   margin-bottom: 4px;
 }
 

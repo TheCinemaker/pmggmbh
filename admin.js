@@ -362,7 +362,6 @@ function renderList(data) {
     const files = Array.isArray(data[displayName]) ? data[displayName] : [];
     const userMeta = usersByName[normName(displayName)];
     const company = userMeta?.company || '';
-    const initials = getInitials(displayName);
 
     const card = document.createElement('div');
     card.className = 'user-card';
@@ -371,7 +370,9 @@ function renderList(data) {
     header.className = 'user-card-header';
     header.innerHTML = `
       <div class="user-info-group">
-        <div class="avatar-initials">${escapeHtml(initials)}</div>
+        <div class="avatar-initials" title="${escapeHtml(displayName)}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
         <div>
           <h3 title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</h3>
           ${company ? `<span class="company-tag">${escapeHtml(company)}</span>` : ''}
