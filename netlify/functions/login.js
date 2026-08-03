@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 
 // --- Konfiguráció és Ellenőrzés ---
-const requiredEnvVars = [ 'ALLOWED_ORIGIN', 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SHEET_NAME_USERS' ];
+const requiredEnvVars = [ 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SHEET_NAME_USERS' ];
 
 function checkEnvVars() {
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -24,11 +24,11 @@ const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SHEET_NAME = process.env.GOOGLE_SHEET_NAME_USERS;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 // --- Konfiguráció vége ---
 
 exports.handler = async (event) => {
-    const headers = { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Access-Control-Allow-Headers': 'Content-Type' };
+    const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
+    const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'Content-Type' };
     if (event.httpMethod === 'OPTIONS') { return { statusCode: 204, headers }; }
 
     try {

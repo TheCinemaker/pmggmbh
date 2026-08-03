@@ -358,10 +358,22 @@ function renderList(data) {
   const fragment = document.createDocumentFragment();
 
   users.forEach(displayNameRaw => {
-    const displayName = String(displayNameRaw);
-    const files = Array.isArray(data[displayName]) ? data[displayName] : [];
-    const userMeta = usersByName[normName(displayName)];
-    const company = userMeta?.company || '';
+    let displayName = String(displayNameRaw);
+    const normKey = normName(displayName);
+
+    // Keresünk egyező teljes nevet a Google Sheet-ből (pl. "GUTJAHR D..." -> "GUTJAHR DANIEL")
+    const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
+      const uNorm = normName(u.displayName || u.id || '');
+      const cleanKey = normKey.replace(/\.+/g, '').trim();
+      return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
+    });
+
+    if (matchedUser && matchedUser.displayName) {
+      displayName = matchedUser.displayName;
+    }
+
+    const files = Array.isArray(data[displayNameRaw]) ? data[displayNameRaw] : [];
+    const company = matchedUser?.company || '';
 
     const card = document.createElement('div');
     card.className = 'user-card';
