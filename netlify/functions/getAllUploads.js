@@ -175,10 +175,14 @@ exports.handler = async (event) => {
 
               files.forEach(f => {
                 const uploadedAt = f.server_modified || f.client_modified || null;
+                const pathToUse = f.path_display || f.path_lower;
                 result[userName].push({
                   folder: mf.name,
                   name: f.name,
-                  path: f.path_lower,
+                  path: pathToUse,
+                  path_lower: f.path_lower,
+                  path_display: f.path_display,
+                  id: f.id,
                   uploadedAt,
                   uploadedAtDisplay: formatHu(uploadedAt)
                 });

@@ -34,11 +34,35 @@ exports.handler = async (event) => {
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif'];
 
         if (imageExtensions.includes(ext)) {
-            // Kép esetén temporary link-et kérünk (egyszerűbb és gyorsabb)
-            console.log('[getThumbnail] Requesting temporary link for:', path);
-            const response = await dbx.filesGetTemporaryLink({ path: path });
+            let tempLink = null;
+            const candidates = [path, path.normalize('NFC'), path.normalize('NFD')].filter(Boolean);
+            for (const candidate of candidates) {
+                try {
+                    const response = await dbx.filesGetTemporaryLink({ path: candidate });
+                    if (response?.result?.link) {
+                        tempLink = response.result.link;
+                        break;
+                    }
+                } catch (e) {
+                    // Try next candidate
+                }
+            }
 
-            console.log('[getThumbnail] Temporary link received:', response.result.link);
+            if (!tempLink) {
+                try {
+                    const ls = await dbx.sharingListSharedLinks({ path, direct_only: true });
+                    let sl = ls?.result?.links?.[0]?.url || null;
+                    if (!sl) {
+                        const cr = await dbx.sharingCreateSharedLinkWithSettings({ path });
+                        sl = cr?.result?.url || null;
+                    }
+                    if (sl) {
+                        tempLink = sl.includes('?') ? `${sl}&raw=1` : `${sl}?raw=1`;
+                    }
+                } catch (eShare) {
+                    console.warn('[getThumbnail] Share link fallback is elhasalt:', eShare?.message);
+                }
+            }
 
             return {
                 statusCode: 200,
@@ -47,7 +71,7 @@ exports.handler = async (event) => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    thumbnail: response.result.link,
+                    thumbnail: tempLink,
                     type: 'image'
                 })
             };

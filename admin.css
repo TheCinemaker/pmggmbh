@@ -151,47 +151,150 @@ body {
   font-size: .9rem;
 }
 
-/* ===== Szűrő ===== */
-.form-group {
-  margin: 6px 0 18px
+/* ===== KPI STATS BAR ===== */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
-#nameFilter {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #0f1722, #0c141f);
-  color: var(--text);
-  outline: none;
-  transition: border-color .2s ease, box-shadow .2s ease;
-}
-
-#nameFilter::placeholder {
-  color: var(--muted)
-}
-
-#nameFilter:focus {
-  border-color: rgba(79, 140, 255, .35);
-  box-shadow: 0 0 0 4px var(--accent-weak);
-}
-
-/* ===== Kártya ===== */
-.user-card {
-  background: linear-gradient(180deg, #0d1520, #0a1019);
-  border: 2px solid var(--border);
-  border-radius: 18px;
-  padding: 14px 14px 8px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow);
-}
-
-/* Kártya – fejléc */
-.user-card-header {
+.stat-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 12px;
+  background: linear-gradient(180deg, #111a28, #0c131e);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  transition: transform .15s ease, border-color .15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 140, 255, .3);
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon.blue {
+  background: rgba(79, 140, 255, .15);
+  color: #4f8cff;
+  border: 1px solid rgba(79, 140, 255, .3);
+}
+
+.stat-icon.green {
+  background: rgba(41, 179, 106, .15);
+  color: #29b36a;
+  border: 1px solid rgba(41, 179, 106, .3);
+}
+
+.stat-icon.red {
+  background: rgba(255, 107, 107, .15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, .3);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.filter-results-summary {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+/* ===== Search input with icon ===== */
+.search-input-group {
+  position: relative;
+}
+
+.search-input-group .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-input-group input {
+  padding-left: 40px !important;
+}
+
+/* ===== User card header & Avatars ===== */
+.user-info-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f8cff, #29b36a);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(79, 140, 255, .3);
+  flex-shrink: 0;
+}
+
+.company-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.user-card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, .08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .user-card-header h3 {

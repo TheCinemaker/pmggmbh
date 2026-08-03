@@ -277,6 +277,39 @@ function setupLightboxEvents() {
 //////////////////////////////
 // Lista és modal render    //
 //////////////////////////////
+function updateKpiStats(data, filteredUsers) {
+  const statMitarbeiter = document.getElementById('statMitarbeiter');
+  const statFiles = document.getElementById('statFiles');
+  const statKrank = document.getElementById('statKrank');
+  const filterSummary = document.getElementById('filterResultsSummary');
+
+  let totalFiles = 0;
+  let totalKrank = 0;
+
+  filteredUsers.forEach(u => {
+    const files = Array.isArray(data[u]) ? data[u] : [];
+    totalFiles += files.length;
+    files.forEach(f => {
+      if (/krank/i.test(f.name || '')) totalKrank += 1;
+    });
+  });
+
+  if (statMitarbeiter) statMitarbeiter.textContent = filteredUsers.length;
+  if (statFiles) statFiles.textContent = totalFiles;
+  if (statKrank) statKrank.textContent = totalKrank;
+
+  if (filterSummary) {
+    filterSummary.textContent = `${filteredUsers.length} Mitarbeiter (${totalFiles} Dateien insgesamt)`;
+  }
+}
+
+function getInitials(name) {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 function renderList(data) {
   const userListContainer = document.getElementById('userListContainer');
   const nameFilter = document.getElementById('nameFilter');
@@ -298,26 +331,40 @@ function renderList(data) {
     return true;
   }).sort((a, b) => a.localeCompare(b, 'de-DE'));
 
+  updateKpiStats(data, users);
+
   userListContainer.innerHTML = '';
   const fragment = document.createDocumentFragment();
 
   users.forEach(displayNameRaw => {
     const displayName = String(displayNameRaw);
     const files = Array.isArray(data[displayName]) ? data[displayName] : [];
+    const userMeta = usersByName[normName(displayName)];
+    const company = userMeta?.company || '';
+    const initials = getInitials(displayName);
 
     const card = document.createElement('div');
     card.className = 'user-card';
 
     const header = document.createElement('div');
     header.className = 'user-card-header';
-    header.innerHTML =
-      `<h3 title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</h3>
-       <button class="info-btn" type="button" aria-label="Info" title="Info">
-         <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm.001 5.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM10.9 11.5h2.2v6h-2.2v-6z"/>
-         </svg>
-         <span class="sr-only">Info</span>
-       </button>`;
+    header.innerHTML = `
+      <div class="user-info-group">
+        <div class="avatar-initials">${escapeHtml(initials)}</div>
+        <div>
+          <h3 title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</h3>
+          ${company ? `<span class="company-tag">${escapeHtml(company)}</span>` : ''}
+        </div>
+      </div>
+      <div class="user-card-header-actions">
+        <span class="file-count-badge">${files.length} Datei${files.length !== 1 ? 'en' : ''}</span>
+        <button class="info-btn" type="button" aria-label="Info" title="Info">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm.001 5.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM10.9 11.5h2.2v6h-2.2v-6z"/>
+          </svg>
+          <span class="sr-only">Info</span>
+        </button>
+      </div>`;
     card.appendChild(header);
 
     const ul = document.createElement('div');
