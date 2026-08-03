@@ -38,12 +38,12 @@ const baseHeaders = {
 };
 
 // ---- Helper: lapozásos listázás teljes mappára ----
-async function listFolderAll(dbx, path) {
+async function listFolderAll(dbx, path, recursive = false) {
   let entries = [];
   let resp;
   try {
-    console.log(`[DEBUG] Attempting to list folder: "${path}"`);
-    resp = await dbx.filesListFolder({ path });
+    console.log(`[DEBUG] Attempting to list folder: "${path}" (recursive: ${recursive})`);
+    resp = await dbx.filesListFolder({ path, recursive });
     console.log(`[DEBUG] Successfully listed folder: "${path}", found ${resp.result.entries?.length || 0} entries`);
   } catch (err) {
     // Részletes hibainformáció naplózása
@@ -153,44 +153,39 @@ exports.handler = async (event) => {
 
     for (const year of yearsToScan) {
       const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
-      const userFolders = (await listFolderAll(dbx, basePath)).filter(e => e['.tag'] === 'folder');
+      const entries = await listFolderAll(dbx, basePath, true);
 
-      for (const uf of userFolders) {
-        const userName = uf.name;
-        if (!result[userName]) { result[userName] = []; }
+      entries.forEach(f => {
+        if (f['.tag'] !== 'file') return;
 
-        const monthFolders = (await listFolderAll(dbx, uf.path_lower)).filter(e => e['.tag'] === 'folder');
+        const pathToUse = f.path_display || f.path_lower || '';
+        const parts = pathToUse.split('/').filter(Boolean);
 
-        for (const mf of monthFolders) {
-          // Mappa név formátum: "1. Jänner" vagy "1. Januar" vagy "12. Dezember"
-          // Csak a szám prefix-et nézzük (pl. "1.", "12.")
-          const monthMatch = mf.name.match(/^(\d+)\./);
-          if (monthMatch) {
-            const folderMonth = parseInt(monthMatch[1], 10);
-            console.log(`[DEBUG] Checking folder "${mf.name}" (month: ${folderMonth}) for user "${userName}"`);
+        // Szerkezet: ["PMG Mindenes - PMG ALLES", "Stundenzettel 2026", "Munkatárs Neve", "Hónap Mappa", "Fájlnév"]
+        if (parts.length < 5) return;
 
-            if (relevantMonths.includes(folderMonth)) {
-              const files = (await listFolderAll(dbx, mf.path_lower)).filter(e => e['.tag'] === 'file');
-              console.log(`[DEBUG] Found ${files.length} files in "${mf.name}" for "${userName}"`);
+        const userName = parts[2];
+        const monthFolderName = parts[3];
 
-              files.forEach(f => {
-                const uploadedAt = f.server_modified || f.client_modified || null;
-                const pathToUse = f.path_display || f.path_lower;
-                result[userName].push({
-                  folder: mf.name,
-                  name: f.name,
-                  path: pathToUse,
-                  path_lower: f.path_lower,
-                  path_display: f.path_display,
-                  id: f.id,
-                  uploadedAt,
-                  uploadedAtDisplay: formatHu(uploadedAt)
-                });
-              });
-            }
+        const monthMatch = monthFolderName.match(/^(\d+)\./);
+        if (monthMatch) {
+          const folderMonth = parseInt(monthMatch[1], 10);
+          if (relevantMonths.includes(folderMonth)) {
+            if (!result[userName]) { result[userName] = []; }
+            const uploadedAt = f.server_modified || f.client_modified || null;
+            result[userName].push({
+              folder: monthFolderName,
+              name: f.name,
+              path: pathToUse,
+              path_lower: f.path_lower,
+              path_display: f.path_display,
+              id: f.id,
+              uploadedAt,
+              uploadedAtDisplay: formatHu(uploadedAt)
+            });
           }
         }
-      }
+      });
     }
 
     for (const user in result) {
