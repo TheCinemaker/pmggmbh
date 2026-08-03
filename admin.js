@@ -157,6 +157,118 @@ async function fetchAllUploads() {
   renderList(allUploads);
 }
 
+const thumbnailCache = new Map();
+
+async function loadFileThumbnail(path, thumbContainer, isImage) {
+  if (!path || !isImage) return;
+  if (thumbnailCache.has(path)) {
+    const cachedUrl = thumbnailCache.get(path);
+    if (cachedUrl) {
+      thumbContainer.innerHTML = `<img src="${cachedUrl}" class="card-thumb-img" alt="Vorschau" loading="lazy" />`;
+    }
+    return;
+  }
+
+  thumbContainer.innerHTML = `<div class="thumb-skeleton-loader"></div>`;
+
+  try {
+    const res = await fetch(`/.netlify/functions/getThumbnail?path=${encodeURIComponent(path)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.thumbnail) {
+      thumbnailCache.set(path, data.thumbnail);
+      thumbContainer.innerHTML = `<img src="${data.thumbnail}" class="card-thumb-img" alt="Vorschau" loading="lazy" />`;
+    } else {
+      thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
+    }
+  } catch (err) {
+    console.warn('[loadThumbnail] Hiba:', err);
+    thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
+  }
+}
+
+async function openFileLightbox(file, userName) {
+  const modal = document.getElementById('fileLightboxModal');
+  const body = document.getElementById('lightboxBody');
+  if (!modal || !body) return;
+
+  modal.classList.remove('hidden');
+  body.innerHTML = `<div class="lightbox-loading">⏳ Vorschau wird geladen…</div>`;
+
+  const name = file.name || '';
+  const folder = file.folder || '';
+  const when = file.uploadedAtDisplay ? formatDateDE(file.uploadedAtDisplay) : '';
+  const ext = name.toLowerCase().split('.').pop();
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+
+  let fileUrl = file.link || thumbnailCache.get(file.path) || null;
+
+  if (!fileUrl && file.path) {
+    try {
+      const resp = await fetch('/.netlify/functions/getFileLink', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: file.path })
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        fileUrl = json.link || json.url;
+      }
+    } catch (e) {
+      console.warn('[getFileLink] Lightbox hiba:', e);
+    }
+  }
+
+  let previewContent = '';
+  if (isImage && fileUrl) {
+    previewContent = `<img src="${fileUrl}" class="lightbox-img" alt="${escapeHtml(name)}" />`;
+  } else if (ext === 'pdf' && fileUrl) {
+    previewContent = `<iframe src="${fileUrl}" class="lightbox-pdf" title="${escapeHtml(name)}"></iframe>`;
+  } else {
+    previewContent = `<div class="lightbox-no-preview">📄 Keine direkte Vorschau verfügbar. Bitte herunterladen.</div>`;
+  }
+
+  let badgeClass = 'badge-stundenzettel';
+  let badgeText = 'Stundenzettel';
+  if (/krank/i.test(name)) {
+    badgeClass = 'badge-krank'; badgeText = 'Krankenstand';
+  } else if (/urlaub/i.test(name)) {
+    badgeClass = 'badge-urlaub'; badgeText = 'Urlaub';
+  }
+
+  body.innerHTML = `
+    <div class="lightbox-header">
+      <div>
+        <span class="card-badge ${badgeClass}">${badgeText}</span>
+        <h3 class="lightbox-title">${escapeHtml(name)}</h3>
+        <p class="lightbox-subtitle">👤 ${escapeHtml(userName)} &bull; 📂 ${escapeHtml(folder)} &bull; 📅 ${when}</p>
+      </div>
+    </div>
+    <div class="lightbox-media-container">
+      ${previewContent}
+    </div>
+    <div class="lightbox-actions">
+      ${fileUrl ? `<a href="${fileUrl}" target="_blank" download="${escapeHtml(name)}" class="action-button download-btn">⬇️ Öffnen / Herunterladen</a>` : ''}
+    </div>
+  `;
+}
+
+function setupLightboxEvents() {
+  const modal = document.getElementById('fileLightboxModal');
+  const closeBtn = document.getElementById('closeLightboxBtn');
+  const backdrop = modal?.querySelector('.lightbox-backdrop');
+
+  const close = () => modal?.classList.add('hidden');
+
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (backdrop) backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      close();
+    }
+  });
+}
+
 //////////////////////////////
 // Lista és modal render    //
 //////////////////////////////
@@ -215,17 +327,19 @@ function renderList(data) {
         const folder = f.folder || '';
         const name = f.name || '';
         const ext = name.toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
 
         const fileCard = document.createElement('div');
-        fileCard.className = 'file-card';
+        fileCard.className = 'file-card clickable';
+        fileCard.title = `${escapeHtml(name)} (Klicken zum Anzeigen)`;
 
         // Thumbnail container
         const thumbContainer = document.createElement('div');
         thumbContainer.className = 'file-thumbnail';
 
-        // Fájl típus alapján ikon vagy thumbnail
-        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
-          thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
+        if (isImage) {
+          thumbContainer.innerHTML = `<div class="thumb-skeleton-loader"></div>`;
+          loadFileThumbnail(f.path, thumbContainer, isImage);
         } else if (ext === 'pdf') {
           thumbContainer.innerHTML = `<div class="file-icon-large">📄</div>`;
         } else {
@@ -234,17 +348,35 @@ function renderList(data) {
 
         fileCard.appendChild(thumbContainer);
 
+        // Típus-jelvény kiszámítása
+        let badgeTag = '';
+        if (/krank/i.test(name)) {
+          badgeTag = `<span class="card-badge badge-krank">KRANK</span>`;
+        } else if (/urlaub/i.test(name)) {
+          badgeTag = `<span class="card-badge badge-urlaub">URLAUB</span>`;
+        } else {
+          badgeTag = `<span class="card-badge badge-stundenzettel">ZEIT</span>`;
+        }
+
         // File info
         const fileInfo = document.createElement('div');
         fileInfo.className = 'file-info';
         fileInfo.innerHTML = `
-          <div class="file-name-small" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+          <div class="file-card-top-row">
+            <span class="file-name-small" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+            ${badgeTag}
+          </div>
           <div class="file-meta">
             ${folder ? `<span class="file-folder">${escapeHtml(folder)}</span>` : ''}
             <span class="file-date-small">${when}</span>
           </div>
         `;
         fileCard.appendChild(fileInfo);
+
+        // Kattintás -> Lightbox megnyitása
+        fileCard.addEventListener('click', () => {
+          openFileLightbox(f, displayName);
+        });
 
         ul.appendChild(fileCard);
       });
@@ -950,6 +1082,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // gomb bekötése a DOM készülte után (BENN az IIFE-ben, nincs extra kapcsos/zárójel!)
   document.addEventListener('DOMContentLoaded', () => {
+    setupLightboxEvents();
     const btn = document.getElementById('openAdminUpload');
     if (btn) {
       btn.addEventListener('click', openAdminUploadModal);
