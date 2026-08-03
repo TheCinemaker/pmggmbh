@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMG Stundenzettel Manager 98 - Admin Desktop</title>
+  <link rel="stylesheet" href="admin-win98.css" />
+  <!-- Font for retro feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=MS+Sans+Serif&family=Tahoma:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="win98-body">
+
+  <!-- WIN98 MAIN WINDOW CONTAINER -->
+  <div class="win98-window" id="appWindow">
+    
+    <!-- TITLE BAR -->
+    <div class="win98-titlebar" id="titleBar">
+      <div class="win98-titlebar-text">
+        <svg class="win98-app-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>PMG Stundenzettel Manager 98 - [Admin Control Panel v1.0]</span>
+      </div>
+      <div class="win98-titlebar-controls">
+        <button class="win98-btn-title" id="btnMinimize" title="Minimieren">_</button>
+        <button class="win98-btn-title" id="btnMaximize" title="Maximieren">▢</button>
+        <button class="win98-btn-title close-btn" id="btnClose" title="Schließen">✕</button>
+      </div>
+    </div>
+
+    <!-- MENU BAR -->
+    <div class="win98-menubar">
+      <div class="menu-item"><u>D</u>atei</div>
+      <div class="menu-item"><u>B</u>earbeiten</div>
+      <div class="menu-item"><u>A</u>nsicht</div>
+      <div class="menu-item" id="menuWeeklyReport"><u>W</u>ochenbericht</div>
+      <div class="menu-item"><u>H</u>ilfe</div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="win98-toolbar">
+      <button class="win98-btn" id="btnRefresh">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Aktualisieren</span>
+      </button>
+
+      <div class="toolbar-separator"></div>
+
+      <button class="win98-btn" id="btnWeeklyReport">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Wochenbericht</span>
+      </button>
+
+      <button class="win98-btn" id="btnPrint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Drucken</span>
+      </button>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- SEARCH FIELD -->
+      <div class="win98-search-box">
+        <label for="win98Search">Suche:</label>
+        <input type="text" id="win98Search" class="win98-input" placeholder="Mitarbeiter filtern…" />
+      </div>
+
+      <div class="win98-search-box">
+        <label for="win98Company">Firma:</label>
+        <select id="win98Company" class="win98-select">
+          <option value="">(Alle Firmen)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAIN EXPLORER CONTENT AREA -->
+    <div class="win98-explorer-body">
+      
+      <!-- LEFT TREEVIEW PANE -->
+      <div class="win98-tree-pane">
+        <div class="tree-pane-header">Ordnerstruktur</div>
+        <div class="win98-tree" id="treeViewContainer">
+          <!-- Populated by JS -->
+          <div class="tree-node root-node">
+            <span class="tree-icon">📁</span>
+            <span class="tree-label">PMG Mindenes - PMG ALLES</span>
+          </div>
+          <div class="tree-children" id="treeChildren">
+            <div class="tree-loading">Lade Daten…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESIZER BAR -->
+      <div class="win98-splitter"></div>
+
+      <!-- RIGHT FILE GRID & DETAILS PANE -->
+      <div class="win98-details-pane">
+        <div class="details-pane-header" id="currentFolderHeader">
+          <span>Stundenzettel 2026 - Alle Mitarbeiter</span>
+        </div>
+        
+        <div class="win98-file-grid" id="win98FileGrid">
+          <!-- JS fills this -->
+        </div>
+
+        <!-- BOTTOM PREVIEW BAR -->
+        <div class="win98-preview-bar" id="win98PreviewBar">
+          <div class="preview-bar-title">Ausgewähltes Dokument:</div>
+          <div class="preview-bar-content" id="previewBarContent">
+            <i>Wählen Sie eine Datei aus der Liste aus.</i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS BAR AT THE BOTTOM -->
+    <div class="win98-statusbar">
+      <div class="status-cell" id="statusServer">Server: Verbunden</div>
+      <div class="status-cell" id="statusCount">0 Mitarbeiter geladen</div>
+      <div class="status-cell" id="statusFiles">0 Dateien</div>
+      <div class="status-cell" id="statusClock">12:00</div>
+    </div>
+
+  </div>
+
+  <!-- LIGHTBOX MODAL (WIN98 DIALOG) -->
+  <div id="win98Modal" class="win98-modal-overlay hidden">
+    <div class="win98-dialog">
+      <div class="win98-titlebar">
+        <span id="win98ModalTitle">Dokumentenvorschau</span>
+        <button class="win98-btn-title close-btn" id="closeWin98Modal">✕</button>
+      </div>
+      <div class="win98-dialog-body" id="win98ModalBody">
+        <!-- Content inserted dynamically -->
+      </div>
+      <div class="win98-dialog-footer">
+        <button class="win98-btn" id="win98ModalDownloadBtn">Herunterladen</button>
+        <button class="win98-btn" id="win98ModalCloseBtn">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin-win98.js"></script>
+</body>
+</html>
