@@ -179,11 +179,11 @@ async function loadFileThumbnail(path, thumbContainer, isImage) {
       thumbnailCache.set(path, data.thumbnail);
       thumbContainer.innerHTML = `<img src="${data.thumbnail}" class="card-thumb-img" alt="Vorschau" loading="lazy" />`;
     } else {
-      thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
+      thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
     }
   } catch (err) {
     console.warn('[loadThumbnail] Hiba:', err);
-    thumbContainer.innerHTML = `<div class="file-icon-large">🖼️</div>`;
+    thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
   }
 }
 
@@ -193,7 +193,7 @@ async function openFileLightbox(file, userName) {
   if (!modal || !body) return;
 
   modal.classList.remove('hidden');
-  body.innerHTML = `<div class="lightbox-loading">⏳ Vorschau wird geladen…</div>`;
+  body.innerHTML = `<div class="lightbox-loading"><svg class="spinner-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Vorschau wird geladen…</div>`;
 
   const name = file.name || '';
   const folder = file.folder || '';
@@ -225,7 +225,7 @@ async function openFileLightbox(file, userName) {
   } else if (ext === 'pdf' && fileUrl) {
     previewContent = `<iframe src="${fileUrl}" class="lightbox-pdf" title="${escapeHtml(name)}"></iframe>`;
   } else {
-    previewContent = `<div class="lightbox-no-preview">📄 Keine direkte Vorschau verfügbar. Bitte herunterladen.</div>`;
+    previewContent = `<div class="lightbox-no-preview"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Keine direkte Vorschau verfügbar. Bitte herunterladen.</div>`;
   }
 
   let badgeClass = 'badge-stundenzettel';
@@ -236,19 +236,24 @@ async function openFileLightbox(file, userName) {
     badgeClass = 'badge-urlaub'; badgeText = 'Urlaub';
   }
 
+  const iconUser = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  const iconFolder = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+  const iconCalendar = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+  const iconDownload = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+
   body.innerHTML = `
     <div class="lightbox-header">
       <div>
         <span class="card-badge ${badgeClass}">${badgeText}</span>
         <h3 class="lightbox-title">${escapeHtml(name)}</h3>
-        <p class="lightbox-subtitle">👤 ${escapeHtml(userName)} &bull; 📂 ${escapeHtml(folder)} &bull; 📅 ${when}</p>
+        <p class="lightbox-subtitle">${iconUser} ${escapeHtml(userName)} &bull; ${iconFolder} ${escapeHtml(folder)} &bull; ${iconCalendar} ${when}</p>
       </div>
     </div>
     <div class="lightbox-media-container">
       ${previewContent}
     </div>
     <div class="lightbox-actions">
-      ${fileUrl ? `<a href="${fileUrl}" target="_blank" download="${escapeHtml(name)}" class="action-button download-btn">⬇️ Öffnen / Herunterladen</a>` : ''}
+      ${fileUrl ? `<a href="${fileUrl}" target="_blank" download="${escapeHtml(name)}" class="action-button download-btn">${iconDownload} Öffnen / Herunterladen</a>` : ''}
     </div>
   `;
 }
@@ -341,9 +346,9 @@ function renderList(data) {
           thumbContainer.innerHTML = `<div class="thumb-skeleton-loader"></div>`;
           loadFileThumbnail(f.path, thumbContainer, isImage);
         } else if (ext === 'pdf') {
-          thumbContainer.innerHTML = `<div class="file-icon-large">📄</div>`;
+          thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>`;
         } else {
-          thumbContainer.innerHTML = `<div class="file-icon-large">📎</div>`;
+          thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>`;
         }
 
         fileCard.appendChild(thumbContainer);
@@ -1018,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (!resp.ok) throw new Error(result.message || 'Speicherfehler (Abwesenheit).');
         }
 
-        notify('Fertig! ✅', 'success');
+        notify('Fertig!', 'success');
         close();
 
         // jelezd a főképernyőnek, hogy frissítsen

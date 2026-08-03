@@ -183,6 +183,10 @@ button:disabled{ background:#4a5568; opacity:.75; cursor:not-allowed; }
   margin-top: .6rem;
 }
 .preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
   padding: .6rem .8rem;
   background: rgba(79, 140, 255, .1);
   border: 1px dashed var(--primary-color);
@@ -192,6 +196,10 @@ button:disabled{ background:#4a5568; opacity:.75; cursor:not-allowed; }
   text-align: center;
   font-weight: 600;
   animation: pulse-border 1.5s infinite alternate;
+}
+
+.spinner-svg {
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes pulse-border {
