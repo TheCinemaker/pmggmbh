@@ -1,5 +1,5 @@
 // ===== ELECTRON MAIN PROCESS FOR WINDOWS 98 DESKTOP APP ===== //
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 
 let mainWindow = null;
@@ -23,6 +23,20 @@ function createWindow() {
 
   // Remove standard browser menu bar for true native Windows feel
   mainWindow.setMenuBarVisibility(false);
+
+  // A Dropbox linkek target="_blank"-kel nyílnak. Handler nélkül az Electron
+  // egy csupasz, keret nélküli ablakot nyitna – helyette az alapértelmezett
+  // böngészőnek adjuk át, ott a letöltés is normálisan működik.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  // Az <a download> által indított letöltéseket az Electron kezeli;
+  // a felhasználó kap egy natív mentés-párbeszédet.
+  mainWindow.webContents.session.on('will-download', (_event, item) => {
+    item.setSaveDialogOptions({ title: 'Dokument speichern', defaultPath: item.getFilename() });
+  });
 
   // Load the Win98 admin app
   const appUrl = process.env.APP_URL || 'https://dev--pmggmbh.netlify.app/admin-win98.html';

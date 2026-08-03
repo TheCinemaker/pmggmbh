@@ -6,6 +6,14 @@ const APP_KEY = process.env.DROPBOX_APP_KEY;
 const APP_SECRET = process.env.DROPBOX_APP_SECRET;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 
+// A Dropbox SDK a nem-JSON hibatestet (pl. a hiányzó scope 400-as, sima szöveges
+// válaszát) az e.error mezőben adja vissza, az e.message viszont csak annyi:
+// "Response failed with a 400 code". Ezért mindkettőt ki kell olvasni.
+function describeDbxError(e) {
+  const body = typeof e?.error === 'string' ? e.error : e?.error?.error_summary;
+  return [e?.status, body || e?.message || 'Unknown error'].filter(Boolean).join(' - ');
+}
+
 exports.handler = async (event) => {
     const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
     const headers = {
@@ -21,6 +29,7 @@ exports.handler = async (event) => {
 
     try {
         const path = event.queryStringParameters?.path;
+        const fileId = event.queryStringParameters?.fileId;
         if (!path) {
             throw new Error('Missing path parameter');
         }
@@ -33,11 +42,14 @@ exports.handler = async (event) => {
 
         // Ellenőrizzük a fájl kiterjesztését
         const ext = path.toLowerCase().split('.').pop();
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'tif'];
 
         if (imageExtensions.includes(ext)) {
             let tempLink = null;
-            const candidates = [path, path.normalize('NFC'), path.normalize('NFD')].filter(Boolean);
+            const problems = [];
+            // A fileId ("id:...") a legmegbízhatóbb azonosító: nem érzékeny a
+            // kis/nagybetűre és az ékezetek unicode-normalizálására.
+            const candidates = [fileId, path, path.normalize('NFC'), path.normalize('NFD')].filter(Boolean);
             for (const candidate of candidates) {
                 try {
                     const response = await dbx.filesGetTemporaryLink({ path: candidate });
@@ -46,7 +58,7 @@ exports.handler = async (event) => {
                         break;
                     }
                 } catch (e) {
-                    // Try next candidate
+                    problems.push(`temp_link(${candidate}): ${describeDbxError(e)}`);
                 }
             }
 
@@ -62,8 +74,12 @@ exports.handler = async (event) => {
                         tempLink = sl.includes('?') ? `${sl}&raw=1` : `${sl}?raw=1`;
                     }
                 } catch (eShare) {
-                    console.warn('[getThumbnail] Share link fallback is elhasalt:', eShare?.message);
+                    problems.push(`share_link: ${describeDbxError(eShare)}`);
                 }
+            }
+
+            if (!tempLink) {
+                console.error('[getThumbnail] Nem sikerült linket szerezni:', path, problems);
             }
 
             return {
@@ -74,7 +90,10 @@ exports.handler = async (event) => {
                 },
                 body: JSON.stringify({
                     thumbnail: tempLink,
-                    type: 'image'
+                    type: 'image',
+                    // Ha nincs link, a kliens konzoljában is látszódjon a valódi ok
+                    // (pl. hiányzó Dropbox scope), ne csak egy néma null.
+                    error: tempLink ? undefined : (problems.join(' | ') || 'Nem sikerült linket generálni')
                 })
             };
         } else if (ext === 'pdf') {

@@ -277,7 +277,7 @@ function renderFileGrid() {
 
     if (isImage) {
       thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
-      loadThumbnail(f.path, thumbBox);
+      loadThumbnail(f.path, thumbBox, f.id);
     } else if (ext === 'pdf') {
       thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
     } else {
@@ -298,7 +298,7 @@ function renderFileGrid() {
 }
 
 // ROBUST THUMBNAIL LOADING WITH DIRECT LINK FALLBACK
-async function loadThumbnail(path, container) {
+async function loadThumbnail(path, container, fileId) {
   if (!path) return;
   if (thumbnailCache.has(path)) {
     const url = thumbnailCache.get(path);
@@ -308,34 +308,39 @@ async function loadThumbnail(path, container) {
 
   // 1) Try getThumbnail endpoint first
   try {
-    const res = await fetch(`/.netlify/functions/getThumbnail?path=${encodeURIComponent(path)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.thumbnail) {
-        thumbnailCache.set(path, data.thumbnail);
-        container.innerHTML = `<img src="${data.thumbnail}" class="win98-thumb-img" alt="Vorschau" />`;
-        return;
-      }
+    const qs = new URLSearchParams({ path });
+    if (fileId) qs.set('fileId', fileId);
+    const res = await fetch(`/.netlify/functions/getThumbnail?${qs}`);
+    const data = res.ok ? await res.json() : null;
+    if (data && data.thumbnail) {
+      thumbnailCache.set(path, data.thumbnail);
+      container.innerHTML = `<img src="${data.thumbnail}" class="win98-thumb-img" alt="Vorschau" />`;
+      return;
     }
-  } catch (e) {}
+    // A szerver 200-at ad üres thumbnaillel is – itt derül ki a valódi ok.
+    console.warn('[Thumbnail] Nincs link:', path, data?.error || `HTTP ${res.status}`);
+  } catch (e) {
+    console.warn('[Thumbnail] getThumbnail hiba:', path, e);
+  }
 
   // 2) Fallback to getFileLink for direct image link if getThumbnail had issues
   try {
     const resp = await fetch('/.netlify/functions/getFileLink', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: path })
+      body: JSON.stringify({ path, fileId })
     });
-    if (resp.ok) {
-      const json = await resp.json();
-      const directUrl = json.url || json.link;
-      if (directUrl) {
-        thumbnailCache.set(path, directUrl);
-        container.innerHTML = `<img src="${directUrl}" class="win98-thumb-img" alt="Vorschau" />`;
-        return;
-      }
+    const json = await resp.json().catch(() => null);
+    const directUrl = resp.ok ? (json?.url || json?.link) : null;
+    if (directUrl) {
+      thumbnailCache.set(path, directUrl);
+      container.innerHTML = `<img src="${directUrl}" class="win98-thumb-img" alt="Vorschau" />`;
+      return;
     }
-  } catch (e) {}
+    console.warn('[Thumbnail] getFileLink fallback bukott:', path, json?.error || `HTTP ${resp.status}`, json?.attempts || '');
+  } catch (e) {
+    console.warn('[Thumbnail] getFileLink hiba:', path, e);
+  }
 
   container.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 }
@@ -354,19 +359,24 @@ async function openLightbox(file) {
   body.innerHTML = `<div style="padding:20px; text-align:center;">Lade Dokumenten-Link von Dropbox…</div>`;
 
   let fileUrl = thumbnailCache.get(file.path) || null;
+  let linkError = null;
 
   if (!fileUrl) {
     try {
       const resp = await fetch('/.netlify/functions/getFileLink', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: file.path })
+        body: JSON.stringify({ path: file.path, fileId: file.id })
       });
-      if (resp.ok) {
-        const json = await resp.json();
+      const json = await resp.json().catch(() => null);
+      if (resp.ok && (json?.url || json?.link)) {
         fileUrl = json.url || json.link;
+      } else {
+        linkError = json?.error || `HTTP ${resp.status}`;
+        console.warn('getFileLink bukott:', file.path, linkError, json?.attempts || '');
       }
     } catch (e) {
+      linkError = e.message;
       console.warn('getFileLink hiba:', e);
     }
   }
@@ -391,14 +401,27 @@ async function openLightbox(file) {
       <div style="padding:20px; text-align:center;">
         <p><b>${escapeHtml(file.name || '')}</b></p>
         <p>Keine direkte Vorschau im Fenster verfügbar.</p>
-        ${fileUrl ? `<p><a href="${fileUrl}" target="_blank"><u>Klicken Sie hier zum Öffnen / Herunterladen</u></a></p>` : ''}
+        ${fileUrl
+          ? `<p><a href="${fileUrl}" target="_blank"><u>Klicken Sie hier zum Öffnen / Herunterladen</u></a></p>`
+          : `<p style="color:#a00;">Dropbox-Link konnte nicht erstellt werden:<br/><code>${escapeHtml(linkError || 'unbekannter Fehler')}</code></p>`}
       </div>
     `;
   }
 
   if (downloadBtn) {
+    downloadBtn.disabled = !fileUrl;
     downloadBtn.onclick = () => {
-      if (fileUrl) window.open(fileUrl, '_blank');
+      if (!fileUrl) return;
+      // Electronban a window.open csak akkor nyit ablakot, ha a main process
+      // setWindowOpenHandler-e engedi – a <a download> minden környezetben megy.
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = file.name || '';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     };
   }
 }

@@ -180,7 +180,7 @@ async function fetchAllUploads() {
 
 const thumbnailCache = new Map();
 
-async function loadFileThumbnail(path, thumbContainer, isImage) {
+async function loadFileThumbnail(path, thumbContainer, isImage, fileId) {
   if (!path || !isImage) return;
   if (thumbnailCache.has(path)) {
     const cachedUrl = thumbnailCache.get(path);
@@ -193,13 +193,16 @@ async function loadFileThumbnail(path, thumbContainer, isImage) {
   thumbContainer.innerHTML = `<div class="thumb-skeleton-loader"></div>`;
 
   try {
-    const res = await fetch(`/.netlify/functions/getThumbnail?path=${encodeURIComponent(path)}`);
+    const qs = new URLSearchParams({ path });
+    if (fileId) qs.set('fileId', fileId);
+    const res = await fetch(`/.netlify/functions/getThumbnail?${qs}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && data.thumbnail) {
       thumbnailCache.set(path, data.thumbnail);
       thumbContainer.innerHTML = `<img src="${data.thumbnail}" class="card-thumb-img" alt="Vorschau" loading="lazy" />`;
     } else {
+      console.warn('[loadThumbnail] Nincs link:', path, data?.error || '(ismeretlen ok)');
       thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
     }
   } catch (err) {
@@ -229,11 +232,13 @@ async function openFileLightbox(file, userName) {
       const resp = await fetch('/.netlify/functions/getFileLink', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: file.path })
+        body: JSON.stringify({ path: file.path, fileId: file.id })
       });
-      if (resp.ok) {
-        const json = await resp.json();
+      const json = await resp.json().catch(() => null);
+      if (resp.ok && (json?.link || json?.url)) {
         fileUrl = json.link || json.url;
+      } else {
+        console.warn('[getFileLink] Lightbox bukott:', file.path, json?.error || `HTTP ${resp.status}`, json?.attempts || '');
       }
     } catch (e) {
       console.warn('[getFileLink] Lightbox hiba:', e);
@@ -425,7 +430,7 @@ function renderList(data) {
 
         if (isImage) {
           thumbContainer.innerHTML = `<div class="thumb-skeleton-loader"></div>`;
-          loadFileThumbnail(f.path, thumbContainer, isImage);
+          loadFileThumbnail(f.path, thumbContainer, isImage, f.id);
         } else if (ext === 'pdf') {
           thumbContainer.innerHTML = `<div class="file-icon-large"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>`;
         } else {

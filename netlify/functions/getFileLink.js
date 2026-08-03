@@ -7,6 +7,14 @@ function assertEnv() {
   if (miss.length) throw new Error(`Hiányzó környezeti változók: ${miss.join(', ')}`);
 }
 
+// A Dropbox SDK a nem-JSON hibatestet (pl. a hiányzó scope 400-as, sima szöveges
+// válaszát) az e.error mezőben adja vissza, az e.message viszont csak annyi:
+// "Response failed with a 400 code". Ezért mindkettőt ki kell olvasni.
+function describeDbxError(e) {
+  const body = typeof e?.error === 'string' ? e.error : e?.error?.error_summary;
+  return body || e?.message || 'Unknown error';
+}
+
 function getCorsHeaders(event) {
   const origin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
   return {
@@ -56,6 +64,8 @@ exports.handler = async (event) => {
     clientSecret: process.env.DROPBOX_APP_SECRET,
   });
 
+  const problems = [];
+
   try {
     // --- 1) TEMP LINK próbálkozások több elérési úttal ---
     const candidates = [fileId, path, rawPath, rawPath ? rawPath.normalize('NFC') : '', rawPath ? rawPath.normalize('NFD') : ''].filter(Boolean);
@@ -67,7 +77,9 @@ exports.handler = async (event) => {
           return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: t.result.link, link: t.result.link }) };
         }
       } catch (e1) {
-        console.warn('Temp link candidate bukott:', candidate, e1?.status, e1?.error?.error_summary || e1?.message);
+        const desc = describeDbxError(e1);
+        problems.push(`temp_link(${candidate}): ${e1?.status} ${desc}`);
+        console.warn('Temp link candidate bukott:', candidate, e1?.status, desc);
       }
     }
 
@@ -102,16 +114,17 @@ exports.handler = async (event) => {
       const direct = sl.includes('?') ? `${sl}&raw=1` : `${sl}?raw=1`;
       return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ url: direct }) };
     } catch (eShare) {
-      console.warn('Share link bukott:', eShare?.status, eShare?.error?.error_summary || eShare?.message);
-      const msg = eShare?.error?.error_summary || eShare?.message || 'Link create failed';
+      const msg = describeDbxError(eShare);
+      console.warn('Share link bukott:', eShare?.status, msg);
+      problems.push(`share_link(${usePath}): ${eShare?.status} ${msg}`);
       const code = /not_found|lookup_failed/i.test(msg) ? 404 : 500;
-      return { statusCode: code, headers: baseHeaders, body: JSON.stringify({ error: msg }) };
+      return { statusCode: code, headers: baseHeaders, body: JSON.stringify({ error: msg, attempts: problems }) };
     }
   } catch (e) {
     console.error('getFileLink fatális:', e);
 
     // Részletesebb hibaüzenet visszaküldése
-    const errMsg = e.error?.error_summary || e.message || 'Server error';
+    const errMsg = describeDbxError(e);
     const statusCode = e.status || 500;
 
     return {
@@ -119,7 +132,8 @@ exports.handler = async (event) => {
       headers: baseHeaders,
       body: JSON.stringify({
         error: errMsg,
-        details: e.error
+        details: e.error,
+        attempts: problems
       })
     };
   }
