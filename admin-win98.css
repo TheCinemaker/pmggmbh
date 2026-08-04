@@ -431,6 +431,11 @@ html, body.win98-body {
   border: 1px dashed #d0c000 !important;
 }
 
+/* HIDE PRINT CONTAINER ON SCREEN */
+#printContainer {
+  display: none;
+}
+
 /* PRINT MEDIA FORMATTING FOR TIME SHEETS */
 @media print {
   body * {
@@ -438,12 +443,14 @@ html, body.win98-body {
   }
   #printContainer, #printContainer * {
     visibility: visible !important;
+    display: block !important;
   }
   #printContainer {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    display: block !important;
   }
   .print-page {
     page-break-after: always;

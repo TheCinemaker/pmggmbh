@@ -1077,6 +1077,9 @@ async function printSelectedFiles(overrideFilesList = null) {
 
   setTimeout(() => {
     window.print();
+    setTimeout(() => {
+      if (existingContainer) existingContainer.innerHTML = '';
+    }, 1000);
   }, 500);
 }
 
