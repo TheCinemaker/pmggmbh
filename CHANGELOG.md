@@ -2,6 +2,12 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **`Wochenbericht` Eltávolítása & `✨ Neue Uploads` (Legutóbbi Megtekintés Óta Érkezett Új Feltöltések) Modul**:
+  - Eltávolítva a felesleges `Wochenbericht` gomb az eszköztárról.
+  - Helyére beépítve az **új feltöltéseket nyomon követő Win98 modul** (`✨ Neue Uploads`).
+  - Az eszköztáron egy piros jelvény (`✨ Neue Uploads [3]`) jelzi a legutóbbi megtekintés óta érkezett új óralapok számát.
+  - A felugró ablakban táblázatosan megjelenik az összes új feltöltés (Munkatárs neve, hónap, fájlnév), amik egy kattintással (`👁️ Vorschau`) azonnal megtekinthetők.
+  - A **`✔ Als gelesen markieren`** gombra kattintva a felület elmenti a pillanatképet (`pmg_win98_seen_files_snapshot`), és nullázza az új feltöltések jelvényét!.
 - **100% Nyers Google Sheets Cella-beolvasás (Oszlop A..L) & Tiszta Német Űrlap (Fix)**:
   - Az alkalmazás mostantól **kivétel nélkül mind a 12 oszlop nyers értékét pontosan úgy olvassa be a Google Sheets-ből, ahogy az be van írva** (a `munkarend` / Col I, `Typ` / Col C, `PIN`, `Baustelle`, `Vorarbeiter` stb. adatokkal együtt, mindenféle átalakítás, kisbetűsítés vagy kényszerített alapértelmezett érték nélkül).
   - A felugró Win98 `👥 Mitarbeiter` ablak összes mezőcímkéjéből törölve lettek a magyar szavak, helyettük egyértelmű **német feliratok és oszlopjelölők (Col A-L)** szerepelnek.

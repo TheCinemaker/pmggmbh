@@ -189,6 +189,7 @@ async function fetchUploadsData(silent = false) {
     renderTree(allUploadsData);
     renderFileGrid();
     updateStatusCount();
+    updateNewUploadsBadge();
   } catch (err) {
     console.error('[Win98 Admin] Hiba:', err);
     if (statusServer && !Object.keys(allUploadsData).length) {
@@ -699,62 +700,166 @@ async function openLightbox(file) {
   }
 }
 
-// SETUP INTERACTIVE MENU DROPDOWNS
-function initMenuDropdowns() {
-  document.getElementById('menuWeeklyReport')?.addEventListener('click', openWeeklyReportDialog);
-  document.getElementById('btnWeeklyReport')?.addEventListener('click', openWeeklyReportDialog);
+// ========================================================
+// NEUE UPLOADS SEIT DEM LETZTEN BESUCH (NEW UPLOADS TRACKER)
+// ========================================================
+function getSeenSnapshot() {
+  try {
+    const raw = localStorage.getItem('pmg_win98_seen_files_snapshot');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
 }
 
-// OPEN WOCHENBERICHT (WEEKLY REPORT DIALOG)
-async function openWeeklyReportDialog() {
-  const modal = document.getElementById('win98Modal');
-  const body = document.getElementById('win98ModalBody');
-  const title = document.getElementById('win98ModalTitle');
-
-  if (!modal || !body) return;
-
-  modal.classList.remove('hidden');
-  if (title) title.textContent = 'Wochenbericht (Statusübersicht)';
-  body.innerHTML = `<div style="padding:20px; text-align:center;">Lade Wochenbericht vom Szerver…</div>`;
-
+function saveSeenSnapshot(paths) {
   try {
-    const resp = await fetch('/.netlify/functions/checkWeeklyUploads');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
+    localStorage.setItem('pmg_win98_seen_files_snapshot', JSON.stringify(paths || []));
+  } catch (e) {}
+}
 
-    let html = `
-      <div style="margin-bottom:8px; font-weight:bold;">Wochenbericht für KW ${data.week || ''} (${data.dateRange || ''}):</div>
-      <table style="width:100%; border-collapse:collapse; font-size:11px; background:#fff; border:1px solid #808080;">
-        <thead>
-          <tr style="background:#000080; color:#fff;">
-            <th style="padding:4px; text-align:left; border:1px solid #808080;">Mitarbeiter</th>
-            <th style="padding:4px; text-align:center; border:1px solid #808080;">Status</th>
-            <th style="padding:4px; text-align:left; border:1px solid #808080;">Hochgeladene Datei</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
+function getNewFilesSinceLastView() {
+  const snapshot = getSeenSnapshot();
+  const allCurrentPaths = [];
+  const newFiles = [];
 
-    const items = data.report || data.users || [];
-    items.forEach(item => {
-      const isUploaded = item.status === 'OK' || item.uploaded;
-      const bg = isUploaded ? '#e6ffe6' : '#ffe6e6';
-      const statusTag = isUploaded ? '<span style="color:green; font-weight:bold;">✔ HOCHGELADEN</span>' : '<span style="color:red; font-weight:bold;">✘ FEHLT</span>';
+  Object.keys(allUploadsData || {}).forEach(userKey => {
+    const lowUser = String(userKey || '').toLowerCase();
+    if (lowUser.includes('ausgeschieden') || lowUser.includes('system')) return;
 
-      html += `
-        <tr style="background:${bg};">
-          <td style="padding:4px; border:1px solid #808080;"><b>${escapeHtml(item.name || item.userName)}</b></td>
-          <td style="padding:4px; text-align:center; border:1px solid #808080;">${statusTag}</td>
-          <td style="padding:4px; border:1px solid #808080;">${escapeHtml(item.fileName || item.file || '-')}</td>
-        </tr>
-      `;
+    let resolvedName = userKey;
+    const normKey = normName(userKey);
+    const matched = usersByName[normKey];
+    if (matched && matched.displayName) resolvedName = matched.displayName;
+
+    const userFiles = allUploadsData[userKey] || [];
+    userFiles.forEach(f => {
+      if (!f.path) return;
+      allCurrentPaths.push(f.path);
+
+      if (snapshot && Array.isArray(snapshot)) {
+        if (!snapshot.includes(f.path)) {
+          newFiles.push({ ...f, userName: userKey, resolvedName });
+        }
+      }
     });
+  });
 
-    html += `</tbody></table>`;
-    body.innerHTML = html;
-  } catch (e) {
-    console.error('Wochenbericht hiba:', e);
-    body.innerHTML = `<div style="color:red; padding:10px;">Fehler beim Laden des Wochenberichts.</div>`;
+  // If first time (no snapshot saved yet), initialize snapshot with current files
+  if (snapshot === null) {
+    saveSeenSnapshot(allCurrentPaths);
+    return [];
+  }
+
+  return newFiles;
+}
+
+function updateNewUploadsBadge() {
+  const badge = document.getElementById('newUploadsBadge');
+  if (!badge) return;
+
+  const newFiles = getNewFilesSinceLastView();
+  if (newFiles.length > 0) {
+    badge.textContent = `${newFiles.length}`;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.textContent = '0';
+    badge.style.display = 'none';
+  }
+}
+
+function openNewUploadsDialog() {
+  const modal = document.getElementById('win98NewUploadsModal');
+  const summaryEl = document.getElementById('newUploadsSummaryText');
+  const container = document.getElementById('newUploadsListContainer');
+
+  if (!modal) return;
+
+  modal.style.zIndex = '100000';
+  modal.classList.remove('hidden');
+
+  const newFiles = getNewFilesSinceLastView();
+
+  if (summaryEl) {
+    summaryEl.textContent = newFiles.length > 0
+      ? `✨ Es wurden ${newFiles.length} neue Upload(s) seit Ihrem letzten Besuch gefunden:`
+      : `✔ Keine neuen Uploads seit dem letzten Besuch. (Alle Dokumente sind auf dem neuesten Stand)`;
+  }
+
+  if (!container) return;
+
+  if (newFiles.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #808080; font-size: 12px;">
+        ✔ Alle hochgeladenen Stundenzettel wurden bereits gesehen.
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <table style="width:100%; border-collapse:collapse; font-size:11px; background:#fff; border:1px solid #808080;">
+      <thead>
+        <tr style="background:#000080; color:#fff;">
+          <th style="padding:4px; text-align:left; border:1px solid #808080;">Mitarbeiter</th>
+          <th style="padding:4px; text-align:left; border:1px solid #808080;">Ordner (Monat)</th>
+          <th style="padding:4px; text-align:left; border:1px solid #808080;">Dateiname</th>
+          <th style="padding:4px; text-align:center; border:1px solid #808080;">Aktion</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  newFiles.forEach((f, idx) => {
+    html += `
+      <tr style="background:${idx % 2 === 0 ? '#fff' : '#f0f0f0'};">
+        <td style="padding:4px; border:1px solid #808080;"><b>👤 ${escapeHtml(f.resolvedName || f.userName)}</b></td>
+        <td style="padding:4px; border:1px solid #808080;">📂 ${escapeHtml(f.folder || '')}</td>
+        <td style="padding:4px; border:1px solid #808080;">📄 ${escapeHtml(f.name || '')}</td>
+        <td style="padding:4px; text-align:center; border:1px solid #808080;">
+          <button class="win98-btn" onclick="openNewUploadFileByIndex(${idx})" style="font-size:10px; padding:1px 6px;">👁️ Vorschau</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+
+  // Store transient reference for openNewUploadFileByIndex
+  window._activeNewFilesList = newFiles;
+}
+
+function openNewUploadFileByIndex(idx) {
+  const list = window._activeNewFilesList || [];
+  if (list[idx]) {
+    openLightbox(list[idx]);
+  }
+}
+
+function markNewUploadsAsRead() {
+  const allCurrentPaths = [];
+  Object.keys(allUploadsData || {}).forEach(userKey => {
+    (allUploadsData[userKey] || []).forEach(f => {
+      if (f.path) allCurrentPaths.push(f.path);
+    });
+  });
+
+  saveSeenSnapshot(allCurrentPaths);
+  updateNewUploadsBadge();
+
+  const summaryEl = document.getElementById('newUploadsSummaryText');
+  const container = document.getElementById('newUploadsListContainer');
+
+  if (summaryEl) {
+    summaryEl.textContent = '✔ Alle neuen Uploads wurden als gelesen markiert.';
+  }
+  if (container) {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: green; font-size: 12px; font-weight: bold;">
+        ✅ Snapshot aktualisiert! Alle aktuellen Dateien als gesehen markiert.
+      </div>
+    `;
   }
 }
 
@@ -835,6 +940,16 @@ function setupEvents() {
   document.getElementById('btnNewUserForm')?.addEventListener('click', resetUserEditForm);
   document.getElementById('btnSaveUserSubmit')?.addEventListener('click', () => handleSaveUserSubmit(false));
   document.getElementById('btnMarkInactiveUser')?.addEventListener('click', () => handleSaveUserSubmit(true));
+
+  // NEW UPLOADS TRACKER EVENT LISTENERS
+  document.getElementById('btnNewUploads')?.addEventListener('click', openNewUploadsDialog);
+  document.getElementById('closeWin98NewUploadsModal')?.addEventListener('click', () => {
+    document.getElementById('win98NewUploadsModal')?.classList.add('hidden');
+  });
+  document.getElementById('closeNewUploadsModalBtn')?.addEventListener('click', () => {
+    document.getElementById('win98NewUploadsModal')?.classList.add('hidden');
+  });
+  document.getElementById('btnMarkNewUploadsAsRead')?.addEventListener('click', markNewUploadsAsRead);
 }
 
 // FETCH STATUS REGISTRY

@@ -46,9 +46,10 @@
 
       <div class="toolbar-separator"></div>
 
-      <button class="win98-btn" id="btnWeeklyReport">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Wochenbericht</span>
+      <button class="win98-btn" id="btnNewUploads" title="Neue Uploads seit dem letzten Besuch prüfen">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Neue Uploads</span>
+        <span id="newUploadsBadge" style="background:#a00; color:#fff; font-size:10px; font-weight:bold; padding:1px 5px; border-radius:8px; margin-left:4px; display:none;">0</span>
       </button>
 
       <button class="win98-btn" id="btnNewNote" title="Jegyzet írása ebbe a mappába">
@@ -322,6 +323,29 @@
     </div>
   </div>
 
-  <script src="admin-win98.js?v=20260804_v14"></script>
+  <!-- NEW UPLOADS DIALOG (WIN98 MODAL) -->
+  <div id="win98NewUploadsModal" class="win98-modal-overlay hidden">
+    <div class="win98-dialog" style="width: 720px; max-width: 95vw;">
+      <div class="win98-titlebar">
+        <span>✨ Neue Uploads seit dem letzten Besuch</span>
+        <button class="win98-btn-title close-btn" id="closeWin98NewUploadsModal">✕</button>
+      </div>
+      <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0;">
+        <div style="margin-bottom: 8px; font-weight: bold; background: #fff; padding: 6px; border: 1px solid #808080;" id="newUploadsSummaryText">
+          Lade neue Uploads...
+        </div>
+
+        <div id="newUploadsListContainer" style="background: #fff; border: 2px solid #808080; padding: 6px; max-height: 55vh; overflow-y: auto;">
+          <!-- List of new files -->
+        </div>
+      </div>
+      <div class="win98-dialog-footer" style="display: flex; justify-content: space-between;">
+        <button class="win98-btn" id="btnMarkNewUploadsAsRead" style="font-weight: bold;">✔ Als gelesen markieren (Snapshot aktualisieren)</button>
+        <button class="win98-btn" id="closeNewUploadsModalBtn">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin-win98.js?v=20260804_v15"></script>
 </body>
 </html>
