@@ -155,11 +155,20 @@
       <div class="win98-dialog-body" id="win98ModalBody">
         <!-- Content inserted dynamically -->
       </div>
-      <div class="win98-dialog-footer">
-        <button class="win98-btn" id="win98ModalPrintBtn">🖨️ Drucken</button>
-        <button class="win98-btn" id="win98ModalRenameBtn">✏️ Umbenennen</button>
-        <button class="win98-btn" id="win98ModalDownloadBtn">Herunterladen</button>
-        <button class="win98-btn" id="win98ModalCloseBtn">Schließen</button>
+      <div class="win98-dialog-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 4px; align-items: center;" id="lightboxImageControls">
+          <button class="win98-btn" id="btnZoomIn" title="Vergrößern (Zoom In)">🔍+</button>
+          <button class="win98-btn" id="btnZoomOut" title="Verkleinern (Zoom Out)">🔍-</button>
+          <button class="win98-btn" id="btnZoomReset" title="Zoom auf 100% zurücksetzen">100%</button>
+          <button class="win98-btn" id="btnRotateImg" title="Bild um 90° drehen">🔄 90°</button>
+          <span id="zoomLevelDisplay" style="font-size: 11px; font-weight: bold; margin-left: 4px; min-width: 40px; text-align: center;">100%</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="win98-btn" id="win98ModalPrintBtn">🖨️ Drucken</button>
+          <button class="win98-btn" id="win98ModalRenameBtn">✏️ Umbenennen</button>
+          <button class="win98-btn" id="win98ModalDownloadBtn">Herunterladen</button>
+          <button class="win98-btn" id="win98ModalCloseBtn">Schließen</button>
+        </div>
       </div>
     </div>
   </div>
@@ -347,6 +356,6 @@
     </div>
   </div>
 
-  <script src="admin-win98.js?v=20260804_v16"></script>
+  <script src="admin-win98.js?v=20260804_v17"></script>
 </body>
 </html>

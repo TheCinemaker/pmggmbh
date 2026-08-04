@@ -660,10 +660,16 @@ async function openLightbox(file) {
   const displayName = file.resolvedName || file.userName || '';
 
   if (isImage && fileUrl) {
+    resetImgZoomPan();
     body.innerHTML = `
-      <div style="margin-bottom:10px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📅 ${file.uploadedAtDisplay || ''}</div>
-      <img src="${fileUrl}" class="lightbox-img-win98" alt="${escapeHtml(file.name)}" />
+      <div style="margin-bottom:6px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080; font-size:11px;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📅 ${file.uploadedAtDisplay || ''}</div>
+      <div id="lightboxImgViewport" style="position:relative; overflow:hidden; width:100%; height:60vh; background:#505050; border:2px inset #808080; display:flex; align-items:center; justify-content:center; user-select:none;">
+        <img src="${fileUrl}" class="lightbox-img-win98" alt="${escapeHtml(file.name)}" style="max-width:100%; max-height:100%; transition:transform 0.05s ease-out; transform-origin:center center;" />
+      </div>
+      <div style="font-size:10px; color:#333; text-align:center; margin-top:4px; font-weight:bold;">💡 Zoom-Lupe: Mausrad zum Zoomen (50%-400%) | Doppelklick für 200% | Ziehen zum Verschieben | Buttons unten benutzen</div>
     `;
+    setTimeout(initLightboxZoomEvents, 50);
+  }
   } else if (ext === 'pdf' && fileUrl) {
     body.innerHTML = `
       <div style="margin-bottom:10px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📅 ${file.uploadedAtDisplay || ''}</div>
@@ -697,6 +703,93 @@ async function openLightbox(file) {
       a.remove();
     };
   }
+}
+
+// ========================================================
+// INTERACTIVE LIGHTBOX ZOOM, PAN & ROTATION TOOL
+// ========================================================
+let currentZoomScale = 1.0;
+let currentRotateDeg = 0;
+let currentPanX = 0;
+let currentPanY = 0;
+let isDraggingImg = false;
+let startDragX = 0;
+let startDragY = 0;
+
+function resetImgZoomPan() {
+  currentZoomScale = 1.0;
+  currentRotateDeg = 0;
+  currentPanX = 0;
+  currentPanY = 0;
+  applyImgTransform();
+}
+
+function applyImgTransform() {
+  const img = document.querySelector('.lightbox-img-win98');
+  const zoomDisplay = document.getElementById('zoomLevelDisplay');
+  if (zoomDisplay) zoomDisplay.textContent = `${Math.round(currentZoomScale * 100)}%`;
+
+  if (img) {
+    img.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoomScale}) rotate(${currentRotateDeg}deg)`;
+    img.style.cursor = currentZoomScale > 1.0 ? (isDraggingImg ? 'grabbing' : 'grab') : 'zoom-in';
+  }
+}
+
+function initLightboxZoomEvents() {
+  const container = document.getElementById('lightboxImgViewport');
+  const img = document.querySelector('.lightbox-img-win98');
+  if (!container || !img) return;
+
+  // Mouse wheel zoom
+  container.onwheel = (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      currentZoomScale = Math.min(4.0, currentZoomScale + 0.25);
+    } else {
+      currentZoomScale = Math.max(0.5, currentZoomScale - 0.25);
+      if (currentZoomScale <= 1.0) {
+        currentPanX = 0;
+        currentPanY = 0;
+      }
+    }
+    applyImgTransform();
+  };
+
+  // Double click toggle zoom 100% <-> 200%
+  img.ondblclick = (e) => {
+    e.preventDefault();
+    if (currentZoomScale === 1.0) {
+      currentZoomScale = 2.0;
+    } else {
+      currentZoomScale = 1.0;
+      currentPanX = 0;
+      currentPanY = 0;
+    }
+    applyImgTransform();
+  };
+
+  // Drag pan when zoomed
+  img.onmousedown = (e) => {
+    if (e.button !== 0) return;
+    isDraggingImg = true;
+    startDragX = e.clientX - currentPanX;
+    startDragY = e.clientY - currentPanY;
+    if (img) img.style.cursor = 'grabbing';
+  };
+
+  window.onmousemove = (e) => {
+    if (!isDraggingImg) return;
+    currentPanX = e.clientX - startDragX;
+    currentPanY = e.clientY - startDragY;
+    applyImgTransform();
+  };
+
+  window.onmouseup = () => {
+    if (isDraggingImg) {
+      isDraggingImg = false;
+      applyImgTransform();
+    }
+  };
 }
 
 // ========================================================
@@ -949,6 +1042,25 @@ function setupEvents() {
     document.getElementById('win98NewUploadsModal')?.classList.add('hidden');
   });
   document.getElementById('btnMarkNewUploadsAsRead')?.addEventListener('click', markNewUploadsAsRead);
+
+  // LIGHTBOX ZOOM CONTROLS
+  document.getElementById('btnZoomIn')?.addEventListener('click', () => {
+    currentZoomScale = Math.min(4.0, currentZoomScale + 0.25);
+    applyImgTransform();
+  });
+  document.getElementById('btnZoomOut')?.addEventListener('click', () => {
+    currentZoomScale = Math.max(0.5, currentZoomScale - 0.25);
+    if (currentZoomScale <= 1.0) {
+      currentPanX = 0;
+      currentPanY = 0;
+    }
+    applyImgTransform();
+  });
+  document.getElementById('btnZoomReset')?.addEventListener('click', resetImgZoomPan);
+  document.getElementById('btnRotateImg')?.addEventListener('click', () => {
+    currentRotateDeg = (currentRotateDeg + 90) % 360;
+    applyImgTransform();
+  });
 }
 
 // FETCH STATUS REGISTRY

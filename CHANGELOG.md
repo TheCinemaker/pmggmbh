@@ -2,6 +2,15 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Interaktív Képnagyító & Zoom Lupe Modul a Képnézegetőben (`🔍+`, `🔍-`, `100%`, `🔄 90°`)**:
+  - A felugró képnéző párbeszédablakba (`#win98Modal`) beépítettünk egy **professzionális interaktív képnagyítót**:
+    - 🔍 **Mausrad Zoom (Egérgörgő)**: Egérgörgővel fokozatmentesen nagyítható/kicsinyíthető a kép 50% és 400% között!
+    - 🖱️ **Doppelklick (Dupla kattintás)**: Dupla kattintással azonnal vált 100% és 200% nagyítás között.
+    - ✋ **Ziehen (Egér húzás / Pan)**: Nagyított állapotban a képet az egérrel megfogva szabadon lehet mozgatni.
+    - 🔘 **Vezérlő gombok**: Eszköztár gombok: `🔍+ Vergrößern`, `🔍- Verkleinern`, `100% Reset`, `🔄 90° Drehen` élő százalékos kijelzővel (`100%`, `125%`, `150%`...)!
+- **Dropbox Fájl-átnevezés Elérési Út & Kiterjesztés Javítás (`renameFile.js`)**:
+  - Javítva a Dropbox API v2 `filesMoveV2` hívás útvonal-formázása (`formatDbxPath` választható kezdő `/` jellel).
+  - Ha az átnevezésnél a felhasználó nem írja ki a kiterjesztést (pl. `.jpg`), a rendszer automatikusan megőrzi az eredeti kiterjesztést, megelőzve az ismeretlen fájltípus hibákat!
 - **Naptár Dátumtartomány-beolvasás & Kategória Színezés (Stundenzettel 🟢 / Urlaub 🔵 / Krankstand 🟠)**:
   - Okos fájlnév-értelmező modul (`parseFileDateRangeAndType`): automatikusan kiszámítja a feltöltött dokumentumok által lefedett dátumtartományt (pl. `14-20`, `14.08-20.08`, `2026.08.14-2026.08.20`).
   - A havi naptárban az adott időszakra eső **ÖSSZES nap automatikusan kiemelésre kerül** a dokumentum típusának megfelelő színnel:

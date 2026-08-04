@@ -8,6 +8,13 @@ const baseHeaders = {
   'Content-Type': 'application/json; charset=utf-8'
 };
 
+function formatDbxPath(pathStr) {
+  if (!pathStr) return '';
+  let s = String(pathStr).trim();
+  if (!s.startsWith('/')) s = '/' + s;
+  return s;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: baseHeaders, body: '' };
@@ -23,21 +30,40 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: baseHeaders,
-      body: JSON.stringify({ message: 'Dropbox API hiba: nincsenek beállítva a környezeti változók.' })
+      body: JSON.stringify({ message: 'Dropbox API error: missing credentials in environment.' })
     };
   }
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { fromPath, newName } = body;
+    let { fromPath, newName } = body;
 
     if (!fromPath || !newName) {
       return {
         statusCode: 400,
         headers: baseHeaders,
-        body: JSON.stringify({ message: 'fromPath és newName megadása kötelező.' })
+        body: JSON.stringify({ message: 'fromPath and newName are required.' })
       };
     }
+
+    const formattedFromPath = formatDbxPath(fromPath);
+
+    // Extract old filename and extension
+    const pathParts = formattedFromPath.split('/');
+    const oldFileName = pathParts.pop();
+    const oldExtMatch = oldFileName.match(/\.([a-zA-Z0-9]+)$/);
+    const oldExt = oldExtMatch ? oldExtMatch[1].toLowerCase() : '';
+
+    let cleanNewName = newName.trim();
+    // If user provided name without extension, append old extension automatically
+    if (oldExt && !cleanNewName.toLowerCase().endsWith('.' + oldExt)) {
+      cleanNewName += '.' + oldExt;
+    }
+
+    pathParts.push(cleanNewName);
+    const formattedToPath = pathParts.join('/');
+
+    console.log(`[Rename] Moving file from "${formattedFromPath}" to "${formattedToPath}"`);
 
     const dbx = new Dropbox({
       refreshToken: DROPBOX_REFRESH_TOKEN,
@@ -45,16 +71,9 @@ exports.handler = async (event) => {
       clientSecret: DROPBOX_APP_SECRET
     });
 
-    const pathParts = fromPath.split('/');
-    pathParts.pop(); // Remove old filename
-    pathParts.push(newName.trim()); // Append new filename
-    const toPath = pathParts.join('/');
-
-    console.log(`[Rename] Moving file from "${fromPath}" to "${toPath}"`);
-
     const result = await dbx.filesMoveV2({
-      from_path: fromPath,
-      to_path: toPath,
+      from_path: formattedFromPath,
+      to_path: formattedToPath,
       autorename: true
     });
 
@@ -63,20 +82,20 @@ exports.handler = async (event) => {
       headers: baseHeaders,
       body: JSON.stringify({
         success: true,
-        message: 'Fájl sikeresen átnevezve!',
-        fromPath,
-        toPath,
+        message: 'File successfully renamed!',
+        fromPath: formattedFromPath,
+        toPath: formattedToPath,
         result: result.result
       })
     };
   } catch (err) {
-    console.error('[Rename] Hiba:', err);
+    console.error('[Rename] Error:', err);
     const dbxErr = describeDbxError(err);
     return {
       statusCode: 500,
       headers: baseHeaders,
       body: JSON.stringify({
-        message: dbxErr.summary || err.message || 'Hiba a fájl átnevezése során',
+        message: dbxErr.summary || err.message || 'Dropbox rename error',
         error: dbxErr
       })
     };
