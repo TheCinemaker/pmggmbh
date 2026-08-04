@@ -676,3 +676,59 @@ html, body.win98-body {
   margin: 0 auto;
   border: 1px solid #808080;
 }
+
+/* CALENDAR TABLE & COLOR BADGES */
+.win98-cal-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: #fff;
+}
+.win98-cal-table th {
+  background: #000080;
+  color: #fff;
+  padding: 4px;
+  font-size: 11px;
+  border: 1px solid #808080;
+}
+.win98-cal-table td {
+  width: 14.28%;
+  height: 55px;
+  vertical-align: top;
+  padding: 4px;
+  border: 1px solid #c0c0c0;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+.win98-cal-table td.empty-day {
+  background: #e9e9e9;
+}
+.cal-day-num {
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.cal-event-badge {
+  display: block;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 3px;
+  margin-top: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-uploaded {
+  background: #28a745;
+  color: #fff;
+}
+.cal-urlaub {
+  background: #0066cc;
+  color: #fff;
+}
+.cal-sick {
+  background: #ff8800;
+  color: #fff;
+}

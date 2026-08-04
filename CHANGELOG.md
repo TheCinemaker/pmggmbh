@@ -2,7 +2,15 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
-- **Betöltési Hiba Kijavítása (Fix `initMenuDropdowns is not defined`)**: Eltávolítva az elavult `initMenuDropdowns()` hívás az indítási sorból (`DOMContentLoaded`), ami korábban leállította a JS futását és "Lade Daten..." állapotban ragasztotta az oldalt. Az adatok mostantól azonnal, hibátlanul betöltenek!
+- **Naptár Dátumtartomány-beolvasás & Kategória Színezés (Stundenzettel 🟢 / Urlaub 🔵 / Krankstand 🟠)**:
+  - Okos fájlnév-értelmező modul (`parseFileDateRangeAndType`): automatikusan kiszámítja a feltöltött dokumentumok által lefedett dátumtartományt (pl. `14-20`, `14.08-20.08`, `2026.08.14-2026.08.20`).
+  - A havi naptárban az adott időszakra eső **ÖSSZES nap automatikusan kiemelésre kerül** a dokumentum típusának megfelelő színnel:
+    - 🟢 **🟢 Stundenzettel (Zöld background)**: Óralapok a megadott napokra
+    - 🔵 **🔵 Urlaub (Kék background)**: Szabadság dokumentumok
+    - 🟠 **🟠 Krankenstand (Narancs background)**: Betegszabadság igazolások
+  - Bármelyik kiemelt napra kattintva azonnal megnyílik a hozzá tartozó dokumentum előnézete (`openLightbox`).
+- **Naptár Modal Rögzített Méretezése (Fixed Window Size)**: A naptár ablak mostantól szigorúan **rögzített méretű** (`width: 760px; height: 580px`), így a hónapok közötti váltáskor (`◀ Vorheriger` / `Nächster ▶`) az ablak nem ugrál és nem változtatja a méretét!
+- **Betöltési Hiba Kijavítása (Fix `initMenuDropdowns is not defined`)**: Eltávolítva az elavult `initMenuDropdowns()` hívás az indítási sorból (`DOMContentLoaded`).
 - **`Wochenbericht` Eltávolítása & `✨ Neue Uploads` (Legutóbbi Megtekintés Óta Érkezett Új Feltöltések) Modul**:
   - Eltávolítva a felesleges `Wochenbericht` gomb az eszköztárról.
   - Helyére beépítve az **új feltöltéseket nyomon követő Win98 modul** (`✨ Neue Uploads`).

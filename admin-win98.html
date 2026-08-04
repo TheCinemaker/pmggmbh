@@ -190,13 +190,13 @@
 
   <!-- WORKER MONTHLY CALENDAR DIALOG (WIN98 MODAL) -->
   <div id="win98CalendarModal" class="win98-modal-overlay hidden">
-    <div class="win98-dialog" style="width: 720px; max-width: 95vw;">
+    <div class="win98-dialog" style="width: 760px; height: 580px; max-width: 95vw; max-height: 90vh;">
       <div class="win98-titlebar">
         <span id="calModalTitle">📅 Mitarbeiter Kalenderübersicht</span>
         <button class="win98-btn-title close-btn" id="closeWin98CalendarModal">✕</button>
       </div>
-      <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: #fff; padding: 6px; border: 1px solid #808080;">
+      <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: #fff; padding: 6px; border: 1px solid #808080; flex-shrink: 0;">
           <div>
             <strong id="calWorkerName">Mitarbeiter: -</strong>
           </div>
@@ -207,14 +207,15 @@
           </div>
         </div>
 
-        <div id="calLegend" style="display: flex; gap: 12px; margin-bottom: 8px; font-size: 11px; padding: 4px 6px; background: #d4d0c8; border: 1px solid #808080;">
-          <span>🟢 <b>Stundenzettel hochgeladen</b></span>
-          <span>🟡 <b>Krankenstand</b></span>
-          <span>⚪ <b>Keim Dokument / Fehlend</b></span>
+        <div id="calLegend" style="display: flex; gap: 12px; margin-bottom: 8px; font-size: 11px; padding: 4px 6px; background: #d4d0c8; border: 1px solid #808080; flex-shrink: 0;">
+          <span>🟢 <b>Stundenzettel</b></span>
+          <span>🔵 <b>Urlaub</b></span>
+          <span>🟠 <b>Krankenstand</b></span>
+          <span>⚪ <b>Kein Dokument</b></span>
         </div>
 
         <!-- CALENDAR GRID -->
-        <div id="calGridContainer" style="background: #fff; border: 2px solid #808080; padding: 6px;">
+        <div id="calGridContainer" style="background: #fff; border: 2px solid #808080; padding: 6px; flex: 1; min-height: 380px; box-sizing: border-box; overflow-y: auto;">
           <!-- JS fills calendar grid -->
         </div>
       </div>

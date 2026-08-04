@@ -1298,9 +1298,80 @@ function openCalendarDialog() {
   renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
 }
 
-function openCalFileByIndex(idx) {
-  const f = calActiveFilesMap[idx];
-  if (f) openLightbox(f);
+function parseFileDateRangeAndType(file, targetYear, targetMonth) {
+  const name = String(file.name || '').toLowerCase();
+  
+  // 1. Determine Type & Color Category
+  let type = 'stunden'; // 🟢 Green default (Stundenzettel)
+  if (/urlaub|urlaubs|szabadsag/i.test(name)) {
+    type = 'urlaub'; // 🔵 Blue (Urlaub)
+  } else if (/krank|beteg|krankschreibung/i.test(name)) {
+    type = 'krank'; // 🟠 Orange (Krankenstand)
+  }
+
+  let startDay = null;
+  let endDay = null;
+
+  // Pattern A: Full YYYY-MM-DD or YYYY.MM.DD range e.g. 2026.08.14-2026.08.20 or 2026-08-14_2026-08-20
+  const fullDateMatch = name.match(/(\d{4}[.\-_/]\d{1,2}[.\-_/]\d{1,2})\s*[-_~a]\s*(\d{4}[.\-_/]\d{1,2}[.\-_/]\d{1,2})/);
+  if (fullDateMatch) {
+    const d1 = new Date(fullDateMatch[1].replace(/[._]/g, '-'));
+    const d2 = new Date(fullDateMatch[2].replace(/[._]/g, '-'));
+    if (!isNaN(d1) && !isNaN(d2)) {
+      startDay = d1.getDate();
+      endDay = d2.getDate();
+    }
+  }
+
+  // Pattern B: DD.MM to DD.MM range e.g. 14.08 - 20.08 or 14.8-20.8
+  if (!startDay) {
+    const dayMonthMatch = name.match(/(\d{1,2})\.(\d{1,2})\s*[-_~a]\s*(\d{1,2})\.(\d{1,2})/);
+    if (dayMonthMatch) {
+      startDay = parseInt(dayMonthMatch[1], 10);
+      endDay = parseInt(dayMonthMatch[3], 10);
+    }
+  }
+
+  // Pattern C: Simple day range e.g. 14-20 or 14_20 or 14 - 20
+  if (!startDay) {
+    const dayRangeMatch = name.match(/(?:^|[^\d])(\d{1,2})\s*[-_~]\s*(\d{1,2})(?:[^\d]|$)/);
+    if (dayRangeMatch) {
+      const d1 = parseInt(dayRangeMatch[1], 10);
+      const d2 = parseInt(dayRangeMatch[2], 10);
+      if (d1 >= 1 && d1 <= 31 && d2 >= 1 && d2 <= 31 && d1 <= d2) {
+        startDay = d1;
+        endDay = d2;
+      }
+    }
+  }
+
+  // Pattern D: Single day number e.g. 14.jpg or 14
+  if (!startDay) {
+    const singleDayMatch = name.match(/(?:^|[^\d])(\d{1,2})(?:[^\d]|$)/);
+    if (singleDayMatch) {
+      const d = parseInt(singleDayMatch[1], 10);
+      if (d >= 1 && d <= 31) {
+        startDay = d;
+        endDay = d;
+      }
+    }
+  }
+
+  // Fallback: Upload date if present
+  if (!startDay && file.uploadedAt) {
+    const dt = new Date(file.uploadedAt);
+    if (!isNaN(dt) && dt.getMonth() === targetMonth) {
+      startDay = dt.getDate();
+      endDay = dt.getDate();
+    }
+  }
+
+  if (!startDay) {
+    startDay = 1;
+    endDay = 1;
+  }
+
+  return { type, startDay, endDay };
 }
 
 function renderCalendar(userName, year, month) {
@@ -1321,15 +1392,26 @@ function renderCalendar(userName, year, month) {
   const userFiles = allUploadsData[userName] || [];
   const monthPattern = `${month + 1}.`; // e.g. "8." for August
 
-  // Map files to days
-  const dayEvents = {};
+  // Map each day (1..31) to files covering that day
+  const dayCoverMap = {}; // dayNum -> array of { file, type, fileIdx }
+
   userFiles.forEach(f => {
-    if (f.folder && (f.folder.startsWith(monthPattern) || f.folder.includes(` ${monthNamesDe[month]}`))) {
-      const dt = f.uploadedAt ? new Date(f.uploadedAt) : null;
-      const dayNum = dt ? dt.getDate() : null;
-      const targetDay = dayNum || 15;
-      if (!dayEvents[targetDay]) dayEvents[targetDay] = [];
-      dayEvents[targetDay].push(f);
+    const folderLow = String(f.folder || '').toLowerCase();
+    const targetMonthLow = monthNamesDe[month].toLowerCase();
+    const isThisMonth = folderLow.startsWith(monthPattern) || folderLow.includes(targetMonthLow) || !f.folder;
+
+    if (isThisMonth) {
+      const parsed = parseFileDateRangeAndType(f, year, month);
+      const fileIdx = calActiveFilesMap.length;
+      calActiveFilesMap.push({ ...f, userName });
+
+      const s = Math.max(1, Math.min(31, parsed.startDay));
+      const e = Math.max(s, Math.min(31, parsed.endDay));
+
+      for (let day = s; day <= e; day++) {
+        if (!dayCoverMap[day]) dayCoverMap[day] = [];
+        dayCoverMap[day].push({ file: f, type: parsed.type, fileIdx });
+      }
     }
   });
 
@@ -1350,30 +1432,57 @@ function renderCalendar(userName, year, month) {
         <tr>
   `;
 
+  let currentCol = 0;
   for (let i = 0; i < startingDay; i++) {
     html += `<td class="empty-day"></td>`;
+    currentCol++;
   }
 
-  let currentCol = startingDay;
   for (let d = 1; d <= totalDays; d++) {
     if (currentCol === 7) {
       html += `</tr><tr>`;
       currentCol = 0;
     }
 
-    const events = dayEvents[d] || [];
+    const covers = dayCoverMap[d] || [];
+    let cellStyle = '';
     let eventHtml = '';
-    events.forEach(f => {
-      const idx = calActiveFilesMap.length;
-      calActiveFilesMap.push({ ...f, userName });
-      const isSick = /krank/i.test(f.name || '');
-      const cls = isSick ? 'cal-sick' : 'cal-uploaded';
-      const label = isSick ? '🟡 Krank' : '🟢 Stundenzettel';
-      eventHtml += `<span class="cal-event-badge ${cls}" title="${escapeHtml(f.name)}" onclick="event.stopPropagation(); openCalFileByIndex(${idx});">${label}</span>`;
-    });
+
+    if (covers.length > 0) {
+      const primaryType = covers.some(c => c.type === 'urlaub') ? 'urlaub'
+                        : covers.some(c => c.type === 'krank') ? 'krank'
+                        : 'stunden';
+
+      if (primaryType === 'urlaub') {
+        cellStyle = 'background: #d0e6ff; border: 1px solid #0055cc;';
+      } else if (primaryType === 'krank') {
+        cellStyle = 'background: #ffe6cc; border: 1px solid #ff8800;';
+      } else {
+        cellStyle = 'background: #e6ffe6; border: 1px solid #009933;';
+      }
+
+      const seenInCell = new Set();
+      covers.forEach(c => {
+        if (seenInCell.has(c.fileIdx)) return;
+        seenInCell.add(c.fileIdx);
+
+        const idx = c.fileIdx;
+        let badgeCls = 'cal-uploaded';
+        let badgeLabel = '🟢 Stundenzettel';
+        if (c.type === 'urlaub') {
+          badgeCls = 'cal-urlaub';
+          badgeLabel = '🔵 Urlaub';
+        } else if (c.type === 'krank') {
+          badgeCls = 'cal-sick';
+          badgeLabel = '🟠 Krank';
+        }
+
+        eventHtml += `<span class="cal-event-badge ${badgeCls}" title="${escapeHtml(c.file.name)}" onclick="event.stopPropagation(); openCalFileByIndex(${idx});">${badgeLabel}</span>`;
+      });
+    }
 
     html += `
-      <td>
+      <td style="${cellStyle}">
         <div class="cal-day-num">${d}</div>
         ${eventHtml}
       </td>
