@@ -2,6 +2,7 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Képszintaxis Hiba Javítása (Fix extra `}` closing brace in `openLightbox`)**: Eltávolítva a duplikált kapcsos zárójel a képnéző függvényből, ami megállította a JS futását a böngészőben. Az alkalmazás és az adatok mostantól azonnal betöltenek!
 - **Interaktív Képnagyító & Zoom Lupe Modul a Képnézegetőben (`🔍+`, `🔍-`, `100%`, `🔄 90°`)**:
   - A felugró képnéző párbeszédablakba (`#win98Modal`) beépítettünk egy **professzionális interaktív képnagyítót**:
     - 🔍 **Mausrad Zoom (Egérgörgő)**: Egérgörgővel fokozatmentesen nagyítható/kicsinyíthető a kép 50% és 400% között!

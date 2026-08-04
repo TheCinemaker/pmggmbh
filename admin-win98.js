@@ -669,7 +669,6 @@ async function openLightbox(file) {
       <div style="font-size:10px; color:#333; text-align:center; margin-top:4px; font-weight:bold;">💡 Zoom-Lupe: Mausrad zum Zoomen (50%-400%) | Doppelklick für 200% | Ziehen zum Verschieben | Buttons unten benutzen</div>
     `;
     setTimeout(initLightboxZoomEvents, 50);
-  }
   } else if (ext === 'pdf' && fileUrl) {
     body.innerHTML = `
       <div style="margin-bottom:10px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📅 ${file.uploadedAtDisplay || ''}</div>
