@@ -187,7 +187,7 @@ exports.handler = async (event) => {
         }
       });
 
-      // 2) MÁSODSZOR: Fájlok hozzáadása a munkatársakhoz
+      // 2) MÁSODSZOR: Fájlok hozzáadása AZ ÖSSZES HÓNAPBÓL (Januártól Decemberig)
       entries.forEach(f => {
         if (f['.tag'] !== 'file') return;
 
@@ -200,24 +200,19 @@ exports.handler = async (event) => {
         const userName = parts[2];
         const monthFolderName = parts[3];
 
-        const monthMatch = monthFolderName.match(/^(\d+)\./);
-        if (monthMatch) {
-          const folderMonth = parseInt(monthMatch[1], 10);
-          if (showAllMonths || relevantMonths.includes(folderMonth)) {
-            if (!result[userName]) { result[userName] = []; }
-            const uploadedAt = f.server_modified || f.client_modified || null;
-            result[userName].push({
-              folder: monthFolderName,
-              name: f.name,
-              path: pathToUse,
-              path_lower: f.path_lower,
-              path_display: f.path_display,
-              id: f.id,
-              uploadedAt,
-              uploadedAtDisplay: formatHu(uploadedAt)
-            });
-          }
-        }
+        if (!result[userName]) { result[userName] = []; }
+
+        const uploadedAt = f.server_modified || f.client_modified || null;
+        result[userName].push({
+          folder: monthFolderName,
+          name: f.name,
+          path: pathToUse,
+          path_lower: f.path_lower,
+          path_display: f.path_display,
+          id: f.id,
+          uploadedAt,
+          uploadedAtDisplay: formatHu(uploadedAt)
+        });
       });
     }
 

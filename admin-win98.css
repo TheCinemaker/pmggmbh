@@ -246,10 +246,11 @@ html, body.win98-body {
 .tree-node {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 4px;
+  gap: 4px;
+  padding: 2px 4px;
   cursor: pointer;
   border: 1px dotted transparent;
+  user-select: none;
 }
 
 .tree-node:hover {
@@ -261,10 +262,32 @@ html, body.win98-body {
   color: #ffffff;
 }
 
+.tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  line-height: 9px;
+  border: 1px solid #808080;
+  background: #ffffff;
+  color: #000000;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  margin-right: 2px;
+}
+
+.tree-toggle:hover {
+  background: #dfdfdf;
+}
+
 .tree-children {
-  margin-left: 16px;
+  margin-left: 14px;
   border-left: 1px dotted #808080;
-  padding-left: 6px;
+  padding-left: 4px;
 }
 
 /* SPLITTER */

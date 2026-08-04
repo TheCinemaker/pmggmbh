@@ -4,9 +4,17 @@ let allUploadsData = {};
 let allUsersMeta = [];
 let usersByName = {};
 let selectedUser = null;
+let selectedMonth = null;
 let selectedCompany = '';
 let selectedDocType = 'all'; // 'all', 'krank', 'stunden'
+let expandedUsers = new Set();
 let thumbnailCache = new Map();
+
+const STANDARD_MONTHS = [
+  '1. Januar', '2. Februar', '3. März', '4. April',
+  '5. Mai', '6. Juni', '7. Juli', '8. August',
+  '9. September', '10. Oktober', '11. November', '12. Dezember'
+];
 
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
@@ -162,6 +170,7 @@ function renderTree(data) {
   allItem.innerHTML = `<span class="tree-icon">📂</span> <span>(Alle Mitarbeiter ${selectedCompany ? `- ${escapeHtml(selectedCompany)}` : ''})</span>`;
   allItem.onclick = () => {
     selectedUser = null;
+    selectedMonth = null;
     document.getElementById('currentFolderHeader').textContent = `Stundenzettel 2026 - Alle Mitarbeiter ${selectedCompany ? `(${selectedCompany})` : ''}`;
     renderTree(data);
     renderFileGrid();
@@ -184,16 +193,88 @@ function renderTree(data) {
     }
 
     const files = Array.isArray(data[displayNameRaw]) ? data[displayNameRaw] : [];
+
+    // Group file counts by month folder
+    const monthCounts = {};
+    files.forEach(f => {
+      if (f.folder) {
+        monthCounts[f.folder] = (monthCounts[f.folder] || 0) + 1;
+      }
+    });
+
+    const customFolders = Object.keys(monthCounts).filter(m => !STANDARD_MONTHS.includes(m));
+    const allUserFolders = [...STANDARD_MONTHS, ...customFolders];
+
+    const isExpanded = expandedUsers.has(displayNameRaw);
+    const isUserSelected = selectedUser === displayNameRaw && selectedMonth === null;
+
+    const userWrap = document.createElement('div');
+    userWrap.className = 'user-tree-wrap';
+
     const item = document.createElement('div');
-    item.className = `tree-node ${selectedUser === displayNameRaw ? 'selected' : ''}`;
-    item.innerHTML = `<span class="tree-icon">👤</span> <span>${escapeHtml(displayName)} (${files.length})</span>`;
+    item.className = `tree-node ${isUserSelected ? 'selected' : ''}`;
+
+    const toggleBtn = document.createElement('span');
+    toggleBtn.className = 'tree-toggle';
+    toggleBtn.textContent = isExpanded ? '-' : '+';
+    toggleBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (expandedUsers.has(displayNameRaw)) {
+        expandedUsers.delete(displayNameRaw);
+      } else {
+        expandedUsers.add(displayNameRaw);
+      }
+      renderTree(data);
+    };
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'tree-icon';
+    iconSpan.textContent = '👤';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.innerHTML = `${escapeHtml(displayName)} <b>(${files.length})</b>`;
+
+    item.appendChild(toggleBtn);
+    item.appendChild(iconSpan);
+    item.appendChild(labelSpan);
+
     item.onclick = () => {
       selectedUser = displayNameRaw;
+      selectedMonth = null;
       document.getElementById('currentFolderHeader').textContent = `Stundenzettel 2026 / ${displayName}`;
       renderTree(data);
       renderFileGrid();
     };
-    treeChildren.appendChild(item);
+
+    userWrap.appendChild(item);
+
+    // Render month subfolders when expanded
+    if (isExpanded) {
+      const childrenDiv = document.createElement('div');
+      childrenDiv.className = 'tree-children';
+
+      allUserFolders.forEach(mName => {
+        const count = monthCounts[mName] || 0;
+        const isMonthSelected = selectedUser === displayNameRaw && selectedMonth === mName;
+
+        const subItem = document.createElement('div');
+        subItem.className = `tree-node ${isMonthSelected ? 'selected' : ''}`;
+        subItem.innerHTML = `<span class="tree-icon">${count > 0 ? '📂' : '📁'}</span> <span>${escapeHtml(mName)} (${count})</span>`;
+        subItem.onclick = (e) => {
+          e.stopPropagation();
+          selectedUser = displayNameRaw;
+          selectedMonth = mName;
+          document.getElementById('currentFolderHeader').textContent = `Stundenzettel 2026 / ${displayName} / ${mName}`;
+          renderTree(data);
+          renderFileGrid();
+        };
+        childrenDiv.appendChild(subItem);
+      });
+
+      userWrap.appendChild(childrenDiv);
+    }
+
+    treeChildren.appendChild(userWrap);
   });
 }
 
@@ -212,6 +293,11 @@ function renderFileGrid() {
   if (selectedUser) {
     const userFiles = allUploadsData[selectedUser] || [];
     filesToDisplay = userFiles.map(f => ({ ...f, userName: selectedUser }));
+    
+    // Filter by specific month folder if selected
+    if (selectedMonth) {
+      filesToDisplay = filesToDisplay.filter(f => f.folder === selectedMonth);
+    }
   } else {
     Object.keys(allUploadsData).forEach(u => {
       // Filter by company if selected
