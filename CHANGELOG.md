@@ -2,7 +2,9 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
-- **Modal HTML Struktúra Beágyazódás Javítása (Naptár Nyitás)**: Kijavítva a hiányzó záró `</div>` tagek az `admin-win98.html`-ben, amik miatt a naptár (`win98CalendarModal`) és a jegyzet modal a rejtett képnézegető (`win98Modal`) belsejébe ragadt. Mostantól mindhárom modal teljesen önálló a legfelső rétegben, így a `Kalender` gombra kattintva a naptár azonnal megjelenik a képernyő tetején!
+- **Képnézegető z-index Halmozás Javítása (Lightbox a Naptár Felett)**: A nagyító/előnézeti ablak (`win98Modal`) mostantól emelt rétegen (`z-index: 100050`) nyílik meg a naptár (`z-index: 100000`) felett, így a naptárból megnyitott képek garantáltan legfelül jelennek meg!
+- **100% Német Nyelvű Felület (Zero Hungarian Text)**: Az alkalmazás összes gombja, címe, gombja, üzenete, felugró ablakai, visszajelzései és naptár jelmagyarázatai **kivétel nélkül 100%-ban német nyelvűek** lettek!
+- **Modal HTML Struktúra Beágyazódás Javítása (Naptár Nyitás)**: Kijavítva a hiányzó záró `</div>` tagek az `admin-win98.html`-ben.
 - **Fa-struktúra Duplázódás Javítása**: Helyreállítva a `treeChildren.innerHTML = ''` tisztítás a `renderTree` fügvény elején, így a `+` jelre kattintva nem generálódik újra a teljes fa az alján, hanem tisztán nyílnak a hónap-mappák!
 - **Naptár Nyitás Automatikus Dolgozó-Választóval**: Ha nincs kijelölve dolgozó, a naptár automatikusan kiválasztja az első aktív munkatársat, így a `Kalender` gombra kattintva azonnal megjelenik a naptár!
 - **Szigorú `Ausgeschieden` Kizárás a Főoldali Fájlrácsból**: Teljesen letiltva az inaktív `Ausgeschieden` mappák és fájlok bekerülése a főoldali fájlrácsba (`renderFileGrid`).

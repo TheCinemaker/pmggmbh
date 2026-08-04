@@ -150,8 +150,8 @@
         <!-- Content inserted dynamically -->
       </div>
       <div class="win98-dialog-footer">
-        <button class="win98-btn" id="win98ModalPrintBtn">🖨️ Drucken (Nyomtatás)</button>
-        <button class="win98-btn" id="win98ModalRenameBtn">✏️ Umbenennen (Átnevezés)</button>
+        <button class="win98-btn" id="win98ModalPrintBtn">🖨️ Drucken</button>
+        <button class="win98-btn" id="win98ModalRenameBtn">✏️ Umbenennen</button>
         <button class="win98-btn" id="win98ModalDownloadBtn">Herunterladen</button>
         <button class="win98-btn" id="win98ModalCloseBtn">Schließen</button>
       </div>
@@ -162,7 +162,7 @@
   <div id="win98NoteModal" class="win98-modal-overlay hidden">
     <div class="win98-dialog" style="width: 480px;">
       <div class="win98-titlebar">
-        <span>📝 Neue Notiz erstellen - [Jegyzet írása]</span>
+        <span>📝 Neue Notiz erstellen</span>
         <button class="win98-btn-title close-btn" id="closeWin98NoteModal">✕</button>
       </div>
       <div class="win98-dialog-body" style="padding: 10px;">
@@ -170,13 +170,13 @@
           <strong id="noteTargetFolderLabel">Ziel-Ordner: Stundenzettel 2026</strong>
         </div>
         <div style="margin-bottom: 8px;">
-          <label for="noteTextInput" style="display: block; font-weight: bold; margin-bottom: 4px;">Notiztext (Jegyzet tartalma):</label>
-          <textarea id="noteTextInput" class="win98-input" style="width: 100%; height: 120px; resize: vertical; font-family: Tahoma, sans-serif; font-size: 12px; box-sizing: border-box;" placeholder="Írj ide jegyzetet... (Pl. Hiányzik a csütörtöki aláírás)"></textarea>
+          <label for="noteTextInput" style="display: block; font-weight: bold; margin-bottom: 4px;">Notiztext:</label>
+          <textarea id="noteTextInput" class="win98-input" style="width: 100%; height: 120px; resize: vertical; font-family: Tahoma, sans-serif; font-size: 12px; box-sizing: border-box;" placeholder="Notiz eingeben..."></textarea>
         </div>
         <div id="noteStatusMsg" style="color: #000080; font-weight: bold; min-height: 18px;"></div>
       </div>
       <div class="win98-dialog-footer">
-        <button class="win98-btn" id="btnSaveNoteSubmit">Speichern (Mentés)</button>
+        <button class="win98-btn" id="btnSaveNoteSubmit">Speichern</button>
         <button class="win98-btn" id="btnCancelNote">Abbrechen</button>
       </div>
     </div>
@@ -186,7 +186,7 @@
   <div id="win98CalendarModal" class="win98-modal-overlay hidden">
     <div class="win98-dialog" style="width: 720px; max-width: 95vw;">
       <div class="win98-titlebar">
-        <span id="calModalTitle">📅 Mitarbeiter Kalenderübersicht - [Havi Naptár Nézet]</span>
+        <span id="calModalTitle">📅 Mitarbeiter Kalenderübersicht</span>
         <button class="win98-btn-title close-btn" id="closeWin98CalendarModal">✕</button>
       </div>
       <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0;">
@@ -202,9 +202,9 @@
         </div>
 
         <div id="calLegend" style="display: flex; gap: 12px; margin-bottom: 8px; font-size: 11px; padding: 4px 6px; background: #d4d0c8; border: 1px solid #808080;">
-          <span>🟢 <b>Óralap Feltöltve</b></span>
-          <span>🟡 <b>Betegszabadság / Krankenstand</b></span>
-          <span>⚪ <b>Hiányzik / Nincs még feltöltés</b></span>
+          <span>🟢 <b>Stundenzettel hochgeladen</b></span>
+          <span>🟡 <b>Krankenstand</b></span>
+          <span>⚪ <b>Keim Dokument / Fehlend</b></span>
         </div>
 
         <!-- CALENDAR GRID -->

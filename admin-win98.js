@@ -626,6 +626,7 @@ async function openLightbox(file) {
 
   if (!modal || !body) return;
 
+  modal.style.zIndex = '100050';
   modal.classList.remove('hidden');
   if (title) title.textContent = `Vorschau: ${file.name || 'Dokument'}`;
   body.innerHTML = `<div style="padding:20px; text-align:center;">Lade Dokumenten-Link von Dropbox…</div>`;
@@ -955,13 +956,13 @@ function toggleSelectAllDisplayed() {
 function updateSelectAllLabel() {
   const lbl = document.getElementById('selectAllLabel');
   if (lbl) {
-    lbl.textContent = selectedFiles.size > 0 ? `Kijelölve (${selectedFiles.size})` : 'Alle ausw.';
+    lbl.textContent = selectedFiles.size > 0 ? `Ausgewählt (${selectedFiles.size})` : 'Alle ausw.';
   }
 }
 
 function printCurrentLightboxFile() {
   if (!currentLightboxFile) {
-    alert('Nincs kiválasztva dokumentum a nyomtatáshoz.');
+    alert('Kein Dokument zum Drucken ausgewählt.');
     return;
   }
   printSelectedFiles([currentLightboxFile]);
@@ -969,12 +970,12 @@ function printCurrentLightboxFile() {
 
 async function handleRenameFile() {
   if (!currentLightboxFile || !currentLightboxFile.path) {
-    alert('Nincs kiválasztva fájl az átnevezéshez.');
+    alert('Keine Datei zum Umbenennen ausgewählt.');
     return;
   }
 
   const oldName = currentLightboxFile.name || '';
-  const newName = prompt(`Új fájlnév megadása (${oldName}):`, oldName);
+  const newName = prompt(`Neuen Dateinamen eingeben (${oldName}):`, oldName);
 
   if (!newName || newName.trim() === '' || newName.trim() === oldName) {
     return;
@@ -983,7 +984,7 @@ async function handleRenameFile() {
   const fromPath = currentLightboxFile.path;
   const modalBody = document.getElementById('win98ModalBody');
   if (modalBody) {
-    modalBody.innerHTML = `<div style="padding:20px; text-align:center; font-weight:bold;">⏳ Fájl átnevezése folyamatban a Dropboxban...<br/>("${escapeHtml(oldName)}" ➔ "${escapeHtml(newName.trim())}")</div>`;
+    modalBody.innerHTML = `<div style="padding:20px; text-align:center; font-weight:bold;">⏳ Datei wird in Dropbox umbenannt...<br/>("${escapeHtml(oldName)}" ➔ "${escapeHtml(newName.trim())}")</div>`;
   }
 
   try {
@@ -995,7 +996,7 @@ async function handleRenameFile() {
 
     const data = await res.json();
     if (res.ok && data.success) {
-      alert(`✅ Fájl sikeresen átnevezve: "${newName.trim()}"`);
+      alert(`✅ Datei erfolgreich umbenannt: "${newName.trim()}"`);
       document.getElementById('win98Modal')?.classList.add('hidden');
       sessionStorage.clear();
       localStorage.removeItem('pmg_win98_uploads_cache_v3');
@@ -1003,12 +1004,12 @@ async function handleRenameFile() {
       localStorage.removeItem('pmg_win98_uploads_cache_v5');
       fetchUploadsData(false);
     } else {
-      alert(`❌ Hiba az átnevezés során: ${data.message || 'Ismeretlen hiba'}`);
+      alert(`❌ Fehler beim Umbenennen: ${data.message || 'Unbekannter Fehler'}`);
       openLightbox(currentLightboxFile);
     }
   } catch (e) {
     console.error('Rename error:', e);
-    alert(`❌ Hiba az átnevezés során: ${e.message}`);
+    alert(`❌ Fehler beim Umbenennen: ${e.message}`);
     openLightbox(currentLightboxFile);
   }
 }
@@ -1047,7 +1048,7 @@ async function printSelectedFiles(overrideFilesList = null) {
   });
 
   if (filesToPrint.length === 0) {
-    alert('Nincs nyomtatható óralap (kép) kijelölve!');
+    alert('Kein druckbares Stundenzettel-Bild ausgewählt!');
     return;
   }
 
@@ -1059,7 +1060,7 @@ async function printSelectedFiles(overrideFilesList = null) {
     document.body.appendChild(existingContainer);
   }
 
-  existingContainer.innerHTML = `<div style="padding:20px; font-weight:bold; font-size:16px;">Képek előkészítése nyomtatásra... (${filesToPrint.length} óralap)</div>`;
+  existingContainer.innerHTML = `<div style="padding:20px; font-weight:bold; font-size:16px;">Bilder werden zum Drucken vorbereitet... (${filesToPrint.length} Stundenzettel)</div>`;
 
   // Fetch image links for all files
   const printPagesHtml = [];
@@ -1095,7 +1096,7 @@ async function printSelectedFiles(overrideFilesList = null) {
   }
 
   if (printPagesHtml.length === 0) {
-    alert('Nem sikerült érvényes kép-linkeket lekérni a nyomtatáshoz.');
+    alert('Gültige Bildlinks konnten nicht zum Drucken abgerufen werden.');
     existingContainer.innerHTML = '';
     return;
   }
@@ -1160,9 +1161,10 @@ function openCalendarDialog() {
 
   const workerLabel = document.getElementById('calWorkerName');
   if (workerLabel) {
-    workerLabel.textContent = `Mitarbeiter (Dolgozó): ${displayName ? escapeHtml(displayName) : 'Nincs kiválasztva dolgozó'}`;
+    workerLabel.textContent = `Mitarbeiter: ${displayName ? escapeHtml(displayName) : 'Kein Mitarbeiter ausgewählt'}`;
   }
 
+  modal.style.zIndex = '100000';
   modal.classList.remove('hidden');
   renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
 }
@@ -1183,7 +1185,7 @@ function renderCalendar(userName, year, month) {
   if (monthLabel) monthLabel.textContent = `${monthNamesDe[month]} ${year}`;
 
   if (!userName || !allUploadsData[userName]) {
-    container.innerHTML = `<div style="padding:20px; text-align:center; color:#808080;">Kérlek válassz ki egy dolgozót a bal oldali fa-nézetben a naptár megtekintéséhez!</div>`;
+    container.innerHTML = `<div style="padding:20px; text-align:center; color:#808080;">Bitte wählen Sie einen Mitarbeiter in der linken Baumansicht aus!</div>`;
     return;
   }
 
