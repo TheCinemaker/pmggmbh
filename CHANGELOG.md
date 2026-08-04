@@ -1,6 +1,7 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
+- **Azonnali 0.0 Másodperces Betöltés & Háttér Szinkronizálás (`localStorage`)**: A Win98 Admin felület mostantól a `localStorage`-ból azonnal (0ms) kirakja az összes dolgozót, mappát, bélyegképet és fájlt. A Dropbox frissítés és az új fájlok keresése háttérben, észrevétlenül fut (`silent sync` 60s intervallummal).
 - **Jegyzet Mentés Mappába (`saveNote.js`)**: Új Netlify funkció és Win98 párbeszédablak. A jegyzetek közvetlenül az épp nyitott dolgozó/hónap Dropbox mappájába mentődnek `notes_YYYYMMDD_HHMMSS.txt` fájlként.
 - **Státusz Megjelölés & Regiszter (`updateStatus.js`)**: Ellenőrzött/Feldolgozás alatt/Elutasítva státuszok tárolása és vizuális jelölése (✅ 🟡 🔴).
 - **Többszörös Óralap Nyomtatás (`btnPrint`)**: Kijelölő checkboxok az óralapokhoz, "Alle ausw." gomb, valamint többszörös nyomtatási nézet (tiszta papír-formátum 1 óralap/oldal elrendezésben).

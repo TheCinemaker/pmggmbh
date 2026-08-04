@@ -22,10 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initTitleControls();
   initMenuDropdowns();
+  loadThumbCache();
   fetchStatusRegistry();
   fetchUsersMeta();
-  fetchUploadsData();
+  loadPersistentCache();
+  fetchUploadsData(true);
   setupEvents();
+  setInterval(() => fetchUploadsData(true), 60000);
 });
 
 function normName(s) {
@@ -101,23 +104,51 @@ async function fetchUsersMeta() {
   }
 }
 
-// FETCH ALL UPLOADS FROM NETLIFY / DROPBOX
-async function fetchUploadsData() {
-  const treeContainer = document.getElementById('treeChildren');
-  const statusServer = document.getElementById('statusServer');
-  const urlBase = '/.netlify/functions/getAllUploads';
-
-  // 1) Load from sessionStorage cache if available for instant display
+// PERSISTENT LOCALSTORAGE THUMBNAIL CACHE
+function loadThumbCache() {
   try {
-    const cached = sessionStorage.getItem('pmg_all_uploads_cache');
+    const raw = localStorage.getItem('pmg_win98_thumb_cache_v3');
+    if (raw) {
+      const obj = JSON.parse(raw);
+      Object.keys(obj).forEach(k => thumbnailCache.set(k, obj[k]));
+    }
+  } catch (e) {}
+}
+
+function saveThumbCache() {
+  try {
+    const obj = {};
+    thumbnailCache.forEach((v, k) => { obj[k] = v; });
+    localStorage.setItem('pmg_win98_thumb_cache_v3', JSON.stringify(obj));
+  } catch (e) {}
+}
+
+// INSTANT LOAD FROM LOCALSTORAGE
+function loadPersistentCache() {
+  try {
+    const cached = localStorage.getItem('pmg_win98_uploads_cache_v3') || sessionStorage.getItem('pmg_all_uploads_cache');
     if (cached) {
       allUploadsData = JSON.parse(cached);
       renderTree(allUploadsData);
       renderFileGrid();
+      updateStatusCount();
+      const statusServer = document.getElementById('statusServer');
+      if (statusServer) statusServer.textContent = 'Server: Verbunden (Cache) - Synchronisiere im Hintergrund…';
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[Cache] Load error:', e);
+  }
+}
 
-  if (statusServer) statusServer.textContent = 'Server: Verbinde mit Dropbox…';
+// FETCH ALL UPLOADS FROM NETLIFY / DROPBOX WITH SILENT BACKGROUND SYNC
+async function fetchUploadsData(silent = false) {
+  const treeContainer = document.getElementById('treeChildren');
+  const statusServer = document.getElementById('statusServer');
+  const urlBase = '/.netlify/functions/getAllUploads';
+
+  if (!silent && !Object.keys(allUploadsData).length && statusServer) {
+    statusServer.textContent = 'Server: Verbinde mit Dropbox…';
+  }
 
   try {
     let resp = await fetch(`${urlBase}?links=0`);
@@ -128,17 +159,20 @@ async function fetchUploadsData() {
     allUploadsData = data || {};
 
     try {
+      localStorage.setItem('pmg_win98_uploads_cache_v3', JSON.stringify(allUploadsData));
       sessionStorage.setItem('pmg_all_uploads_cache', JSON.stringify(allUploadsData));
     } catch (e) {}
 
-    if (statusServer) statusServer.textContent = 'Server: Verbunden (Dropbox OK)';
+    if (statusServer) statusServer.textContent = 'Server: Verbunden (Dropbox OK - Synchronisiert)';
 
     renderTree(allUploadsData);
     renderFileGrid();
     updateStatusCount();
   } catch (err) {
     console.error('[Win98 Admin] Hiba:', err);
-    if (statusServer) statusServer.textContent = 'Server: FEHLER bei der Verbindung!';
+    if (statusServer && !Object.keys(allUploadsData).length) {
+      statusServer.textContent = 'Server: FEHLER bei der Verbindung!';
+    }
     if (treeContainer && !Object.keys(allUploadsData).length) {
       treeContainer.innerHTML = `<div style="color:red; padding:6px;">Fehler beim Laden der Daten.</div>`;
     }
@@ -426,6 +460,7 @@ async function loadThumbnail(path, container, fileId) {
     const data = res.ok ? await res.json() : null;
     if (data && data.thumbnail) {
       thumbnailCache.set(path, data.thumbnail);
+      saveThumbCache();
       container.innerHTML = `<img src="${data.thumbnail}" class="win98-thumb-img" alt="Vorschau" />`;
       return;
     }
@@ -446,6 +481,7 @@ async function loadThumbnail(path, container, fileId) {
     const directUrl = resp.ok ? (json?.url || json?.link) : null;
     if (directUrl) {
       thumbnailCache.set(path, directUrl);
+      saveThumbCache();
       container.innerHTML = `<img src="${directUrl}" class="win98-thumb-img" alt="Vorschau" />`;
       return;
     }
