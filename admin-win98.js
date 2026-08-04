@@ -376,6 +376,21 @@ function renderFileGrid() {
     });
   }
 
+  // Filter by last 2 months (current month + previous month) unless a specific month was clicked in the tree
+  if (!selectedMonth) {
+    const now = new Date();
+    const currentM = now.getMonth() + 1; // 1-12
+    const prevM = currentM === 1 ? 12 : currentM - 1;
+
+    filesToDisplay = filesToDisplay.filter(f => {
+      if (!f.folder) return true;
+      const m = f.folder.match(/^(\d+)\./);
+      if (!m) return true;
+      const fNum = parseInt(m[1], 10);
+      return fNum === currentM || fNum === prevM;
+    });
+  }
+
   // Filter doc type ('krank', 'stunden')
   if (selectedDocType === 'krank') {
     filesToDisplay = filesToDisplay.filter(f => /krank/i.test(f.name || ''));

@@ -1,6 +1,7 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
+- **Szigorú Utolsó 2 Havi Szűrés a Főoldalon**: A főoldal mostantól **kizárólag az ehavi és az előző havi** dokumentumokat listázza (pl. `8. August` és `7. Juli`). A régebbi hónapok többé nem jelennek meg feleslegesen a főnézetben, de a fa-struktúrában bármikor megnyithatóak maradnak!
 - **Lusta Betöltés (Lazy Loading - `IntersectionObserver`)**: A bélyegképek **csak akkor töltődnek le, amikor odagörgetsz hozzájuk**. Emiatt a felület lassú interneten és gyengébb gépen is azonnal megnyílik, nulla felesleges adatforgalommal!
 - **Kétszintű Beágyazott Csoportosítás (Dolgozó + Hónap)**: A jobb oldali fájllistában a dokumentumok **először Munkatárs Neve szerint** (`👤 BARACSKAI Istvan`), **másodszor pedig Hónapok szerint** (`📅 8. August 2026`) látványos kék fejlécekkel vannak elválasztva. Garantáltan nem folyik össze semmi!
 - **Cache Invalidation & Hard Refresh**: Kényszerített böngésző cache-busting (`v=20260804_v4`) és a Win98 `Aktualisieren` gomb felvértezése teljes `localStorage` és `sessionStorage` ürítéssel.
