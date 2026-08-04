@@ -1,6 +1,7 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
+- **Teljes 38+ Munkatársi Névsor Megjelenítése**: Módosítva a `getAllUploads.js`, hogy a Dropboxban lévő ÖSSZES (38) munkatárs mappáját beolvassa és átadja az Admin & Win98 felületnek akkor is, ha az adott hónapban még 0 feltöltése van.
 - **Új Refresh Token Generálás**: Lekértük az új tokent a Dropbox OAuth2 API-n keresztül hiánytalan scope-okkal (`files.content.read`, `sharing.write`, `files.metadata.read`).
 - **Dropbox OAuth Scope Fix**: Netlify `DROPBOX_REFRESH_TOKEN` frissítve az új le nem járó frissítési tokenre.
 - **Részletes Hibadiagnosztika & Whitespace Trim**: Hozzáadva a részletes Dropbox OAuth hibaüzenet megjelenítés (`getAllUploads.js`), valamint az `env` változók automatikus `.trim()` tisztítása.

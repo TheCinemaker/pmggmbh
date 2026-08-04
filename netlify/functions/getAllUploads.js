@@ -165,12 +165,29 @@ exports.handler = async (event) => {
     console.log('[DEBUG] Relevant months:', relevantMonths);
     console.log('[DEBUG] Years to scan:', yearsToScan);
 
+    const showAllMonths = event?.queryStringParameters?.allMonths === '1';
+
     const result = {};
 
     for (const year of yearsToScan) {
       const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
       const entries = await listFolderAll(dbx, basePath, true);
 
+      // 1) ELŐSZÖR: A Dropboxban lévő ÖSSZES (38+) munkatárs mappáját regisztráljuk,
+      // hogy a névsor hiánytalanul megjelenjen a felületen akkor is, ha 0 fájlja van ebben a hónapban!
+      entries.forEach(f => {
+        const pathToUse = f.path_display || f.path_lower || '';
+        const parts = pathToUse.split('/').filter(Boolean);
+        // Szerkezet: ["PMG Mindenes - PMG ALLES", "Stundenzettel 2026", "Munkatárs Neve", ...]
+        if (parts.length >= 3) {
+          const userName = parts[2];
+          if (userName && userName !== 'SYSTEM' && !result[userName]) {
+            result[userName] = [];
+          }
+        }
+      });
+
+      // 2) MÁSODSZOR: Fájlok hozzáadása a munkatársakhoz
       entries.forEach(f => {
         if (f['.tag'] !== 'file') return;
 
@@ -186,7 +203,7 @@ exports.handler = async (event) => {
         const monthMatch = monthFolderName.match(/^(\d+)\./);
         if (monthMatch) {
           const folderMonth = parseInt(monthMatch[1], 10);
-          if (relevantMonths.includes(folderMonth)) {
+          if (showAllMonths || relevantMonths.includes(folderMonth)) {
             if (!result[userName]) { result[userName] = []; }
             const uploadedAt = f.server_modified || f.client_modified || null;
             result[userName].push({
