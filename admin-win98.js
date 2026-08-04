@@ -1103,6 +1103,34 @@ function setupEvents() {
     selectedUser = e.target.value;
     renderCalendar(e.target.value, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
   });
+
+  // MAC THEME TOGGLE LISTENER
+  document.getElementById('btnToggleMacTheme')?.addEventListener('click', toggleMacTheme);
+  initTheme();
+}
+
+// MAC THEME FUNCTIONS
+function initTheme() {
+  const savedTheme = localStorage.getItem('pmg_theme') || 'win98';
+  if (savedTheme === 'macos') {
+    document.body.classList.add('macos-theme');
+  } else {
+    document.body.classList.remove('macos-theme');
+  }
+  updateThemeBtnText();
+}
+
+function toggleMacTheme() {
+  const isMac = document.body.classList.toggle('macos-theme');
+  localStorage.setItem('pmg_theme', isMac ? 'macos' : 'win98');
+  updateThemeBtnText();
+}
+
+function updateThemeBtnText() {
+  const txt = document.getElementById('themeToggleBtnText');
+  if (txt) {
+    txt.textContent = document.body.classList.contains('macos-theme') ? '💻 Win98 Theme' : '🍎 macOS Theme';
+  }
 }
 
 // FETCH STATUS REGISTRY

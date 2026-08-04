@@ -732,3 +732,177 @@ html, body.win98-body {
   background: #ff8800;
   color: #fff;
 }
+
+/* ========================================================
+   MODERN macOS SEQUOIA / SONOMA GLASS THEME
+   ======================================================== */
+
+body.macos-theme {
+  background: radial-gradient(circle at 15% 20%, rgba(32, 45, 90, 0.95), rgba(12, 16, 28, 0.98)), linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
+  color: #f1f5f9 !important;
+}
+
+body.macos-theme .win98-window {
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(22, 27, 38, 0.85) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  overflow: hidden !important;
+}
+
+body.macos-theme .win98-titlebar {
+  background: rgba(15, 19, 28, 0.88) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #f8fafc !important;
+}
+
+body.macos-theme .win98-titlebar-controls {
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+body.macos-theme .win98-btn-title {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  transition: transform 0.15s ease, filter 0.15s ease !important;
+}
+body.macos-theme .win98-btn-title:hover {
+  transform: scale(1.15) !important;
+  filter: brightness(1.1) !important;
+}
+
+body.macos-theme .win98-btn-title.close-btn {
+  background: #ff5f56 !important;
+}
+body.macos-theme .win98-btn-title:not(.close-btn):first-child {
+  background: #ffbd2e !important;
+}
+body.macos-theme .win98-btn-title:not(.close-btn):last-child {
+  background: #27c93f !important;
+}
+
+body.macos-theme .win98-toolbar {
+  background: rgba(30, 37, 52, 0.75) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 8px 12px !important;
+  gap: 8px !important;
+}
+
+body.macos-theme .win98-btn {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px !important;
+  color: #f8fafc !important;
+  font-weight: 500 !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  font-family: inherit !important;
+}
+
+body.macos-theme .win98-btn:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.macos-theme .win98-btn:active {
+  transform: translateY(0) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.macos-theme .win98-sidebar {
+  background: rgba(15, 20, 30, 0.85) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-size: 12px !important;
+}
+
+body.macos-theme .tree-item-win98 {
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  color: #e2e8f0 !important;
+  transition: background 0.15s ease !important;
+}
+
+body.macos-theme .tree-item-win98:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.macos-theme .tree-item-win98.active-tree-item {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+body.macos-theme .win98-content-area {
+  background: rgba(22, 28, 40, 0.6) !important;
+}
+
+body.macos-theme .win98-input {
+  background: rgba(15, 20, 32, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: #f8fafc !important;
+  padding: 6px 10px !important;
+  font-family: inherit !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.macos-theme .win98-input:focus {
+  outline: none !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+}
+
+body.macos-theme .file-card-win98 {
+  border-radius: 12px !important;
+  background: rgba(30, 38, 54, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+  color: #f1f5f9 !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+body.macos-theme .file-card-win98:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  background: rgba(40, 50, 72, 0.85) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.2) !important;
+}
+
+body.macos-theme .file-card-win98.selected {
+  background: rgba(2, 132, 199, 0.4) !important;
+  border: 2px solid #38bdf8 !important;
+}
+
+body.macos-theme .win98-dialog {
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(20, 26, 38, 0.92) !important;
+  backdrop-filter: blur(40px) saturate(200%) !important;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8) !important;
+  color: #f8fafc !important;
+  overflow: hidden !important;
+}
+
+body.macos-theme .win98-dialog-body {
+  background: transparent !important;
+}
+
+body.macos-theme .win98-statusbar {
+  background: rgba(15, 19, 28, 0.9) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
