@@ -52,6 +52,11 @@
         <span id="newUploadsBadge" style="background:#a00; color:#fff; font-size:10px; font-weight:bold; padding:1px 5px; border-radius:8px; margin-left:4px; display:none;">0</span>
       </button>
 
+      <button class="win98-btn" id="btnUploadFile" title="Dateien hochladen (Stundenzettel, Urlaub, Krankmeldung, Parkticket, Öffi etc.)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Datei hochladen</span>
+      </button>
+
       <button class="win98-btn" id="btnNewNote" title="Jegyzet írása ebbe a mappába">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         <span>Neue Notiz</span>
@@ -185,6 +190,10 @@
           <strong id="noteTargetFolderLabel">Ziel-Ordner: Stundenzettel 2026</strong>
         </div>
         <div style="margin-bottom: 8px;">
+          <label for="noteTitleInput" style="display: block; font-weight: bold; margin-bottom: 4px;">Titel / Name der Notiz (Notiz-Name):</label>
+          <input type="text" id="noteTitleInput" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. Urlaub_August, Parkticket, Wichtige_Info">
+        </div>
+        <div style="margin-bottom: 8px;">
           <label for="noteTextInput" style="display: block; font-weight: bold; margin-bottom: 4px;">Notiztext:</label>
           <textarea id="noteTextInput" class="win98-input" style="width: 100%; height: 120px; resize: vertical; font-family: Tahoma, sans-serif; font-size: 12px; box-sizing: border-box;" placeholder="Notiz eingeben..."></textarea>
         </div>
@@ -205,14 +214,17 @@
         <button class="win98-btn-title close-btn" id="closeWin98CalendarModal">✕</button>
       </div>
       <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: #fff; padding: 6px; border: 1px solid #808080; flex-shrink: 0;">
-          <div>
-            <strong id="calWorkerName">Mitarbeiter: -</strong>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: #fff; padding: 6px; border: 1px solid #808080; flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <strong>Mitarbeiter:</strong>
+            <button class="win98-btn" id="btnCalPrevWorker" title="Vorheriger Mitarbeiter">◀</button>
+            <select id="calWorkerSelect" class="win98-input" style="max-width: 220px; font-weight: bold;"></select>
+            <button class="win98-btn" id="btnCalNextWorker" title="Nächster Mitarbeiter">▶</button>
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
-            <button class="win98-btn" id="btnCalPrevMonth">◀ Vorheriger</button>
+            <button class="win98-btn" id="btnCalPrevMonth">◀ Monat</button>
             <strong id="calMonthLabel" style="font-size: 13px; min-width: 110px; text-align: center;">August 2026</strong>
-            <button class="win98-btn" id="btnCalNextMonth">Nächster ▶</button>
+            <button class="win98-btn" id="btnCalNextMonth">Monat ▶</button>
           </div>
         </div>
 
@@ -354,8 +366,61 @@
         <button class="win98-btn" id="closeNewUploadsModalBtn">Schließen</button>
       </div>
     </div>
+  <!-- GENERAL UPLOAD DIALOG (WIN98 MODAL) -->
+  <div id="win98UploadModal" class="win98-modal-overlay hidden">
+    <div class="win98-dialog" style="width: 520px; max-width: 95vw;">
+      <div class="win98-titlebar">
+        <span>📤 Datei hochladen (Dokumenten-Upload)</span>
+        <button class="win98-btn-title close-btn" id="closeWin98UploadModal">✕</button>
+      </div>
+      <div class="win98-dialog-body" style="padding: 10px; background: #c0c0c0;">
+        <div style="margin-bottom: 8px; font-weight: bold; background: #fff; padding: 6px; border: 1px solid #808080;" id="uploadTargetLabel">
+          Ziel-Ordner: Stundenzettel 2026
+        </div>
+
+        <div style="background: #fff; border: 1px solid #808080; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 2px;">Mitarbeiter (Dolgozó):</label>
+            <select id="uploadWorkerSelect" class="win98-input" style="width: 100%; box-sizing: border-box;"></select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 2px;">Ordner / Monat (Hónap):</label>
+            <select id="uploadMonthSelect" class="win98-input" style="width: 100%; box-sizing: border-box;"></select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 2px;">Dokumententyp (Típus):</label>
+            <select id="uploadDocTypeSelect" class="win98-input" style="width: 100%; box-sizing: border-box;">
+              <option value="stunden">🟢 Stundenzettel (Óralap)</option>
+              <option value="urlaub">🔵 Urlaub (Szabadság)</option>
+              <option value="krank">🟠 Krankenstand (Betegszabadság)</option>
+              <option value="parkticket">🎫 Parkticket (Parkolójegy)</option>
+              <option value="oeffi">🚌 Öffi / Ticket (Tömegközlekedés)</option>
+              <option value="sonstiges">📄 Sonstiges / Egyéb dokumentum</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 2px;">Zeitraum / Dateiname (Pl. 14-20 vagy egyedi név):</label>
+            <input type="text" id="uploadCustomNameInput" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. 14-20, Parkticket_08, Offi_Ticket">
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: bold; font-size: 11px; margin-bottom: 2px;">Datei auswählen (Bármilyen fájl pl. JPG, PNG, PDF, TXT):</label>
+            <input type="file" id="uploadFileInputs" class="win98-input" style="width: 100%; box-sizing: border-box;" multiple accept="*/*">
+          </div>
+
+          <div id="uploadStatusMsg" style="font-size: 11px; font-weight: bold; color: #000080; min-height: 16px;"></div>
+        </div>
+      </div>
+      <div class="win98-dialog-footer" style="display: flex; justify-content: space-between;">
+        <button class="win98-btn" id="btnSubmitUpload" style="font-weight: bold; min-width: 120px;">📤 Hochladen</button>
+        <button class="win98-btn" id="closeUploadModalBtn">Schließen</button>
+      </div>
+    </div>
   </div>
 
-  <script src="admin-win98.js?v=20260804_v18"></script>
+  <script src="admin-win98.js?v=20260804_v19"></script>
 </body>
 </html>

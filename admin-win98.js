@@ -671,9 +671,34 @@ async function openLightbox(file) {
     setTimeout(initLightboxZoomEvents, 50);
   } else if (ext === 'pdf' && fileUrl) {
     body.innerHTML = `
-      <div style="margin-bottom:10px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📅 ${file.uploadedAtDisplay || ''}</div>
-      <iframe src="${fileUrl}" style="width:100%; height:55vh; border:1px solid #808080;" title="PDF"></iframe>
+      <div style="margin-bottom:6px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
+        <span>👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📄 PDF Dokument</span>
+        <a href="${fileUrl}" target="_blank" style="color:#000080; text-decoration:underline; font-weight:bold;">🔗 In neuem Tab öffnen</a>
+      </div>
+      <object data="${fileUrl}" type="application/pdf" style="width:100%; height:58vh; border:1px solid #808080;">
+        <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true" style="width:100%; height:58vh; border:none;" title="PDF Preview">
+          <div style="padding:20px; text-align:center;">
+            <p>PDF-Vorschau kann nicht direkt eingebettet werden.</p>
+            <a href="${fileUrl}" target="_blank" class="win98-btn">📄 PDF öffnen / herunterladen</a>
+          </div>
+        </iframe>
+      </object>
     `;
+  } else if (['txt', 'text', 'log', 'csv', 'md', 'json'].includes(ext) && fileUrl) {
+    body.innerHTML = `
+      <div style="margin-bottom:6px; font-weight:bold; background:#d4d0c8; padding:4px 8px; border:1px solid #808080; font-size:11px;">👤 Mitarbeiter: ${escapeHtml(displayName)} | 📂 Ordner: ${escapeHtml(file.folder || '')} | 📝 Textdokument</div>
+      <div id="txtPreviewBox" style="background:#fff; border:2px inset #808080; padding:10px; font-family:'Courier New', monospace; font-size:12px; height:56vh; overflow-y:auto; white-space:pre-wrap; color:#000;">Lade Textinhalt vom Server...</div>
+    `;
+    fetch(fileUrl)
+      .then(r => r.text())
+      .then(txt => {
+        const box = document.getElementById('txtPreviewBox');
+        if (box) box.textContent = txt;
+      })
+      .catch(err => {
+        const box = document.getElementById('txtPreviewBox');
+        if (box) box.innerHTML = `<span style="color:red;">Fehler beim Laden des Textinhalts: ${escapeHtml(err.message)}</span>`;
+      });
   } else {
     body.innerHTML = `
       <div style="padding:20px; text-align:center;">
@@ -1060,6 +1085,24 @@ function setupEvents() {
     currentRotateDeg = (currentRotateDeg + 90) % 360;
     applyImgTransform();
   });
+
+  // GENERAL FILE UPLOAD EVENT LISTENERS
+  document.getElementById('btnUploadFile')?.addEventListener('click', openUploadModal);
+  document.getElementById('closeWin98UploadModal')?.addEventListener('click', () => {
+    document.getElementById('win98UploadModal')?.classList.add('hidden');
+  });
+  document.getElementById('closeUploadModalBtn')?.addEventListener('click', () => {
+    document.getElementById('win98UploadModal')?.classList.add('hidden');
+  });
+  document.getElementById('btnSubmitUpload')?.addEventListener('click', handleUploadSubmit);
+
+  // CALENDAR WORKER NAVIGATION LISTENERS
+  document.getElementById('btnCalPrevWorker')?.addEventListener('click', () => navigateCalWorker(-1));
+  document.getElementById('btnCalNextWorker')?.addEventListener('click', () => navigateCalWorker(1));
+  document.getElementById('calWorkerSelect')?.addEventListener('change', (e) => {
+    selectedUser = e.target.value;
+    renderCalendar(e.target.value, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+  });
 }
 
 // FETCH STATUS REGISTRY
@@ -1097,10 +1140,13 @@ async function saveStatus(key, status, note = '') {
 function openNoteDialog() {
   const modal = document.getElementById('win98NoteModal');
   const label = document.getElementById('noteTargetFolderLabel');
+  const titleInput = document.getElementById('noteTitleInput');
   const textInput = document.getElementById('noteTextInput');
   const msg = document.getElementById('noteStatusMsg');
 
   if (!modal) return;
+
+  modal.style.zIndex = '100000';
 
   let folderLabel = 'Stundenzettel 2026';
   if (selectedUser && selectedMonth) {
@@ -1110,6 +1156,7 @@ function openNoteDialog() {
   }
 
   if (label) label.textContent = `Ziel-Ordner (Cél mappa): ${folderLabel}`;
+  if (titleInput) titleInput.value = '';
   if (textInput) textInput.value = '';
   if (msg) msg.textContent = '';
 
@@ -1118,13 +1165,16 @@ function openNoteDialog() {
 
 // SAVE NOTE SUBMIT
 async function handleSaveNoteSubmit() {
+  const titleInput = document.getElementById('noteTitleInput');
   const textInput = document.getElementById('noteTextInput');
   const msg = document.getElementById('noteStatusMsg');
   const submitBtn = document.getElementById('btnSaveNoteSubmit');
 
+  const noteTitle = (titleInput?.value || '').trim();
   const noteText = (textInput?.value || '').trim();
+
   if (!noteText) {
-    if (msg) msg.textContent = '❌ Kérlek írj be valamilyen jegyzetet!';
+    if (msg) msg.textContent = '❌ Bitte Notiztext eingeben!';
     return;
   }
 
@@ -1135,30 +1185,36 @@ async function handleSaveNoteSubmit() {
     folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel 2026/${selectedUser}`;
   }
 
-  if (msg) msg.textContent = '⏳ Jegyzet mentése folyamatban...';
+  let customFileName = '';
+  if (noteTitle) {
+    customFileName = noteTitle;
+    if (!customFileName.toLowerCase().endsWith('.txt')) {
+      customFileName += '.txt';
+    }
+  }
+
+  if (msg) msg.textContent = '⏳ Notiz wird gespeichert...';
   if (submitBtn) submitBtn.disabled = true;
 
   try {
     const res = await fetch('/.netlify/functions/saveNote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folderPath, noteText })
+      body: JSON.stringify({ folderPath, noteText, fileName: customFileName })
     });
 
     const data = await res.json();
     if (res.ok && data.success) {
-      if (msg) msg.textContent = '✅ Jegyzet sikeresen elmentve a Dropboxba!';
+      if (msg) msg.textContent = '✅ Notiz erfolgreich gespeichert!';
       setTimeout(() => {
         document.getElementById('win98NoteModal')?.classList.add('hidden');
-        sessionStorage.removeItem('pmg_all_uploads_cache');
-        fetchUploadsData();
+        fetchUploadsData(false);
       }, 1000);
     } else {
-      if (msg) msg.textContent = `❌ Hiba: ${data.message || 'Mentés sikertelen'}`;
+      if (msg) msg.textContent = `❌ Fehler beim Speichern: ${data.message || 'Unbekannter Fehler'}`;
     }
   } catch (e) {
-    console.error('Note save error:', e);
-    if (msg) msg.textContent = `❌ Hiba: ${e.message}`;
+    if (msg) msg.textContent = `❌ Fehler: ${e.message}`;
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -1376,6 +1432,51 @@ function escapeHtml(str) {
 let calCurrentDate = new Date();
 let calActiveFilesMap = [];
 
+function populateCalWorkerSelect(activeWorker) {
+  const select = document.getElementById('calWorkerSelect');
+  if (!select) return;
+
+  select.innerHTML = '';
+  const validUsers = Object.keys(allUploadsData || {}).filter(u => {
+    const low = String(u || '').toLowerCase();
+    return !low.includes('ausgeschieden') && !low.includes('system');
+  });
+
+  validUsers.forEach(u => {
+    let dispName = u;
+    const normKey = normName(u);
+    const matched = usersByName[normKey];
+    if (matched && matched.displayName) dispName = matched.displayName;
+
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = dispName;
+    if (u === activeWorker) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function navigateCalWorker(step) {
+  const validUsers = Object.keys(allUploadsData || {}).filter(u => {
+    const low = String(u || '').toLowerCase();
+    return !low.includes('ausgeschieden') && !low.includes('system');
+  });
+
+  if (validUsers.length === 0) return;
+
+  const currentSelect = document.getElementById('calWorkerSelect');
+  const currentWorker = currentSelect?.value || selectedUser || validUsers[0];
+  let currIdx = validUsers.indexOf(currentWorker);
+  if (currIdx === -1) currIdx = 0;
+
+  let newIdx = (currIdx + step + validUsers.length) % validUsers.length;
+  const newWorker = validUsers[newIdx];
+
+  if (currentSelect) currentSelect.value = newWorker;
+  selectedUser = newWorker;
+  renderCalendar(newWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+}
+
 function openCalendarDialog() {
   console.log('[Calendar] Opening calendar dialog...');
   const modal = document.getElementById('win98CalendarModal');
@@ -1390,19 +1491,8 @@ function openCalendarDialog() {
   });
 
   const targetWorker = selectedUser || validUsers[0] || '';
-  let displayName = targetWorker;
-  const normKey = normName(targetWorker);
-  const matched = usersByName[normKey] || Object.values(usersByName).find(u => {
-    const uNorm = normName(u.displayName || u.id || '');
-    const cleanKey = normKey.replace(/\.+/g, '').trim();
-    return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
-  });
-  if (matched && matched.displayName) displayName = matched.displayName;
 
-  const workerLabel = document.getElementById('calWorkerName');
-  if (workerLabel) {
-    workerLabel.textContent = `Mitarbeiter: ${displayName ? escapeHtml(displayName) : 'Kein Mitarbeiter ausgewählt'}`;
-  }
+  populateCalWorkerSelect(targetWorker);
 
   modal.style.zIndex = '100000';
   modal.classList.remove('hidden');
