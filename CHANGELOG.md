@@ -1,5 +1,22 @@
 # Projekt Napló (Changelog)
 
+## [2026-08-04] - v2.0.1 - Modern macOS Glass UI, Bármilyen Fájl Upload & Naptár Dolgozó-Pörgető
+- **🍎 Modern macOS Sequoia / Sonoma Glass UI Theme**:
+  - Eszköztár gomb: **`🍎 macOS Theme`**, amivel 1 kattintással válthatsz Retro Win98 és modern Apple Mac dizájn között!
+  - Sötét frosted glass áttetsző ablakok (`backdrop-filter: blur(30px)`), lekerekített 14px sarkok, SF Apple tipográfia.
+  - 🔴 🟡 🟢 **macOS piros-sárga-zöld ablakkezelő gombok**.
+  - A kiválasztott témát az app automatikusan elmenti (`localStorage.setItem('pmg_theme')`).
+- **📤 Bármilyen Fájl Feltöltése Mappákba (`📤 Datei hochladen`) & HTML Beágyazási Hiba Javítása**:
+  - Kijelölhető a dolgozó, a hónap, a dokumentum típusa (🟢 Stundenzettel, 🔵 Urlaub, 🟠 Krankenstand, 🎫 Parkticket, 🚌 Öffi, 📄 Sonstiges), és bármilyen fájl feltölthető (JPG, PNG, PDF, TXT, DOCX, ZIP stb.).
+  - Javítva az unclosed modal HTML szerkezet (`#win98UploadModal`), ami miatt a feltöltő ablak rejtve maradt a háttérben.
+- **📄 PDF és 📝 TXT Fájlok Olvasása / Megtekintése a Lightboxban**:
+  - TXT fájlok: a szöveges tartalom azonnal beolvasásra és megjelenítésre kerül a képnézőben.
+  - PDF fájlok: beágyazott PDF-megjelenítőként és *In neuem Tab öffnen* hivatkozással futnak mind asztali EXE-ben, mind böngészőben.
+- **📝 Jegyzet Címadás (Note Title)**:
+  - A `Neue Notiz` ablakban megadható a jegyzet címe (pl. `Urlaub_August`, `Parkticket`), amiből a rendszer automatikusan elkészíti a `.txt` fájlt.
+- **🔄 Naptár Dolgozó-Pörgető Controls (`◀ Mitarbeiter ▶`)**:
+  - A naptár ablakban a hónapok mellett a dolgozókat is azonnal léptetheted a `◀ / ▶` gombokkal és a legördülő menüvel.
+
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
 - **Képszintaxis Hiba Javítása (Fix extra `}` closing brace in `openLightbox`)**: Eltávolítva a duplikált kapcsos zárójel a képnéző függvényből, ami megállította a JS futását a böngészőben. Az alkalmazás és az adatok mostantól azonnal betöltenek!
