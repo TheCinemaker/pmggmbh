@@ -205,6 +205,8 @@ function renderTree(data) {
   const treeChildren = document.getElementById('treeChildren');
   if (!treeChildren) return;
 
+  treeChildren.innerHTML = '';
+
   let users = Object.keys(data).filter(u => {
     const low = String(u || '').toLowerCase();
     return !low.includes('ausgeschieden') && !low.includes('system');
@@ -1141,11 +1143,19 @@ function openCalendarDialog() {
     return;
   }
 
-  const userKeys = Object.keys(allUploadsData || {});
-  const targetWorker = selectedUser || userKeys[0] || '';
+  const validUsers = Object.keys(allUploadsData || {}).filter(u => {
+    const low = String(u || '').toLowerCase();
+    return !low.includes('ausgeschieden') && !low.includes('system');
+  });
+
+  const targetWorker = selectedUser || validUsers[0] || '';
   let displayName = targetWorker;
   const normKey = normName(targetWorker);
-  const matched = usersByName[normKey];
+  const matched = usersByName[normKey] || Object.values(usersByName).find(u => {
+    const uNorm = normName(u.displayName || u.id || '');
+    const cleanKey = normKey.replace(/\.+/g, '').trim();
+    return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
+  });
   if (matched && matched.displayName) displayName = matched.displayName;
 
   const workerLabel = document.getElementById('calWorkerName');

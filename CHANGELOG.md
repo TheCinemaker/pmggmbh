@@ -2,6 +2,8 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Fa-struktúra Duplázódás Javítása**: Helyreállítva a `treeChildren.innerHTML = ''` tisztítás a `renderTree` fügvény elején, így a `+` jelre kattintva nem generálódik újra a teljes fa az alján, hanem tisztán nyílnak a hónap-mappák!
+- **Naptár Nyitás Automatikus Dolgozó-Választóval**: Ha nincs kijelölve dolgozó, a naptár automatikusan kiválasztja az első aktív munkatársat, így a `Kalender` gombra kattintva azonnal megjelenik a naptár!
 - **Szigorú `Ausgeschieden` Kizárás a Főoldali Fájlrácsból**: Teljesen letiltva az inaktív `Ausgeschieden` mappák és fájlok bekerülése a főoldali fájlrácsba (`renderFileGrid`).
 - **`Ausgeschieden` Mappa Kiszűrése & Dolgozói Névsorrend (A-Z)**: Az inaktív/kilépett dolgozók (`Ausgeschieden`) mappái és fájljai többé nem jelennek meg a felületen. A dolgozók mind a bal oldali fa-struktúrában, mind a jobb oldali főoldalon **ABC névsorrendben (A-Z)** rendezve jelennek meg!
 - **Robust Win98 Kalender**: Javított naptár megnyitási és index-alapú képnézegető logika, így a `Kalender` gombra kattintva a naptár azonnal és hibátlanul megnyílik.
