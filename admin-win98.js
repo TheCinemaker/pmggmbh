@@ -1376,6 +1376,12 @@ function selectWorkerForEdit(workerId) {
   const editBauEl = document.getElementById('editUserBaustelle');
   if (editBauEl) editBauEl.value = worker.baustelle || '';
 
+  const editVorNameEl = document.getElementById('editUserVorarbeiterName');
+  if (editVorNameEl) editVorNameEl.value = worker.vorarbeiterName || '';
+
+  const editVorTelEl = document.getElementById('editUserVorarbeiterTelefon');
+  if (editVorTelEl) editVorTelEl.value = worker.vorarbeiterTelefon || '';
+
   const msg = document.getElementById('userMgrStatusMsg');
   if (msg) msg.textContent = '';
 
@@ -1412,6 +1418,8 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
   const userLang = document.getElementById('editUserLang')?.value || 'hu';
   const munkarend = (document.getElementById('editUserMunkarend')?.value || '').trim();
   const baustelle = (document.getElementById('editUserBaustelle')?.value || '').trim();
+  const vorarbeiterName = (document.getElementById('editUserVorarbeiterName')?.value || '').trim();
+  const vorarbeiterTelefon = (document.getElementById('editUserVorarbeiterTelefon')?.value || '').trim();
 
   let action = editingWorker ? 'update' : 'add';
 
@@ -1452,7 +1460,9 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
         email,
         company,
         munkarend,
-        baustelle
+        baustelle,
+        vorarbeiterName,
+        vorarbeiterTelefon
       })
     });
 

@@ -43,8 +43,8 @@ exports.handler = async (event) => {
     });
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // --- Tartomány kiterjesztése az J oszlopra (A:J) ---
-    const range = `${SHEET_NAME}!A:J`; 
+    // --- Tartomány kiterjesztése az L oszlopra (A:L) ---
+    const range = `${SHEET_NAME}!A:L`; 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
     // Fejléc-sor eldobása (heurisztika)
     if (rows.length) {
       const head = rows[0].join(' ').toLowerCase();
-      if (/(pin|lang|role|phone|email|type|ceg|munkarend|baustelle)/.test(head)) {
+      if (/(pin|lang|role|phone|email|type|ceg|munkarend|baustelle|vorarbeiter)/.test(head)) {
         rows = rows.slice(1);
       }
     }
@@ -67,16 +67,18 @@ exports.handler = async (event) => {
     const users = rows
       .filter(r => r && r[0]) // legyen id / displayName
       .map(r => {
-        const id        = (r[0] || '').trim();
-        const pin       = (r[1] || '').trim();
-        const userType  = (r[2] || 'oralapos').trim().toLowerCase();
-        const userLang  = (r[3] || 'hu').trim().toLowerCase();
-        const userRole  = (r[4] || 'user').trim().toLowerCase();
-        const phone     = normalizePhoneLoose(r[5] || '');
-        const email     = (r[6] || '').trim();
-        const company   = (r[7] || '').trim() || null;
-        const munkarend = (r[8] || '').trim();
-        const baustelle = (r[9] || '').trim();
+        const id                = (r[0] || '').trim();
+        const pin               = (r[1] || '').trim();
+        const userType          = (r[2] || 'oralapos').trim().toLowerCase();
+        const userLang          = (r[3] || 'hu').trim().toLowerCase();
+        const userRole          = (r[4] || 'user').trim().toLowerCase();
+        const phone             = normalizePhoneLoose(r[5] || '');
+        const email             = (r[6] || '').trim();
+        const company           = (r[7] || '').trim() || null;
+        const munkarend         = (r[8] || '').trim();
+        const baustelle         = (r[9] || '').trim();
+        const vorarbeiterName   = (r[10] || '').trim();
+        const vorarbeiterTelefon= normalizePhoneLoose(r[11] || '');
 
         return {
           id,
@@ -89,7 +91,9 @@ exports.handler = async (event) => {
           email,
           company,
           munkarend,
-          baustelle
+          baustelle,
+          vorarbeiterName,
+          vorarbeiterTelefon
         };
       });
 

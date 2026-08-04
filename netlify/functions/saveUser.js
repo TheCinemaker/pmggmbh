@@ -37,7 +37,9 @@ exports.handler = async (event) => {
       email = '',
       company = '',
       munkarend = '',
-      baustelle = ''
+      baustelle = '',
+      vorarbeiterName = '',
+      vorarbeiterTelefon = ''
     } = body;
 
     if (!id && action !== 'add') {
@@ -50,7 +52,7 @@ exports.handler = async (event) => {
     });
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const range = `${SHEET_NAME}!A:J`;
+    const range = `${SHEET_NAME}!A:L`;
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range
@@ -83,7 +85,9 @@ exports.handler = async (event) => {
         String(email).trim(),
         String(company).trim(),
         String(munkarend).trim(),
-        String(baustelle).trim()
+        String(baustelle).trim(),
+        String(vorarbeiterName).trim(),
+        String(vorarbeiterTelefon).trim()
       ];
 
       await sheets.spreadsheets.values.append({
@@ -133,10 +137,12 @@ exports.handler = async (event) => {
       String(email).trim(),
       String(company).trim(),
       String(munkarend).trim(),
-      String(baustelle).trim()
+      String(baustelle).trim(),
+      String(vorarbeiterName).trim(),
+      String(vorarbeiterTelefon).trim()
     ];
 
-    const updateRange = `${SHEET_NAME}!A${targetRowIndex}:J${targetRowIndex}`;
+    const updateRange = `${SHEET_NAME}!A${targetRowIndex}:L${targetRowIndex}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: SHEET_ID,
       range: updateRange,
