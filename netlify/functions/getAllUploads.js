@@ -59,7 +59,7 @@ async function listFolderAll(dbx, path, recursive = false) {
   let resp;
   try {
     console.log(`[DEBUG] Attempting to list folder: "${path}" (recursive: ${recursive})`);
-    resp = await dbx.filesListFolder({ path, recursive });
+    resp = await dbx.filesListFolder({ path, recursive, limit: 2000 });
     console.log(`[DEBUG] Successfully listed folder: "${path}", found ${resp.result.entries?.length || 0} entries`);
   } catch (err) {
     // Részletes hibainformáció naplózása
