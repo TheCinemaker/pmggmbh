@@ -658,8 +658,14 @@ async function openWeeklyReportDialog() {
 // SETUP EVENT LISTENERS
 function setupEvents() {
   document.getElementById('btnRefresh')?.addEventListener('click', () => {
-    sessionStorage.removeItem('pmg_all_uploads_cache');
-    fetchUploadsData();
+    sessionStorage.clear();
+    localStorage.removeItem('pmg_win98_uploads_cache_v3');
+    localStorage.removeItem('pmg_win98_uploads_cache_v4');
+    localStorage.removeItem('pmg_win98_thumb_cache_v3');
+    allUploadsData = {};
+    const statusServer = document.getElementById('statusServer');
+    if (statusServer) statusServer.textContent = 'Server: Cache geleert, lade neu…';
+    fetchUploadsData(false);
     fetchStatusRegistry();
   });
 

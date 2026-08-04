@@ -1,6 +1,7 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
+- **Cache Invalidation & Hard Refresh**: Kényszerített böngésző cache-busting (`v=20260804_v4`) és a Win98 `Aktualisieren` gomb felvértezése teljes `localStorage` és `sessionStorage` ürítéssel.
 - **Hónap Szerinti Vizuális Csoportosítás**: A Win98 fájllistában a dokumentumok tisztán szétválasztva, látványos hónap fejlécek alatt (pl. `📅 8. August 2026`, `📅 7. Juli 2026`) jelennek meg, hogy ne folyjon egybe a nézet.
 - **Dolgozói Havi Naptár Nézet (`Kalender`)**: Új Win98 naptár ablak (`#win98CalendarModal`), amely naptári rácsban (Hé-Va) jeleníti meg az adott dolgozó feltöltéseit: 🟢 zölddel a feltöltött óralapokat, 🟡 sárgával a betegszabadság igazolásokat. Bármelyikre rákattintva azonnal megnyílik a kép!
 - **Kétlépcsős Gyorstöltés (`fast=1`)**: A `getAllUploads.js` a legfrissebb hónapokat tölti le legelőször, megelőzve a felesleges várakozást.
