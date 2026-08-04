@@ -18,10 +18,31 @@ const STANDARD_MONTHS = [
   '9. September', '10. Oktober', '11. November', '12. Dezember'
 ];
 
+let thumbObserver = null;
+
+function initThumbObserver() {
+  if ('IntersectionObserver' in window) {
+    thumbObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const box = entry.target;
+          const path = box.dataset.path;
+          const fileId = box.dataset.fileid;
+          if (path) {
+            loadThumbnail(path, box, fileId);
+          }
+          observer.unobserve(box);
+        }
+      });
+    }, { rootMargin: '150px' });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initTitleControls();
   initMenuDropdowns();
+  initThumbObserver();
   loadThumbCache();
   fetchStatusRegistry();
   fetchUsersMeta();
@@ -465,8 +486,18 @@ function renderFileGrid() {
         if (isNote) {
           thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
         } else if (isImage) {
-          thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
-          loadThumbnail(f.path, thumbBox, f.id);
+          if (thumbnailCache.has(f.path)) {
+            loadThumbnail(f.path, thumbBox, f.id);
+          } else {
+            thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">📷</div>`;
+            thumbBox.dataset.path = f.path;
+            if (f.id) thumbBox.dataset.fileid = f.id;
+            if (thumbObserver) {
+              thumbObserver.observe(thumbBox);
+            } else {
+              loadThumbnail(f.path, thumbBox, f.id);
+            }
+          }
         } else if (ext === 'pdf') {
           thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
         } else {
