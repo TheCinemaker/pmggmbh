@@ -44,7 +44,8 @@ exports.handler = async (event) => {
     const sheets = google.sheets({ version: 'v4', auth });
 
     // --- Tartomány kiterjesztése az L oszlopra (A:L) ---
-    const range = `${SHEET_NAME}!A:L`; 
+    const safeName = (SHEET_NAME || 'Munkások').replace(/'/g, "''");
+    const range = `'${safeName}'!A:L`; 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range

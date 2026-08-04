@@ -4,7 +4,12 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 const CLIENT_EMAIL   = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY    = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 const SHEET_ID       = process.env.GOOGLE_SHEET_ID;
-const SHEET_NAME     = process.env.GOOGLE_SHEET_NAME_USERS;
+const SHEET_NAME     = process.env.GOOGLE_SHEET_NAME_USERS || 'Munkások';
+
+function formatSheetRange(cells) {
+  const safeName = (SHEET_NAME || '').replace(/'/g, "''");
+  return `'${safeName}'!${cells}`;
+}
 
 exports.handler = async (event) => {
   const reqOrigin = event?.headers?.origin || event?.headers?.Origin || process.env.ALLOWED_ORIGIN || '*';
@@ -42,8 +47,10 @@ exports.handler = async (event) => {
       vorarbeiterTelefon = ''
     } = body;
 
-    if (!id && action !== 'add') {
-      return { statusCode: 400, headers, body: JSON.stringify({ message: 'Mitarbeiter ID ist erforderlich!' }) };
+    const targetId = (newId || id || '').trim();
+
+    if (!targetId) {
+      return { statusCode: 400, headers, body: JSON.stringify({ message: 'Név_ID (Mitarbeiter ID) ist erforderlich!' }) };
     }
 
     const auth = new google.auth.GoogleAuth({
@@ -52,29 +59,60 @@ exports.handler = async (event) => {
     });
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const range = `${SHEET_NAME}!A:L`;
+    // Read full sheet to locate existing row index
+    const readRange = formatSheetRange('A:L');
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range
+      range: readRange
     });
 
     const rows = response.data.values || [];
 
-    // Find row index (1-based for Google Sheets API)
+    // Find row index (1-based index for Google Sheets API)
     let targetRowIndex = -1;
     for (let i = 0; i < rows.length; i++) {
       const rId = String(rows[i][0] || '').trim();
-      if (rId && rId.toLowerCase() === String(id).trim().toLowerCase()) {
+      if (rId && (rId.toLowerCase() === String(id || '').trim().toLowerCase() || rId.toLowerCase() === targetId.toLowerCase())) {
         targetRowIndex = i + 1; // 1-based index
         break;
       }
     }
 
+    // ACTION: ADD NEW WORKER
     if (action === 'add') {
-      const targetId = (newId || id || '').trim();
-      if (!targetId) {
-        return { statusCode: 400, headers, body: JSON.stringify({ message: 'Név_ID ist erforderlich!' }) };
+      // If worker already exists, update instead of duplicating
+      if (targetRowIndex !== -1) {
+        const updateRowValues = [
+          targetId,
+          String(pin).trim(),
+          String(userType).trim(),
+          String(userLang).trim(),
+          String(userRole).trim(),
+          String(phone).trim(),
+          String(email).trim(),
+          String(company).trim(),
+          String(munkarend).trim(),
+          String(baustelle).trim(),
+          String(vorarbeiterName).trim(),
+          String(vorarbeiterTelefon).trim()
+        ];
+
+        const updateRange = formatSheetRange(`A${targetRowIndex}:L${targetRowIndex}`);
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SHEET_ID,
+          range: updateRange,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [updateRowValues] }
+        });
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true, message: `Mitarbeiter "${targetId}" wurde aktualisiert.` })
+        };
       }
+
+      // Append new row at bottom
       const newRowValues = [
         targetId,
         String(pin).trim(),
@@ -90,27 +128,30 @@ exports.handler = async (event) => {
         String(vorarbeiterTelefon).trim()
       ];
 
+      const appendRange = formatSheetRange('A1');
       await sheets.spreadsheets.values.append({
         spreadsheetId: SHEET_ID,
-        range: `${SHEET_NAME}!A1`,
+        range: appendRange,
         valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [newRowValues] }
       });
 
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, message: 'Neuer Mitarbeiter erfolgreich hinzugefügt.' })
+        body: JSON.stringify({ success: true, message: `Neuer Mitarbeiter "${targetId}" erfolgreich hinzugefügt.` })
       };
     }
 
-    if (targetRowIndex === -1) {
-      return { statusCode: 444, headers, body: JSON.stringify({ message: `Mitarbeiter "${id}" wurde in Google Sheet nicht gefunden.` }) };
-    }
-
+    // ACTION: MARK AS INACTIVE (AUSGESCHIEDEN)
     if (action === 'set_inactive') {
-      // Set company column H (index 8 in 1-based columns: A=1, B=2, C=3, D=4, E=5, F=6, G=7, H=8)
-      const rowRange = `${SHEET_NAME}!H${targetRowIndex}`;
+      if (targetRowIndex === -1) {
+        return { statusCode: 404, headers, body: JSON.stringify({ message: `Mitarbeiter "${targetId}" wurde im Sheet nem található.` }) };
+      }
+
+      // Set company column H (column 8) to 'Ausgeschieden'
+      const rowRange = formatSheetRange(`H${targetRowIndex}`);
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
         range: rowRange,
@@ -121,14 +162,47 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, message: 'Mitarbeiter als Ausgeschieden markiert.' })
+        body: JSON.stringify({ success: true, message: `Mitarbeiter "${targetId}" als Ausgeschieden markiert.` })
       };
     }
 
-    // Update existing row
-    const finalId = (newId || id || '').trim();
+    // ACTION: UPDATE EXISTING WORKER
+    if (targetRowIndex === -1) {
+      // If not found when updating, append as new worker automatically!
+      const newRowValues = [
+        targetId,
+        String(pin).trim(),
+        String(userType).trim(),
+        String(userLang).trim(),
+        String(userRole).trim(),
+        String(phone).trim(),
+        String(email).trim(),
+        String(company).trim(),
+        String(munkarend).trim(),
+        String(baustelle).trim(),
+        String(vorarbeiterName).trim(),
+        String(vorarbeiterTelefon).trim()
+      ];
+
+      const appendRange = formatSheetRange('A1');
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: appendRange,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [newRowValues] }
+      });
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, message: `Mitarbeiter "${targetId}" neu hinzugefügt (nicht gefunden zum Bearbeiten).` })
+      };
+    }
+
+    // Update existing row (Columns A:L)
     const updatedRowValues = [
-      finalId,
+      targetId,
       String(pin).trim(),
       String(userType).trim(),
       String(userLang).trim(),
@@ -142,7 +216,7 @@ exports.handler = async (event) => {
       String(vorarbeiterTelefon).trim()
     ];
 
-    const updateRange = `${SHEET_NAME}!A${targetRowIndex}:L${targetRowIndex}`;
+    const updateRange = formatSheetRange(`A${targetRowIndex}:L${targetRowIndex}`);
     await sheets.spreadsheets.values.update({
       spreadsheetId: SHEET_ID,
       range: updateRange,
@@ -153,7 +227,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true, message: 'Mitarbeiterdaten erfolgreich aktualisiert.' })
+      body: JSON.stringify({ success: true, message: `Mitarbeiterdaten für "${targetId}" erfolgreich aktualisiert.` })
     };
 
   } catch (error) {

@@ -1399,6 +1399,12 @@ function resetUserEditForm() {
   const msg = document.getElementById('userMgrStatusMsg');
   if (msg) msg.textContent = '';
 
+  const editIdEl = document.getElementById('editUserId');
+  if (editIdEl) {
+    editIdEl.value = '';
+    editIdEl.focus();
+  }
+
   renderUserMgrList();
 }
 
@@ -1407,7 +1413,7 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
   const saveBtn = document.getElementById('btnSaveUserSubmit');
   const inactiveBtn = document.getElementById('btnMarkInactiveUser');
 
-  const id = editingWorker ? editingWorker.id : '';
+  const id = editingWorker ? (editingWorker.id || editingWorker.displayName) : '';
   const newId = (document.getElementById('editUserId')?.value || '').trim();
   const pin = (document.getElementById('editUserPin')?.value || '').trim();
   const company = (document.getElementById('editUserCompany')?.value || '').trim();
@@ -1426,7 +1432,10 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
   if (isInactiveAction) {
     action = 'set_inactive';
     if (!id && !newId) {
-      if (msg) msg.textContent = '❌ Bitte wählen Sie einen Mitarbeiter aus!';
+      if (msg) {
+        msg.style.color = '#a00';
+        msg.textContent = '❌ Bitte wählen Sie einen Mitarbeiter aus!';
+      }
       return;
     }
     if (!confirm(`Möchten Sie "${newId || id}" wirklich als "Ausgeschieden" markieren?`)) {
@@ -1434,13 +1443,19 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
     }
   } else {
     if (!newId) {
-      if (msg) msg.textContent = '❌ Név_ID (Mitarbeiter Name) ist erforderlich!';
+      if (msg) {
+        msg.style.color = '#a00';
+        msg.textContent = '❌ Név_ID (Mitarbeiter Name) ist erforderlich!';
+      }
+      document.getElementById('editUserId')?.focus();
       return;
     }
   }
 
-  if (msg) msg.style.color = '#000080';
-  if (msg) msg.textContent = '⏳ Mitarbeiterdaten werden in Google Sheets gespeichert...';
+  if (msg) {
+    msg.style.color = '#000080';
+    msg.textContent = '⏳ Mitarbeiterdaten werden in Google Sheets gespeichert...';
+  }
   if (saveBtn) saveBtn.disabled = true;
   if (inactiveBtn) inactiveBtn.disabled = true;
 
@@ -1466,10 +1481,12 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
       })
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({ success: false, message: `HTTP ${res.status}` }));
     if (res.ok && data.success) {
-      if (msg) msg.style.color = '#008000';
-      if (msg) msg.textContent = `✅ ${data.message || 'Erfolgreich gespeichert!'}`;
+      if (msg) {
+        msg.style.color = '#008000';
+        msg.textContent = `✅ ${data.message || 'Erfolgreich gespeichert!'}`;
+      }
       
       // Refresh Users metadata
       await fetchUsersMeta();
@@ -1481,13 +1498,17 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
         resetUserEditForm();
       }
     } else {
-      if (msg) msg.style.color = '#a00';
-      if (msg) msg.textContent = `❌ Fehler: ${data.message || 'Speichern fehlgeschlagen'}`;
+      if (msg) {
+        msg.style.color = '#a00';
+        msg.textContent = `❌ Fehler: ${data.message || 'Speichern fehlgeschlagen'}`;
+      }
     }
   } catch (e) {
     console.error('Save user error:', e);
-    if (msg) msg.style.color = '#a00';
-    if (msg) msg.textContent = `❌ Fehler: ${e.message}`;
+    if (msg) {
+      msg.style.color = '#a00';
+      msg.textContent = `❌ Fehler: ${e.message}`;
+    }
   } finally {
     if (saveBtn) saveBtn.disabled = false;
     if (inactiveBtn) inactiveBtn.disabled = false;

@@ -2,6 +2,7 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Új Munkatárs Létrehozás & Google Sheets Range Biztonság (Fix)**: Javítva a Google Sheets API munkalap név hivatkozása (`'Munkások'!A:L` idézőjeles biztonsági borítás), így a munkatárslétrehozás (`➕ Neuer Mitarbeiter`) és szerkesztés hiba nélkül beszúrja az új sorokat a táblázat aljára!
 - **Munkatárs Szerkesztés és Inaktiválás (Google Sheets Írás v4 API)**: Létrehozva a `👥 Mitarbeiter` (Munkatársak Kezelése) Win98 modul és a `netlify/functions/saveUser.js` szerveroldali megbízható Netlify funkció. Mostantól az adminisztrátor közvetlenül a Win98 appból:
   - Módosítani tudja a dolgozók adatait (`Név_ID`, `PIN`, `ceg` / Firma átsorolás, `Phone`, `Email`, `Szerepkör`, `Típus`, `Nyelv`, `munkarend`, `baustelle`, és **K oszlop:** `Vorarbeiter name`, **L oszlop:** `Vorarbeiter telefon`).
   - Új dolgozót tud hozzáadni a Google Sheet táblázathoz (A-tól L oszlopig).
