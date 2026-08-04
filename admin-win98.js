@@ -1359,35 +1359,115 @@ async function handleUploadSubmit() {
 
   if (submitBtn) submitBtn.disabled = true;
 
+  // 1. Attempt to fetch direct Dropbox upload token for unlimited file sizes (PDF, ZIP, large scans)
+  let dbxAccessToken = null;
+  try {
+    const tokRes = await fetch('/.netlify/functions/getUploadToken');
+    if (tokRes.ok) {
+      const tokData = await tokRes.json();
+      if (tokData.success && tokData.accessToken) {
+        dbxAccessToken = tokData.accessToken;
+      }
+    }
+  } catch (e) {
+    console.warn('Direct upload token fetch failed, fallback to serverless upload:', e);
+  }
+
   let successCount = 0;
   let failCount = 0;
+  const currentYear = new Date().getFullYear();
 
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+    let fileToUpload = files[i];
+
+    // Client-side Image Compression (JPG/PNG/WebP/HEIC)
+    const isImage = fileToUpload.type?.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|bmp)$/i.test(fileToUpload.name);
+    if (isImage && window.compressImageFile) {
+      if (statusMsg) {
+        statusMsg.style.color = '#000080';
+        statusMsg.textContent = `⏳ Komprimiere Bild ${i + 1} von ${files.length} ("${fileToUpload.name}")...`;
+      }
+      try {
+        fileToUpload = await window.compressImageFile(fileToUpload, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+      } catch (err) {
+        console.warn('Compress failed, uploading original:', err);
+      }
+    }
+
+    // Construct filename
+    const origFilename = fileToUpload.name || 'file';
+    const extMatch = origFilename.match(/\.([a-zA-Z0-9]+)$/);
+    const fileExtension = extMatch ? extMatch[1].toLowerCase() : 'pdf';
+
+    let prefix = '';
+    if (docType === 'urlaub') prefix = 'Urlaub';
+    else if (docType === 'krank') prefix = 'Krankmeldung';
+    else if (docType === 'parkticket') prefix = 'Parkticket';
+    else if (docType === 'oeffi') prefix = 'Oeffi_Ticket';
+
+    let baseName = (customName || origFilename.replace(/\.[^/.]+$/, "")).trim();
+    if (prefix && !baseName.toLowerCase().includes(prefix.toLowerCase())) {
+      baseName = `${prefix}_${baseName}`;
+    }
+
+    let finalFileName = baseName;
+    if (!finalFileName.toLowerCase().endsWith('.' + fileExtension)) {
+      finalFileName += '.' + fileExtension;
+    }
+
+    const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${finalFileName}`;
+
     if (statusMsg) {
       statusMsg.style.color = '#000080';
-      statusMsg.textContent = `⏳ Lade Datei ${i + 1} von ${files.length} hoch: "${file.name}"...`;
+      statusMsg.textContent = `⏳ Lade Datei ${i + 1} von ${files.length} hoch: "${finalFileName}"...`;
     }
 
     try {
-      const formData = new FormData();
-      formData.append('employeeName', employeeName);
-      formData.append('selectedMonth', selectedMonth);
-      formData.append('docType', docType);
-      if (customName) formData.append('customName', customName);
-      formData.append('file', file);
+      if (dbxAccessToken) {
+        // DIRECT UPLOAD TO DROPBOX API (No 6MB Netlify Limit! Works for 100MB+ PDFs!)
+        const dbxResp = await fetch('https://content.dropboxapi.com/2/files/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${dbxAccessToken}`,
+            'Dropbox-API-Arg': JSON.stringify({
+              path: dropboxPath,
+              mode: 'overwrite',
+              autorename: true,
+              mute: false
+            }),
+            'Content-Type': 'application/octet-stream'
+          },
+          body: fileToUpload
+        });
 
-      const resp = await fetch('/.netlify/functions/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await resp.json().catch(() => ({}));
-      if (resp.ok && (data.success || data.message)) {
-        successCount++;
+        if (dbxResp.ok) {
+          successCount++;
+        } else {
+          const errData = await dbxResp.json().catch(() => ({}));
+          console.warn('Direct Dropbox upload failed:', errData);
+          failCount++;
+        }
       } else {
-        failCount++;
-        console.warn('Upload failed:', data);
+        // FALLBACK SERVERLESS UPLOAD
+        const formData = new FormData();
+        formData.append('employeeName', employeeName);
+        formData.append('selectedMonth', selectedMonth);
+        formData.append('docType', docType);
+        if (customName) formData.append('customName', customName);
+        formData.append('file', fileToUpload);
+
+        const resp = await fetch('/.netlify/functions/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && (data.success || data.message)) {
+          successCount++;
+        } else {
+          failCount++;
+          console.warn('Serverless Upload failed:', data);
+        }
       }
     } catch (e) {
       failCount++;
