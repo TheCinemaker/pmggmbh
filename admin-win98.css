@@ -732,37 +732,82 @@ html, body.win98-body {
   background: #ff8800;
   color: #fff;
 }
-
 /* ========================================================
-   MODERN macOS SEQUOIA / SONOMA GLASS THEME
+   macOS SEQUOIA THEME (Light Appearance)
+   Aktiv über <body class="macos-theme">
+   Wichtig: die Selektoren müssen exakt den Win98-Klassen
+   entsprechen, sonst bleiben Panels weiß und der Text
+   ist unsichtbar.
    ======================================================== */
 
 body.macos-theme {
-  background: radial-gradient(circle at 15% 20%, rgba(32, 45, 90, 0.95), rgba(12, 16, 28, 0.98)), linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
-  color: #f1f5f9 !important;
+  --mac-accent: #007aff;
+  --mac-accent-soft: rgba(0, 122, 255, 0.12);
+  --mac-text: #1d1d1f;
+  --mac-text-dim: #6e6e73;
+  --mac-window: #ffffff;
+  --mac-chrome: rgba(246, 246, 248, 0.85);
+  --mac-sidebar: rgba(240, 240, 244, 0.75);
+  --mac-line: rgba(0, 0, 0, 0.1);
+  --mac-line-soft: rgba(0, 0, 0, 0.06);
+  --mac-fill: rgba(0, 0, 0, 0.05);
+  --mac-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+
+  background:
+    radial-gradient(120% 90% at 12% 0%, #ffd9ec 0%, rgba(255, 217, 236, 0) 55%),
+    radial-gradient(110% 90% at 92% 8%, #cfe4ff 0%, rgba(207, 228, 255, 0) 60%),
+    linear-gradient(160deg, #f3e7ff 0%, #dfe9ff 45%, #eaf3ff 100%) !important;
+  font-family: var(--mac-font) !important;
+  font-size: 13px !important;
+  color: var(--mac-text) !important;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ===== FENSTER ===== */
 body.macos-theme .win98-window {
-  border-radius: 14px !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  background: rgba(22, 27, 38, 0.85) !important;
-  backdrop-filter: blur(30px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--mac-line) !important;
+  background: var(--mac-window) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   overflow: hidden !important;
 }
 
+/* ===== TITELLEISTE + AMPEL-BUTTONS ===== */
 body.macos-theme .win98-titlebar {
-  background: rgba(15, 19, 28, 0.88) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding: 10px 14px !important;
+  position: relative !important;
+  background: var(--mac-chrome) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+  padding: 0 14px !important;
+  height: 38px !important;
+  color: var(--mac-text) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: #f8fafc !important;
+  justify-content: flex-start !important;
+}
+
+body.macos-theme .win98-titlebar > span,
+body.macos-theme .win98-titlebar-text {
+  position: absolute !important;
+  left: 90px !important;
+  right: 90px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  color: var(--mac-text) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+body.macos-theme .win98-app-icon {
+  color: var(--mac-accent) !important;
 }
 
 body.macos-theme .win98-titlebar-controls {
+  order: -1 !important;
   gap: 8px !important;
   align-items: center !important;
 }
@@ -770,139 +815,507 @@ body.macos-theme .win98-titlebar-controls {
 body.macos-theme .win98-btn-title {
   width: 12px !important;
   height: 12px !important;
-  border-radius: 50% !important;
+  padding: 0 !important;
   border: none !important;
+  border-radius: 50% !important;
   font-size: 0 !important;
-  line-height: 0 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-  transition: transform 0.15s ease, filter 0.15s ease !important;
-}
-body.macos-theme .win98-btn-title:hover {
-  transform: scale(1.15) !important;
-  filter: brightness(1.1) !important;
+  line-height: 12px !important;
+  color: rgba(0, 0, 0, 0.55) !important;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12) !important;
+  transition: filter 0.15s ease;
 }
 
-body.macos-theme .win98-btn-title.close-btn {
-  background: #ff5f56 !important;
-}
-body.macos-theme .win98-btn-title:not(.close-btn):first-child {
-  background: #ffbd2e !important;
-}
-body.macos-theme .win98-btn-title:not(.close-btn):last-child {
-  background: #27c93f !important;
+/* macOS Reihenfolge: Schließen · Minimieren · Vollbild */
+body.macos-theme #btnClose { order: 1 !important; background: #ff5f57 !important; }
+body.macos-theme #btnMinimize { order: 2 !important; background: #febc2e !important; }
+body.macos-theme #btnMaximize { order: 3 !important; background: #28c840 !important; }
+
+/* Modal-Dialoge: nur ein Close-Button, ganz links */
+body.macos-theme .win98-titlebar > .win98-btn-title.close-btn {
+  order: -1 !important;
+  margin-left: 0 !important;
+  background: #ff5f57 !important;
 }
 
+/* Symbole erscheinen wie am Mac erst beim Hover über die Leiste */
+body.macos-theme .win98-titlebar:hover .win98-btn-title {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+}
+body.macos-theme .win98-btn-title:active {
+  border: none !important;
+  filter: brightness(0.88);
+}
+
+/* ===== MENÜLEISTE ===== */
+body.macos-theme .win98-menubar {
+  background: var(--mac-chrome) !important;
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+  padding: 4px 10px !important;
+  gap: 2px !important;
+}
+
+body.macos-theme .menu-item {
+  border-radius: 6px !important;
+  padding: 3px 9px !important;
+  color: var(--mac-text) !important;
+  font-size: 13px !important;
+}
+
+body.macos-theme .menu-item u {
+  text-decoration: none !important;
+}
+
+body.macos-theme .menu-item:hover {
+  background: var(--mac-accent) !important;
+  color: #fff !important;
+}
+
+/* ===== TOOLBAR ===== */
 body.macos-theme .win98-toolbar {
-  background: rgba(30, 37, 52, 0.75) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--mac-chrome) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+  box-shadow: none !important;
   padding: 8px 12px !important;
   gap: 8px !important;
+  flex-wrap: wrap;
 }
 
 body.macos-theme .win98-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 8px !important;
-  color: #f8fafc !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 7px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.09) !important;
+  color: var(--mac-text) !important;
+  font-family: var(--mac-font) !important;
+  font-size: 12.5px !important;
   font-weight: 500 !important;
-  padding: 6px 12px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  font-family: inherit !important;
+  padding: 5px 11px !important;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 body.macos-theme .win98-btn:hover {
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  background: #f2f2f5 !important;
 }
 
 body.macos-theme .win98-btn:active {
-  transform: translateY(0) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: #e4e4e9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+  padding: 5px 11px !important;
+  transform: scale(0.98);
 }
 
-body.macos-theme .win98-sidebar {
-  background: rgba(15, 20, 30, 0.85) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  font-size: 12px !important;
+body.macos-theme .toolbar-separator {
+  width: 1px !important;
+  height: 18px !important;
+  background: var(--mac-line) !important;
+  border: none !important;
 }
 
-body.macos-theme .tree-item-win98 {
+/* ===== EINGABEFELDER ===== */
+body.macos-theme .win98-input,
+body.macos-theme .win98-select,
+body.macos-theme textarea.win98-input,
+body.macos-theme select.win98-input {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+  color: var(--mac-text) !important;
+  font-family: var(--mac-font) !important;
+  font-size: 12.5px !important;
+  padding: 5px 9px !important;
+}
+
+body.macos-theme .win98-input::placeholder {
+  color: #a1a1a6 !important;
+}
+
+body.macos-theme .win98-input:focus,
+body.macos-theme .win98-select:focus {
+  border-color: var(--mac-accent) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25) !important;
+  outline: none !important;
+}
+
+body.macos-theme .win98-search-box label {
+  color: var(--mac-text-dim) !important;
+  font-size: 12.5px !important;
+}
+
+/* ===== EXPLORER-BEREICH ===== */
+body.macos-theme .win98-explorer-body {
+  background: transparent !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+/* Seitenleiste (Ordnerbaum) */
+body.macos-theme .win98-tree-pane {
+  background: var(--mac-sidebar) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: none !important;
+  border-right: 1px solid var(--mac-line-soft) !important;
+  box-shadow: none !important;
+  color: var(--mac-text) !important;
+}
+
+body.macos-theme .tree-pane-header {
+  background: transparent !important;
+  color: var(--mac-text-dim) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 14px 4px !important;
+}
+
+body.macos-theme .win98-tree {
+  padding: 4px 8px 10px !important;
+}
+
+body.macos-theme .tree-node {
+  border: none !important;
   border-radius: 6px !important;
   padding: 4px 8px !important;
-  color: #e2e8f0 !important;
-  transition: background 0.15s ease !important;
+  color: var(--mac-text) !important;
+  font-size: 12.5px !important;
 }
 
-body.macos-theme .tree-item-win98:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+body.macos-theme .tree-node:hover {
+  background: var(--mac-fill) !important;
 }
 
-body.macos-theme .tree-item-win98.active-tree-item {
-  background: #0284c7 !important;
+body.macos-theme .tree-node.selected {
+  background: var(--mac-accent) !important;
   color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+body.macos-theme .tree-toggle {
+  background: transparent !important;
+  border: none !important;
+  color: var(--mac-text-dim) !important;
+  font-size: 11px !important;
+}
+
+body.macos-theme .tree-node.selected .tree-toggle {
+  color: #ffffff !important;
+}
+
+body.macos-theme .tree-children {
+  border-left: 1px solid var(--mac-line-soft) !important;
+  margin-left: 16px !important;
+}
+
+body.macos-theme .tree-loading {
+  color: var(--mac-text-dim) !important;
+  padding: 6px 8px;
+}
+
+body.macos-theme .win98-splitter {
+  width: 1px !important;
+  background: var(--mac-line-soft) !important;
+  border: none !important;
+}
+
+/* ===== DATEI-BEREICH ===== */
+body.macos-theme .win98-details-pane {
+  background: var(--mac-window) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--mac-text) !important;
+}
+
+body.macos-theme .details-pane-header {
+  background: rgba(250, 250, 252, 0.9) !important;
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+  color: var(--mac-text) !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
+  padding: 9px 14px !important;
 }
 
-body.macos-theme .win98-content-area {
-  background: rgba(22, 28, 40, 0.6) !important;
+body.macos-theme .win98-file-grid {
+  background: var(--mac-window) !important;
+  gap: 14px !important;
+  padding: 16px !important;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
 }
 
-body.macos-theme .win98-input {
-  background: rgba(15, 20, 32, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+body.macos-theme .win98-file-card {
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  padding: 8px !important;
+  color: var(--mac-text) !important;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+body.macos-theme .win98-file-card:hover {
+  background: var(--mac-fill) !important;
+  border: 1px solid transparent !important;
+  transform: translateY(-1px);
+}
+
+body.macos-theme .win98-file-card.selected {
+  background: var(--mac-accent-soft) !important;
+  border: 1px solid rgba(0, 122, 255, 0.35) !important;
+  color: var(--mac-text) !important;
+}
+
+body.macos-theme .win98-file-card.note-card {
+  background: #fff8d6 !important;
+  border: 1px solid #f0e0a0 !important;
+}
+
+body.macos-theme .win98-thumb-box {
+  background: #f5f5f7 !important;
+  border: 1px solid var(--mac-line-soft) !important;
   border-radius: 8px !important;
-  color: #f8fafc !important;
-  padding: 6px 10px !important;
-  font-family: inherit !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: none !important;
+  overflow: hidden;
 }
 
-body.macos-theme .win98-input:focus {
-  outline: none !important;
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+body.macos-theme .win98-file-title {
+  font-size: 12px !important;
+  color: var(--mac-text) !important;
 }
 
-body.macos-theme .file-card-win98 {
-  border-radius: 12px !important;
-  background: rgba(30, 38, 54, 0.65) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
-  color: #f1f5f9 !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+body.macos-theme .file-checkbox-wrap {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid var(--mac-line) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
 }
 
-body.macos-theme .file-card-win98:hover {
-  transform: translateY(-3px) scale(1.02) !important;
-  background: rgba(40, 50, 72, 0.85) !important;
-  border-color: #38bdf8 !important;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.2) !important;
+body.macos-theme .file-checkbox {
+  accent-color: var(--mac-accent);
 }
 
-body.macos-theme .file-card-win98.selected {
-  background: rgba(2, 132, 199, 0.4) !important;
-  border: 2px solid #38bdf8 !important;
+/* Gruppen-Header im Grid */
+body.macos-theme .grid-worker-header {
+  background: rgba(0, 122, 255, 0.1) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: #0058b8 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 8px 12px !important;
+}
+
+body.macos-theme .grid-month-header {
+  background: var(--mac-fill) !important;
+  border: none !important;
+  border-radius: 7px !important;
+  color: var(--mac-text-dim) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  padding: 5px 10px !important;
+}
+
+/* ===== VORSCHAULEISTE + STATUSLEISTE ===== */
+body.macos-theme .win98-preview-bar {
+  background: rgba(250, 250, 252, 0.92) !important;
+  border-top: 1px solid var(--mac-line-soft) !important;
+  color: var(--mac-text) !important;
+  padding: 10px 14px !important;
+}
+
+body.macos-theme .preview-bar-title {
+  color: var(--mac-text-dim) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.macos-theme .preview-bar-content {
+  color: var(--mac-text) !important;
+  font-size: 12.5px !important;
+}
+
+body.macos-theme .win98-statusbar {
+  background: var(--mac-chrome) !important;
+  border-top: 1px solid var(--mac-line-soft) !important;
+  gap: 0 !important;
+  padding: 6px 12px !important;
+}
+
+body.macos-theme .status-cell {
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid var(--mac-line-soft) !important;
+  box-shadow: none !important;
+  color: var(--mac-text-dim) !important;
+  font-size: 11.5px !important;
+  padding: 0 12px !important;
+}
+
+body.macos-theme .status-cell:last-child {
+  border-right: none !important;
+}
+
+/* ===== DIALOGE ===== */
+body.macos-theme .win98-modal-overlay {
+  background: rgba(0, 0, 0, 0.22) !important;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 
 body.macos-theme .win98-dialog {
-  border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  background: rgba(20, 26, 38, 0.92) !important;
-  backdrop-filter: blur(40px) saturate(200%) !important;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8) !important;
-  color: #f8fafc !important;
+  background: rgba(248, 248, 250, 0.98) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+  border: 1px solid var(--mac-line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 35px 70px rgba(0, 0, 0, 0.3) !important;
+  color: var(--mac-text) !important;
   overflow: hidden !important;
 }
 
 body.macos-theme .win98-dialog-body {
   background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+  color: var(--mac-text) !important;
 }
 
-body.macos-theme .win98-statusbar {
-  background: rgba(15, 19, 28, 0.9) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #94a3b8 !important;
+body.macos-theme .win98-dialog-footer {
+  background: rgba(244, 244, 247, 0.9) !important;
+  border-top: 1px solid var(--mac-line-soft) !important;
+  padding: 10px 14px !important;
+}
+
+body.macos-theme .lightbox-img-win98 {
+  border: 1px solid var(--mac-line-soft) !important;
+  border-radius: 10px !important;
+}
+
+/* ===== KALENDER ===== */
+body.macos-theme .win98-cal-table {
+  background: transparent !important;
+}
+
+body.macos-theme .win98-cal-table th {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+  color: var(--mac-text-dim) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 6px 4px !important;
+}
+
+body.macos-theme .win98-cal-table td {
+  background: #ffffff !important;
+  border: 1px solid var(--mac-line-soft) !important;
+  color: var(--mac-text) !important;
+}
+
+body.macos-theme .win98-cal-table td.empty-day {
+  background: #f5f5f7 !important;
+}
+
+body.macos-theme .cal-event-badge {
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+}
+
+body.macos-theme .cal-uploaded { background: #34c759 !important; color: #fff !important; }
+body.macos-theme .cal-urlaub { background: var(--mac-accent) !important; color: #fff !important; }
+body.macos-theme .cal-sick { background: #ff9500 !important; color: #fff !important; }
+
+/* ===== STATUS-BADGES ===== */
+body.macos-theme .status-badge {
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+}
+body.macos-theme .status-geprueft { background: #e3f7e8 !important; color: #1a7f37 !important; border: 1px solid #bfe8ca !important; }
+body.macos-theme .status-bearbeitung { background: #fff4dd !important; color: #a15c00 !important; border: 1px solid #ffe1ac !important; }
+body.macos-theme .status-abgelehnt { background: #fdeaea !important; color: #c1332d !important; border: 1px solid #f7c9c7 !important; }
+
+/* ===== 3D-HILFSKLASSEN NEUTRALISIEREN ===== */
+body.macos-theme .win98-outset,
+body.macos-theme .win98-inset {
+  background: #ffffff !important;
+  border: 1px solid var(--mac-line-soft) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+/* ===== INLINE-STYLES AUS HTML/JS ÜBERSCHREIBEN =====
+   Die Dialoge setzen Win98-Farben direkt im style-Attribut;
+   ohne diese Regeln bleiben graue Kästen und harte Rahmen. */
+body.macos-theme [style*="background: #c0c0c0"],
+body.macos-theme [style*="background:#c0c0c0"],
+body.macos-theme [style*="background: #d4d0c8"],
+body.macos-theme [style*="background:#d4d0c8"] {
+  background: #f5f5f7 !important;
+}
+
+body.macos-theme [style*="border: 1px solid #808080"],
+body.macos-theme [style*="border:1px solid #808080"],
+body.macos-theme [style*="border: 2px solid #808080"],
+body.macos-theme [style*="border:2px solid #808080"],
+body.macos-theme [style*="border: 2px inset #808080"],
+body.macos-theme [style*="border:2px inset #808080"] {
+  border: 1px solid var(--mac-line-soft) !important;
+  border-radius: 8px !important;
+}
+
+body.macos-theme [style*="color: #000080"],
+body.macos-theme [style*="color:#000080"] {
+  color: var(--mac-accent) !important;
+}
+
+/* markierter Mitarbeiter in der Verwaltungsliste (JS setzt #000080 inline) */
+body.macos-theme [style*="background:#000080"],
+body.macos-theme [style*="background: #000080"] {
+  background: var(--mac-accent) !important;
+  border-radius: 6px !important;
+}
+
+body.macos-theme .user-mgr-item {
+  border-bottom: 1px solid var(--mac-line-soft) !important;
+}
+
+body.macos-theme .user-mgr-item:hover:not([style*="000080"]) {
+  background: var(--mac-fill) !important;
+}
+
+body.macos-theme [style*="color: #a00"],
+body.macos-theme [style*="color:#a00"] {
+  color: #ff3b30 !important;
+}
+
+body.macos-theme #newUploadsBadge {
+  background: #ff3b30 !important;
+  border-radius: 9px !important;
+  padding: 1px 6px !important;
+}
+
+/* ===== SCROLLBALKEN ===== */
+body.macos-theme ::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+body.macos-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+body.macos-theme ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.24);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 8px;
+}
+body.macos-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+  background-clip: content-box;
 }
