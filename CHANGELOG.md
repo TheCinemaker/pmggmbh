@@ -1,7 +1,10 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
-- **Win98 Intéző Stílusú Lenyitható Fa-Szerkezet**: A Win98 Admin felületen minden dolgozó neve mellett egy `[+]` / `[-]` gomb jelenik meg. Lenyitáskor láthatóvá válnak a hónapok mappái (1. Januar - 12. Dezember) a feltöltött fájlok számával. Bármelyik hónapra kattintva szűrhető a jobb oldali fájllista.
+- **Jegyzet Mentés Mappába (`saveNote.js`)**: Új Netlify funkció és Win98 párbeszédablak. A jegyzetek közvetlenül az épp nyitott dolgozó/hónap Dropbox mappájába mentődnek `notes_YYYYMMDD_HHMMSS.txt` fájlként.
+- **Státusz Megjelölés & Regiszter (`updateStatus.js`)**: Ellenőrzött/Feldolgozás alatt/Elutasítva státuszok tárolása és vizuális jelölése (✅ 🟡 🔴).
+- **Többszörös Óralap Nyomtatás (`btnPrint`)**: Kijelölő checkboxok az óralapokhoz, "Alle ausw." gomb, valamint többszörös nyomtatási nézet (tiszta papír-formátum 1 óralap/oldal elrendezésben).
+- **Win98 Intéző Stílusú Lenyitható Fa-Szerkezet**: A Win98 Admin felületen minden dolgozó neve mellett egy `[+]` / `[-]` gomb jelenik meg. Lenyitáskor láthatóvá válnak a hónapok mappái (1. Januar - 12. Dezember) a feltöltött fájlok számával.
 - **Teljes Éves és 38+ Munkatársi Névsor**: A `getAllUploads.js` mostantól az összes hónap (Jan-Dec) feltöltéseit beolvassa, és mind a 38 dolgozót kilistázza.
 - **Új Refresh Token Generálás**: Lekértük az új tokent a Dropbox OAuth2 API-n keresztül hiánytalan scope-okkal (`files.content.read`, `sharing.write`, `files.metadata.read`).
 - **Dropbox OAuth Scope Fix**: Netlify `DROPBOX_REFRESH_TOKEN` frissítve az új le nem járó frissítési tokenre.

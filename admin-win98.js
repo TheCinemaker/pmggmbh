@@ -8,6 +8,8 @@ let selectedMonth = null;
 let selectedCompany = '';
 let selectedDocType = 'all'; // 'all', 'krank', 'stunden'
 let expandedUsers = new Set();
+let selectedFiles = new Set();
+let statusRegistry = {};
 let thumbnailCache = new Map();
 
 const STANDARD_MONTHS = [
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initTitleControls();
   initMenuDropdowns();
+  fetchStatusRegistry();
   fetchUsersMeta();
   fetchUploadsData();
   setupEvents();
@@ -352,16 +355,39 @@ function renderFileGrid() {
     });
     if (matchedUser && matchedUser.displayName) resolvedName = matchedUser.displayName;
 
-    const card = document.createElement('div');
-    card.className = 'win98-file-card';
-
-    const ext = (f.name || '').toLowerCase().split('.').pop();
+    const fileName = (f.name || '').toLowerCase();
+    const isNote = fileName.startsWith('notes_') || fileName.endsWith('.txt');
+    const ext = fileName.split('.').pop();
     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+
+    const card = document.createElement('div');
+    card.className = `win98-file-card ${isNote ? 'note-card' : ''}`;
+
+    // Checkbox for multi-select / batch print
+    const cbWrap = document.createElement('div');
+    cbWrap.className = 'file-checkbox-wrap';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'file-checkbox';
+    cb.checked = selectedFiles.has(f.path);
+    cb.onclick = (e) => {
+      e.stopPropagation();
+      if (cb.checked) {
+        selectedFiles.add(f.path);
+      } else {
+        selectedFiles.delete(f.path);
+      }
+      updateSelectAllLabel();
+    };
+    cbWrap.appendChild(cb);
+    card.appendChild(cbWrap);
 
     const thumbBox = document.createElement('div');
     thumbBox.className = 'win98-thumb-box';
 
-    if (isImage) {
+    if (isNote) {
+      thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
+    } else if (isImage) {
       thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
       loadThumbnail(f.path, thumbBox, f.id);
     } else if (ext === 'pdf') {
@@ -372,7 +398,7 @@ function renderFileGrid() {
 
     const title = document.createElement('div');
     title.className = 'win98-file-title';
-    title.innerHTML = `<b>${escapeHtml(resolvedName)}</b><br/><span style="font-size:10px; color:#555;">${escapeHtml(f.name || '')}</span>`;
+    title.innerHTML = `<b>${escapeHtml(resolvedName)}</b><br/><span style="font-size:10px; color:#555;">${isNote ? '📝 Notiz: ' : ''}${escapeHtml(f.name || '')}</span>`;
 
     card.appendChild(thumbBox);
     card.appendChild(title);
@@ -576,6 +602,7 @@ function setupEvents() {
   document.getElementById('btnRefresh')?.addEventListener('click', () => {
     sessionStorage.removeItem('pmg_all_uploads_cache');
     fetchUploadsData();
+    fetchStatusRegistry();
   });
 
   document.getElementById('win98Search')?.addEventListener('input', renderFileGrid);
@@ -594,9 +621,247 @@ function setupEvents() {
     document.getElementById('win98Modal')?.classList.add('hidden');
   });
 
-  document.getElementById('btnPrint')?.addEventListener('click', () => {
-    window.print();
+  document.getElementById('btnNewNote')?.addEventListener('click', openNoteDialog);
+  document.getElementById('closeWin98NoteModal')?.addEventListener('click', () => {
+    document.getElementById('win98NoteModal')?.classList.add('hidden');
   });
+  document.getElementById('btnCancelNote')?.addEventListener('click', () => {
+    document.getElementById('win98NoteModal')?.classList.add('hidden');
+  });
+  document.getElementById('btnSaveNoteSubmit')?.addEventListener('click', handleSaveNoteSubmit);
+
+  document.getElementById('btnSelectAll')?.addEventListener('click', toggleSelectAllDisplayed);
+  document.getElementById('btnPrint')?.addEventListener('click', printSelectedFiles);
+}
+
+// FETCH STATUS REGISTRY
+async function fetchStatusRegistry() {
+  try {
+    const res = await fetch('/.netlify/functions/updateStatus');
+    if (res.ok) {
+      statusRegistry = await res.json();
+      renderTree(allUploadsData);
+    }
+  } catch (e) {
+    console.warn('[Status] fetch error:', e);
+  }
+}
+
+// SAVE STATUS
+async function saveStatus(key, status, note = '') {
+  try {
+    const res = await fetch('/.netlify/functions/updateStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, status, note })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      statusRegistry[key] = data.statusData;
+      renderTree(allUploadsData);
+    }
+  } catch (e) {
+    console.error('[Status] save error:', e);
+  }
+}
+
+// OPEN NOTE DIALOG
+function openNoteDialog() {
+  const modal = document.getElementById('win98NoteModal');
+  const label = document.getElementById('noteTargetFolderLabel');
+  const textInput = document.getElementById('noteTextInput');
+  const msg = document.getElementById('noteStatusMsg');
+
+  if (!modal) return;
+
+  let folderLabel = 'Stundenzettel 2026';
+  if (selectedUser && selectedMonth) {
+    folderLabel = `Stundenzettel 2026 / ${selectedUser} / ${selectedMonth}`;
+  } else if (selectedUser) {
+    folderLabel = `Stundenzettel 2026 / ${selectedUser}`;
+  }
+
+  if (label) label.textContent = `Ziel-Ordner (Cél mappa): ${folderLabel}`;
+  if (textInput) textInput.value = '';
+  if (msg) msg.textContent = '';
+
+  modal.classList.remove('hidden');
+}
+
+// SAVE NOTE SUBMIT
+async function handleSaveNoteSubmit() {
+  const textInput = document.getElementById('noteTextInput');
+  const msg = document.getElementById('noteStatusMsg');
+  const submitBtn = document.getElementById('btnSaveNoteSubmit');
+
+  const noteText = (textInput?.value || '').trim();
+  if (!noteText) {
+    if (msg) msg.textContent = '❌ Kérlek írj be valamilyen jegyzetet!';
+    return;
+  }
+
+  let folderPath = '/PMG Mindenes - PMG ALLES/Stundenzettel 2026';
+  if (selectedUser && selectedMonth) {
+    folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel 2026/${selectedUser}/${selectedMonth}`;
+  } else if (selectedUser) {
+    folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel 2026/${selectedUser}`;
+  }
+
+  if (msg) msg.textContent = '⏳ Jegyzet mentése folyamatban...';
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/saveNote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folderPath, noteText })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (msg) msg.textContent = '✅ Jegyzet sikeresen elmentve a Dropboxba!';
+      setTimeout(() => {
+        document.getElementById('win98NoteModal')?.classList.add('hidden');
+        sessionStorage.removeItem('pmg_all_uploads_cache');
+        fetchUploadsData();
+      }, 1000);
+    } else {
+      if (msg) msg.textContent = `❌ Hiba: ${data.message || 'Mentés sikertelen'}`;
+    }
+  } catch (e) {
+    console.error('Note save error:', e);
+    if (msg) msg.textContent = `❌ Hiba: ${e.message}`;
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+// TOGGLE SELECT ALL / DESELECT ALL
+function toggleSelectAllDisplayed() {
+  const searchInput = document.getElementById('win98Search');
+  const searchQuery = (searchInput?.value || '').toLowerCase().trim();
+
+  let filesToDisplay = [];
+  if (selectedUser) {
+    const userFiles = allUploadsData[selectedUser] || [];
+    filesToDisplay = userFiles.map(f => ({ ...f, userName: selectedUser }));
+    if (selectedMonth) filesToDisplay = filesToDisplay.filter(f => f.folder === selectedMonth);
+  } else {
+    Object.keys(allUploadsData).forEach(u => {
+      const uFiles = allUploadsData[u] || [];
+      uFiles.forEach(f => filesToDisplay.push({ ...f, userName: u }));
+    });
+  }
+
+  const allSelected = filesToDisplay.length > 0 && filesToDisplay.every(f => selectedFiles.has(f.path));
+
+  if (allSelected) {
+    filesToDisplay.forEach(f => selectedFiles.delete(f.path));
+  } else {
+    filesToDisplay.forEach(f => selectedFiles.add(f.path));
+  }
+
+  updateSelectAllLabel();
+  renderFileGrid();
+}
+
+function updateSelectAllLabel() {
+  const lbl = document.getElementById('selectAllLabel');
+  if (lbl) {
+    lbl.textContent = selectedFiles.size > 0 ? `Kijelölve (${selectedFiles.size})` : 'Alle ausw.';
+  }
+}
+
+// BATCH TIME SHEET PRINTING
+async function printSelectedFiles() {
+  let filesToPrint = [];
+
+  if (selectedFiles.size > 0) {
+    Object.keys(allUploadsData).forEach(u => {
+      (allUploadsData[u] || []).forEach(f => {
+        if (selectedFiles.has(f.path)) {
+          filesToPrint.push({ ...f, userName: u });
+        }
+      });
+    });
+  } else {
+    // If none checked, print all images in current view
+    if (selectedUser) {
+      const userFiles = allUploadsData[selectedUser] || [];
+      filesToPrint = userFiles.map(f => ({ ...f, userName: selectedUser }));
+      if (selectedMonth) filesToPrint = filesToPrint.filter(f => f.folder === selectedMonth);
+    } else {
+      Object.keys(allUploadsData).forEach(u => {
+        (allUploadsData[u] || []).forEach(f => filesToPrint.push({ ...f, userName: u }));
+      });
+    }
+  }
+
+  // Filter only image files for time sheet paper printing
+  filesToPrint = filesToPrint.filter(f => {
+    const ext = (f.name || '').toLowerCase().split('.').pop();
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+  });
+
+  if (filesToPrint.length === 0) {
+    alert('Nincs nyomtatható óralap (kép) kijelölve!');
+    return;
+  }
+
+  // Build print container
+  let existingContainer = document.getElementById('printContainer');
+  if (!existingContainer) {
+    existingContainer = document.createElement('div');
+    existingContainer.id = 'printContainer';
+    document.body.appendChild(existingContainer);
+  }
+
+  existingContainer.innerHTML = `<div style="padding:20px; font-weight:bold; font-size:16px;">Képek előkészítése nyomtatásra... (${filesToPrint.length} óralap)</div>`;
+
+  // Fetch image links for all files
+  const printPagesHtml = [];
+  for (const f of filesToPrint) {
+    let resolvedName = f.userName;
+    const normKey = normName(f.userName);
+    const matchedUser = usersByName[normKey];
+    if (matchedUser && matchedUser.displayName) resolvedName = matchedUser.displayName;
+
+    let fileUrl = thumbnailCache.get(f.path) || null;
+    if (!fileUrl) {
+      try {
+        const resp = await fetch('/.netlify/functions/getFileLink', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: f.path, fileId: f.id })
+        });
+        const json = await resp.json().catch(() => null);
+        fileUrl = json?.url || json?.link || null;
+      } catch (e) {}
+    }
+
+    if (fileUrl) {
+      printPagesHtml.push(`
+        <div class="print-page">
+          <div class="print-page-header">
+            PMG GmbH - Stundenzettel | ${escapeHtml(resolvedName)} | ${escapeHtml(f.folder || '')} | ${escapeHtml(f.name || '')}
+          </div>
+          <img src="${fileUrl}" alt="${escapeHtml(f.name)}" />
+        </div>
+      `);
+    }
+  }
+
+  if (printPagesHtml.length === 0) {
+    alert('Nem sikerült érvényes kép-linkeket lekérni a nyomtatáshoz.');
+    existingContainer.innerHTML = '';
+    return;
+  }
+
+  existingContainer.innerHTML = printPagesHtml.join('');
+
+  setTimeout(() => {
+    window.print();
+  }, 500);
 }
 
 function updateStatusCount() {
