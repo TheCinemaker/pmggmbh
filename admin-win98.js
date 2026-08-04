@@ -407,8 +407,10 @@ function renderFileGrid() {
     );
   }
 
-  // Sort newest first
-  filesToDisplay.sort((a, b) => new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime());
+  // Sort naturally by numerical filename order (e.g. 1.jpg, 2.jpg, 10.jpg)
+  filesToDisplay.sort((a, b) => {
+    return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
+  });
 
   if (filesToDisplay.length === 0) {
     grid.innerHTML = `<div style="grid-column:1/-1; padding:20px; text-align:center; color:#808080;">Keine Dokumente in dieser Ansicht gefunden.</div>`;
@@ -456,6 +458,7 @@ function renderFileGrid() {
     // 2) MONTH SUB-HEADERS & FILE CARDS
     Object.keys(workerMonths).forEach(mFolder => {
       const mFiles = workerMonths[mFolder];
+      mFiles.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
 
       const monthSectionHeader = document.createElement('div');
       monthSectionHeader.className = 'grid-month-section';
