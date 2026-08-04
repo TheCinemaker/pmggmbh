@@ -1,9 +1,9 @@
 // netlify/functions/getThumbnail.js
 const { Dropbox } = require('dropbox');
 
-const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
-const APP_KEY = process.env.DROPBOX_APP_KEY;
-const APP_SECRET = process.env.DROPBOX_APP_SECRET;
+const REFRESH_TOKEN = (process.env.DROPBOX_REFRESH_TOKEN || '').trim();
+const APP_KEY = (process.env.DROPBOX_APP_KEY || '').trim();
+const APP_SECRET = (process.env.DROPBOX_APP_SECRET || '').trim();
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
 
 // A Dropbox SDK a nem-JSON hibatestet (pl. a hiányzó scope 400-as, sima szöveges

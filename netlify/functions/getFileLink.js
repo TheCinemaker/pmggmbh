@@ -59,9 +59,9 @@ exports.handler = async (event) => {
   }
 
   const dbx = new Dropbox({
-    refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
-    clientId: process.env.DROPBOX_APP_KEY,
-    clientSecret: process.env.DROPBOX_APP_SECRET,
+    refreshToken: (process.env.DROPBOX_REFRESH_TOKEN || '').trim(),
+    clientId: (process.env.DROPBOX_APP_KEY || '').trim(),
+    clientSecret: (process.env.DROPBOX_APP_SECRET || '').trim(),
   });
 
   const problems = [];

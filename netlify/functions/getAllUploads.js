@@ -24,11 +24,27 @@ catch (err) {
   return;
 }
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
-const APP_KEY = process.env.DROPBOX_APP_KEY;
-const APP_SECRET = process.env.DROPBOX_APP_SECRET;
-const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
+const ALLOWED_ORIGIN = (process.env.ALLOWED_ORIGIN || '*').trim();
+const APP_KEY = (process.env.DROPBOX_APP_KEY || '').trim();
+const APP_SECRET = (process.env.DROPBOX_APP_SECRET || '').trim();
+const REFRESH_TOKEN = (process.env.DROPBOX_REFRESH_TOKEN || '').trim();
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : null;
+
+function describeDbxError(e) {
+  if (!e) return 'Unknown error';
+  const status = e.status ? `[${e.status}] ` : '';
+  let body = '';
+  if (typeof e.error === 'string') {
+    body = e.error;
+  } else if (e.error?.error_description) {
+    body = `${e.error.error}: ${e.error.error_description}`;
+  } else if (e.error?.error_summary) {
+    body = e.error.error_summary;
+  } else if (e.error?.error) {
+    body = typeof e.error.error === 'string' ? e.error.error : JSON.stringify(e.error.error);
+  }
+  return `${status}${body || e.message || 'Unknown error'}`;
+}
 
 const baseHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -204,10 +220,11 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('getAllUploads hiba:', error);
+    const detailMsg = describeDbxError(error);
     return {
       statusCode: 500,
       headers: baseHeaders,
-      body: JSON.stringify({ message: error.message || 'Szerver hiba getAllUploads-ben.' })
+      body: JSON.stringify({ message: detailMsg, error: detailMsg })
     };
   }
 };

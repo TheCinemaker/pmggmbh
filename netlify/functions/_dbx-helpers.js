@@ -12,9 +12,9 @@ const STATE_PATH = `${STATE_DIR}/admin-last-seen.json`;
 function createDbxClient() {
   // fontos: ugyanaz a refreshToken/appKey/appSecret mint a többi működő fn-ben
   return new Dropbox({
-    clientId: process.env.DROPBOX_APP_KEY,
-    clientSecret: process.env.DROPBOX_APP_SECRET,
-    refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
+    clientId: (process.env.DROPBOX_APP_KEY || '').trim(),
+    clientSecret: (process.env.DROPBOX_APP_SECRET || '').trim(),
+    refreshToken: (process.env.DROPBOX_REFRESH_TOKEN || '').trim(),
   });
 }
 
