@@ -205,9 +205,17 @@ function renderTree(data) {
   const treeChildren = document.getElementById('treeChildren');
   if (!treeChildren) return;
 
-  treeChildren.innerHTML = '';
+  let users = Object.keys(data).filter(u => {
+    const low = String(u || '').toLowerCase();
+    return !low.includes('ausgeschieden') && !low.includes('system');
+  });
 
-  let users = Object.keys(data).sort((a, b) => a.localeCompare(b, 'de-DE'));
+  // Sort workers alphabetically A-Z by resolved display name
+  users.sort((a, b) => {
+    const nameA = usersByName[normName(a)]?.displayName || a;
+    const nameB = usersByName[normName(b)]?.displayName || b;
+    return nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
+  });
 
   // Filter by company if selected
   if (selectedCompany) {
@@ -358,6 +366,9 @@ function renderFileGrid() {
     }
   } else {
     Object.keys(allUploadsData).forEach(u => {
+      const uLow = String(u || '').toLowerCase();
+      if (uLow.includes('ausgeschieden') || uLow.includes('system')) return;
+
       // Filter by company if selected
       if (selectedCompany) {
         const normKey = normName(u);
@@ -371,6 +382,8 @@ function renderFileGrid() {
 
       const uFiles = allUploadsData[u] || [];
       uFiles.forEach(f => {
+        const fPathLow = String(f.path || f.folder || '').toLowerCase();
+        if (fPathLow.includes('ausgeschieden') || fPathLow.includes('system')) return;
         filesToDisplay.push({ ...f, userName: u });
       });
     });
@@ -429,8 +442,20 @@ function renderFileGrid() {
     groupedByWorker[uName][mFolder].push(f);
   });
 
+  // Filter out Ausgeschieden folders and sort worker sections alphabetically A-Z
+  let workerKeys = Object.keys(groupedByWorker).filter(u => {
+    const low = String(u || '').toLowerCase();
+    return !low.includes('ausgeschieden') && !low.includes('system');
+  });
+
+  workerKeys.sort((a, b) => {
+    const nameA = usersByName[normName(a)]?.displayName || a;
+    const nameB = usersByName[normName(b)]?.displayName || b;
+    return nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
+  });
+
   // Render Worker sections & Month sub-sections
-  Object.keys(groupedByWorker).forEach(uName => {
+  workerKeys.forEach(uName => {
     let resolvedWorkerName = uName;
     const normKey = normName(uName);
     const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
@@ -1106,22 +1131,35 @@ function escapeHtml(str) {
 
 // WIN98 WORKER MONTHLY CALENDAR DIALOG
 let calCurrentDate = new Date();
+let calActiveFilesMap = [];
 
 function openCalendarDialog() {
+  console.log('[Calendar] Opening calendar dialog...');
   const modal = document.getElementById('win98CalendarModal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('[Calendar] Error: win98CalendarModal element not found in DOM!');
+    return;
+  }
 
-  const targetWorker = selectedUser || Object.keys(allUploadsData)[0] || '';
+  const userKeys = Object.keys(allUploadsData || {});
+  const targetWorker = selectedUser || userKeys[0] || '';
   let displayName = targetWorker;
   const normKey = normName(targetWorker);
   const matched = usersByName[normKey];
   if (matched && matched.displayName) displayName = matched.displayName;
 
   const workerLabel = document.getElementById('calWorkerName');
-  if (workerLabel) workerLabel.textContent = `Mitarbeiter (Dolgozó): ${displayName ? escapeHtml(displayName) : 'Alle'}`;
+  if (workerLabel) {
+    workerLabel.textContent = `Mitarbeiter (Dolgozó): ${displayName ? escapeHtml(displayName) : 'Nincs kiválasztva dolgozó'}`;
+  }
 
   modal.classList.remove('hidden');
   renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+}
+
+function openCalFileByIndex(idx) {
+  const f = calActiveFilesMap[idx];
+  if (f) openLightbox(f);
 }
 
 function renderCalendar(userName, year, month) {
@@ -1129,8 +1167,15 @@ function renderCalendar(userName, year, month) {
   const monthLabel = document.getElementById('calMonthLabel');
   if (!container) return;
 
+  calActiveFilesMap = [];
+
   const monthNamesDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   if (monthLabel) monthLabel.textContent = `${monthNamesDe[month]} ${year}`;
+
+  if (!userName || !allUploadsData[userName]) {
+    container.innerHTML = `<div style="padding:20px; text-align:center; color:#808080;">Kérlek válassz ki egy dolgozót a bal oldali fa-nézetben a naptár megtekintéséhez!</div>`;
+    return;
+  }
 
   const userFiles = allUploadsData[userName] || [];
   const monthPattern = `${month + 1}.`; // e.g. "8." for August
@@ -1138,16 +1183,12 @@ function renderCalendar(userName, year, month) {
   // Map files to days
   const dayEvents = {};
   userFiles.forEach(f => {
-    if (f.folder && f.folder.startsWith(monthPattern)) {
+    if (f.folder && (f.folder.startsWith(monthPattern) || f.folder.includes(` ${monthNamesDe[month]}`))) {
       const dt = f.uploadedAt ? new Date(f.uploadedAt) : null;
       const dayNum = dt ? dt.getDate() : null;
-      if (dayNum) {
-        if (!dayEvents[dayNum]) dayEvents[dayNum] = [];
-        dayEvents[dayNum].push(f);
-      } else {
-        if (!dayEvents[15]) dayEvents[15] = [];
-        dayEvents[15].push(f);
-      }
+      const targetDay = dayNum || 15;
+      if (!dayEvents[targetDay]) dayEvents[targetDay] = [];
+      dayEvents[targetDay].push(f);
     }
   });
 
@@ -1182,10 +1223,12 @@ function renderCalendar(userName, year, month) {
     const events = dayEvents[d] || [];
     let eventHtml = '';
     events.forEach(f => {
+      const idx = calActiveFilesMap.length;
+      calActiveFilesMap.push({ ...f, userName });
       const isSick = /krank/i.test(f.name || '');
       const cls = isSick ? 'cal-sick' : 'cal-uploaded';
       const label = isSick ? '🟡 Krank' : '🟢 Stundenzettel';
-      eventHtml += `<span class="cal-event-badge ${cls}" title="${escapeHtml(f.name)}" onclick="event.stopPropagation(); openLightbox(${JSON.stringify(f).replace(/"/g, '&quot;')});">${label}</span>`;
+      eventHtml += `<span class="cal-event-badge ${cls}" title="${escapeHtml(f.name)}" onclick="event.stopPropagation(); openCalFileByIndex(${idx});">${label}</span>`;
     });
 
     html += `

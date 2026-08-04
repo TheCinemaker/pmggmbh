@@ -2,6 +2,9 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Szigorú `Ausgeschieden` Kizárás a Főoldali Fájlrácsból**: Teljesen letiltva az inaktív `Ausgeschieden` mappák és fájlok bekerülése a főoldali fájlrácsba (`renderFileGrid`).
+- **`Ausgeschieden` Mappa Kiszűrése & Dolgozói Névsorrend (A-Z)**: Az inaktív/kilépett dolgozók (`Ausgeschieden`) mappái és fájljai többé nem jelennek meg a felületen. A dolgozók mind a bal oldali fa-struktúrában, mind a jobb oldali főoldalon **ABC névsorrendben (A-Z)** rendezve jelennek meg!
+- **Robust Win98 Kalender**: Javított naptár megnyitási és index-alapú képnézegető logika, így a `Kalender` gombra kattintva a naptár azonnal és hibátlanul megnyílik.
 - **Természetes Számsorrendi Rendezés (Natural Sort)**: A főoldalon és minden mappa alatt a fájlok **természetes számsorrendben** jelennek meg a fájlneveik alapján.
 - **Kártya Checkbox Pozicionálás Javítás**: Hozzáadva a `position: relative` szabály a `.win98-file-card`-ra, így **minden egyes képkártya bal felső sarkában** ott van a saját kijelölő checkboxa!
 - **Tömeges Kijelölés Nyomtatás**: A felületen tetszőlegesen kijelölt N darab képkártya (pl. 20 óralap) a `Drucken` gombra kattintva pontosan és hiánytalanul kinyomtatásra kerül.

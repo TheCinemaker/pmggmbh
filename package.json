@@ -2,10 +2,11 @@
   "name": "pmg-stundenzettel-manager-98",
   "version": "1.0.0",
   "description": "PMG Stundenzettel Manager 98 - Windows Desktop App",
+  "author": "PMG GmbH",
   "main": "desktop-main.js",
   "scripts": {
     "start:desktop": "npx electron .",
-    "build:exe": "npx electron-builder --win nsis"
+    "build:exe": "npx electron-builder --win"
   },
   "dependencies": {
     "busboy": "^1.6.0",
@@ -15,7 +16,25 @@
     "@netlify/blobs": "^6.0.0"
   },
   "devDependencies": {
-    "electron": "^28.2.0",
+    "electron": "28.2.0",
     "electron-builder": "^24.9.0"
+  },
+  "build": {
+    "appId": "com.pmggmbh.stundenzettel98",
+    "productName": "PMG Stundenzettel Manager 98",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": ["portable", "nsis"]
+    },
+    "files": [
+      "desktop-main.js",
+      "desktop-preload.js",
+      "admin-win98.html",
+      "admin-win98.css",
+      "admin-win98.js",
+      "icons/**/*"
+    ]
   }
 }
