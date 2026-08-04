@@ -251,56 +251,47 @@
 
             <form id="userEditForm" onsubmit="return false;" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Név_ID (Mitarbeiter Name):</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Mitarbeiter ID / Name (Col A):</label>
                 <input type="text" id="editUserId" class="win98-input" style="width: 100%; box-sizing: border-box;" required />
               </div>
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">PIN Code:</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">PIN-Code (Col B):</label>
                 <input type="text" id="editUserPin" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. 000169" />
               </div>
 
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Firma (Cég):</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Firma (Col H):</label>
                 <input type="text" id="editUserCompany" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. PMG Büro / PMG GmbH" />
               </div>
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Telefon (Phone):</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Telefon (Col F):</label>
                 <input type="text" id="editUserPhone" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. 36706364745" />
               </div>
 
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">E-Mail:</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">E-Mail (Col G):</label>
                 <input type="email" id="editUserEmail" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="beispiel@gmail.com" />
               </div>
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Rolle (Szerepkör):</label>
-                <select id="editUserRole" class="win98-select" style="width: 100%; box-sizing: border-box;">
-                  <option value="user">user (Normaler Mitarbeiter)</option>
-                  <option value="admin">admin (Administrator)</option>
-                </select>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Rolle (Col E):</label>
+                <input type="text" id="editUserRole" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="user / admin" />
               </div>
 
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Typ (Típus):</label>
-                <select id="editUserType" class="win98-select" style="width: 100%; box-sizing: border-box;">
-                  <option value="oralapos">oralapos (Stundenlohn)</option>
-                  <option value="havidijas">havidijas (Monatsgehalt)</option>
-                </select>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Typ (Col C):</label>
+                <input type="text" id="editUserType" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="oralapos / havidijas" />
               </div>
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Sprache (Nyelv):</label>
-                <select id="editUserLang" class="win98-select" style="width: 100%; box-sizing: border-box;">
-                  <option value="hu">HU (Ungarisch)</option>
-                  <option value="de">DE (Deutsch)</option>
-                </select>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Sprache (Col D):</label>
+                <input type="text" id="editUserLang" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="hu / de" />
               </div>
 
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Munkarend (Arbeitstage):</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Arbeitsmodell / Munkarend (Col I):</label>
                 <input type="text" id="editUserMunkarend" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. 1,2,3,4,5" />
               </div>
               <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Baustelle (Arbeitsort):</label>
+                <label style="display: block; font-weight: bold; margin-bottom: 2px;">Einsatzort / Baustelle (Col J):</label>
                 <input type="text" id="editUserBaustelle" class="win98-input" style="width: 100%; box-sizing: border-box;" placeholder="z.B. büro" />
               </div>
 

@@ -1362,13 +1362,13 @@ function selectWorkerForEdit(workerId) {
   if (editEmailEl) editEmailEl.value = worker.email || '';
 
   const editRoleEl = document.getElementById('editUserRole');
-  if (editRoleEl) editRoleEl.value = worker.userRole || 'user';
+  if (editRoleEl) editRoleEl.value = worker.userRole || '';
 
   const editTypeEl = document.getElementById('editUserType');
-  if (editTypeEl) editTypeEl.value = worker.userType || 'oralapos';
+  if (editTypeEl) editTypeEl.value = worker.userType || '';
 
   const editLangEl = document.getElementById('editUserLang');
-  if (editLangEl) editLangEl.value = worker.userLang || 'hu';
+  if (editLangEl) editLangEl.value = worker.userLang || '';
 
   const editMunkEl = document.getElementById('editUserMunkarend');
   if (editMunkEl) editMunkEl.value = worker.munkarend || '';
@@ -1419,9 +1419,9 @@ async function handleSaveUserSubmit(isInactiveAction = false) {
   const company = (document.getElementById('editUserCompany')?.value || '').trim();
   const phone = (document.getElementById('editUserPhone')?.value || '').trim();
   const email = (document.getElementById('editUserEmail')?.value || '').trim();
-  const userRole = document.getElementById('editUserRole')?.value || 'user';
-  const userType = document.getElementById('editUserType')?.value || 'oralapos';
-  const userLang = document.getElementById('editUserLang')?.value || 'hu';
+  const userRole = (document.getElementById('editUserRole')?.value || '').trim();
+  const userType = (document.getElementById('editUserType')?.value || '').trim();
+  const userLang = (document.getElementById('editUserLang')?.value || '').trim();
   const munkarend = (document.getElementById('editUserMunkarend')?.value || '').trim();
   const baustelle = (document.getElementById('editUserBaustelle')?.value || '').trim();
   const vorarbeiterName = (document.getElementById('editUserVorarbeiterName')?.value || '').trim();

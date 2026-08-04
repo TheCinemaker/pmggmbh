@@ -70,16 +70,16 @@ exports.handler = async (event) => {
       .map(r => {
         const id                = (r[0] || '').trim();
         const pin               = (r[1] || '').trim();
-        const userType          = (r[2] || 'oralapos').trim().toLowerCase();
-        const userLang          = (r[3] || 'hu').trim().toLowerCase();
-        const userRole          = (r[4] || 'user').trim().toLowerCase();
-        const phone             = normalizePhoneLoose(r[5] || '');
+        const userType          = (r[2] || '').trim();
+        const userLang          = (r[3] || '').trim();
+        const userRole          = (r[4] || '').trim();
+        const phone             = (r[5] || '').trim();
         const email             = (r[6] || '').trim();
         const company           = (r[7] || '').trim() || null;
         const munkarend         = (r[8] || '').trim();
         const baustelle         = (r[9] || '').trim();
         const vorarbeiterName   = (r[10] || '').trim();
-        const vorarbeiterTelefon= normalizePhoneLoose(r[11] || '');
+        const vorarbeiterTelefon= (r[11] || '').trim();
 
         return {
           id,

@@ -2,6 +2,9 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **100% Nyers Google Sheets Cella-beolvasás (Oszlop A..L) & Tiszta Német Űrlap (Fix)**:
+  - Az alkalmazás mostantól **kivétel nélkül mind a 12 oszlop nyers értékét pontosan úgy olvassa be a Google Sheets-ből, ahogy az be van írva** (a `munkarend` / Col I, `Typ` / Col C, `PIN`, `Baustelle`, `Vorarbeiter` stb. adatokkal együtt, mindenféle átalakítás, kisbetűsítés vagy kényszerített alapértelmezett érték nélkül).
+  - A felugró Win98 `👥 Mitarbeiter` ablak összes mezőcímkéjéből törölve lettek a magyar szavak, helyettük egyértelmű **német feliratok és oszlopjelölők (Col A-L)** szerepelnek.
 - **Új Munkatárs Létrehozás & Google Sheets Range Biztonság (Fix)**: Javítva a Google Sheets API munkalap név hivatkozása (`'Munkások'!A:L` idézőjeles biztonsági borítás), így a munkatárslétrehozás (`➕ Neuer Mitarbeiter`) és szerkesztés hiba nélkül beszúrja az új sorokat a táblázat aljára!
 - **Munkatárs Szerkesztés és Inaktiválás (Google Sheets Írás v4 API)**: Létrehozva a `👥 Mitarbeiter` (Munkatársak Kezelése) Win98 modul és a `netlify/functions/saveUser.js` szerveroldali megbízható Netlify funkció. Mostantól az adminisztrátor közvetlenül a Win98 appból:
   - Módosítani tudja a dolgozók adatait (`Név_ID`, `PIN`, `ceg` / Firma átsorolás, `Phone`, `Email`, `Szerepkör`, `Típus`, `Nyelv`, `munkarend`, `baustelle`, és **K oszlop:** `Vorarbeiter name`, **L oszlop:** `Vorarbeiter telefon`).
