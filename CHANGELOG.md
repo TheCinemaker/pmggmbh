@@ -1,7 +1,10 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
-- **Azonnali 0.0 Másodperces Betöltés & Háttér Szinkronizálás (`localStorage`)**: A Win98 Admin felület mostantól a `localStorage`-ból azonnal (0ms) kirakja az összes dolgozót, mappát, bélyegképet és fájlt. A Dropbox frissítés és az új fájlok keresése háttérben, észrevétlenül fut (`silent sync` 60s intervallummal).
+- **Hónap Szerinti Vizuális Csoportosítás**: A Win98 fájllistában a dokumentumok tisztán szétválasztva, látványos hónap fejlécek alatt (pl. `📅 8. August 2026`, `📅 7. Juli 2026`) jelennek meg, hogy ne folyjon egybe a nézet.
+- **Dolgozói Havi Naptár Nézet (`Kalender`)**: Új Win98 naptár ablak (`#win98CalendarModal`), amely naptári rácsban (Hé-Va) jeleníti meg az adott dolgozó feltöltéseit: 🟢 zölddel a feltöltött óralapokat, 🟡 sárgával a betegszabadság igazolásokat. Bármelyikre rákattintva azonnal megnyílik a kép!
+- **Kétlépcsős Gyorstöltés (`fast=1`)**: A `getAllUploads.js` a legfrissebb hónapokat tölti le legelőször, megelőzve a felesleges várakozást.
+- **Azonnali 0.0 Másodperces Betöltés & Háttér Szinkronizálás (`localStorage`)**: A Win98 Admin felület mostantól a `localStorage`-ból azonnal (0ms) kirakja az összes dolgozót, mappát, bélyegképet és fájlt.
 - **Jegyzet Mentés Mappába (`saveNote.js`)**: Új Netlify funkció és Win98 párbeszédablak. A jegyzetek közvetlenül az épp nyitott dolgozó/hónap Dropbox mappájába mentődnek `notes_YYYYMMDD_HHMMSS.txt` fájlként.
 - **Státusz Megjelölés & Regiszter (`updateStatus.js`)**: Ellenőrzött/Feldolgozás alatt/Elutasítva státuszok tárolása és vizuális jelölése (✅ 🟡 🔴).
 - **Többszörös Óralap Nyomtatás (`btnPrint`)**: Kijelölő checkboxok az óralapokhoz, "Alle ausw." gomb, valamint többszörös nyomtatási nézet (tiszta papír-formátum 1 óralap/oldal elrendezésben).

@@ -379,67 +379,89 @@ function renderFileGrid() {
     return;
   }
 
+  // Group files by month folder to prevent everything from flowing together
+  const groupedByMonth = {};
   filesToDisplay.forEach(f => {
-    let resolvedName = f.userName;
-    const normKey = normName(f.userName);
-    const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
-      const uNorm = normName(u.displayName || u.id || '');
-      const cleanKey = normKey.replace(/\.+/g, '').trim();
-      return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
-    });
-    if (matchedUser && matchedUser.displayName) resolvedName = matchedUser.displayName;
+    const folderName = f.folder || 'Unkategorisiert';
+    if (!groupedByMonth[folderName]) groupedByMonth[folderName] = [];
+    groupedByMonth[folderName].push(f);
+  });
 
-    const fileName = (f.name || '').toLowerCase();
-    const isNote = fileName.startsWith('notes_') || fileName.endsWith('.txt');
-    const ext = fileName.split('.').pop();
-    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+  Object.keys(groupedByMonth).forEach(mFolder => {
+    const mFiles = groupedByMonth[mFolder];
 
-    const card = document.createElement('div');
-    card.className = `win98-file-card ${isNote ? 'note-card' : ''}`;
+    const sectionHeader = document.createElement('div');
+    sectionHeader.className = 'grid-month-section';
+    sectionHeader.innerHTML = `
+      <div class="grid-month-header">
+        <span>📅 ${escapeHtml(mFolder)}</span>
+        <span style="font-size:11px; font-weight:normal;">(${mFiles.length} Dokumente)</span>
+      </div>
+    `;
+    grid.appendChild(sectionHeader);
 
-    // Checkbox for multi-select / batch print
-    const cbWrap = document.createElement('div');
-    cbWrap.className = 'file-checkbox-wrap';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'file-checkbox';
-    cb.checked = selectedFiles.has(f.path);
-    cb.onclick = (e) => {
-      e.stopPropagation();
-      if (cb.checked) {
-        selectedFiles.add(f.path);
+    mFiles.forEach(f => {
+      let resolvedName = f.userName;
+      const normKey = normName(f.userName);
+      const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
+        const uNorm = normName(u.displayName || u.id || '');
+        const cleanKey = normKey.replace(/\.+/g, '').trim();
+        return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
+      });
+      if (matchedUser && matchedUser.displayName) resolvedName = matchedUser.displayName;
+
+      const fileName = (f.name || '').toLowerCase();
+      const isNote = fileName.startsWith('notes_') || fileName.endsWith('.txt');
+      const ext = fileName.split('.').pop();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+
+      const card = document.createElement('div');
+      card.className = `win98-file-card ${isNote ? 'note-card' : ''}`;
+
+      // Checkbox for multi-select / batch print
+      const cbWrap = document.createElement('div');
+      cbWrap.className = 'file-checkbox-wrap';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'file-checkbox';
+      cb.checked = selectedFiles.has(f.path);
+      cb.onclick = (e) => {
+        e.stopPropagation();
+        if (cb.checked) {
+          selectedFiles.add(f.path);
+        } else {
+          selectedFiles.delete(f.path);
+        }
+        updateSelectAllLabel();
+      };
+      cbWrap.appendChild(cb);
+      card.appendChild(cbWrap);
+
+      const thumbBox = document.createElement('div');
+      thumbBox.className = 'win98-thumb-box';
+
+      if (isNote) {
+        thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
+      } else if (isImage) {
+        thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
+        loadThumbnail(f.path, thumbBox, f.id);
+      } else if (ext === 'pdf') {
+        thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
       } else {
-        selectedFiles.delete(f.path);
+        thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
       }
-      updateSelectAllLabel();
-    };
-    cbWrap.appendChild(cb);
-    card.appendChild(cbWrap);
 
-    const thumbBox = document.createElement('div');
-    thumbBox.className = 'win98-thumb-box';
+      const title = document.createElement('div');
+      title.className = 'win98-file-title';
+      title.innerHTML = `<b>${escapeHtml(resolvedName)}</b><br/><span style="font-size:10px; color:#555;">${isNote ? '📝 Notiz: ' : ''}${escapeHtml(f.name || '')}</span>`;
 
-    if (isNote) {
-      thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
-    } else if (isImage) {
-      thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
-      loadThumbnail(f.path, thumbBox, f.id);
-    } else if (ext === 'pdf') {
-      thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-    } else {
-      thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
-    }
+      card.appendChild(thumbBox);
+      card.appendChild(title);
 
-    const title = document.createElement('div');
-    title.className = 'win98-file-title';
-    title.innerHTML = `<b>${escapeHtml(resolvedName)}</b><br/><span style="font-size:10px; color:#555;">${isNote ? '📝 Notiz: ' : ''}${escapeHtml(f.name || '')}</span>`;
+      card.onclick = () => openLightbox({ ...f, resolvedName });
 
-    card.appendChild(thumbBox);
-    card.appendChild(title);
-
-    card.onclick = () => openLightbox({ ...f, resolvedName });
-
-    grid.appendChild(card);
+      grid.appendChild(card);
+    });
   });
 }
 
@@ -668,6 +690,24 @@ function setupEvents() {
 
   document.getElementById('btnSelectAll')?.addEventListener('click', toggleSelectAllDisplayed);
   document.getElementById('btnPrint')?.addEventListener('click', printSelectedFiles);
+
+  document.getElementById('btnCalendar')?.addEventListener('click', openCalendarDialog);
+  document.getElementById('closeWin98CalendarModal')?.addEventListener('click', () => {
+    document.getElementById('win98CalendarModal')?.classList.add('hidden');
+  });
+  document.getElementById('closeCalModalBtn')?.addEventListener('click', () => {
+    document.getElementById('win98CalendarModal')?.classList.add('hidden');
+  });
+  document.getElementById('btnCalPrevMonth')?.addEventListener('click', () => {
+    calCurrentDate.setMonth(calCurrentDate.getMonth() - 1);
+    const targetWorker = selectedUser || Object.keys(allUploadsData)[0] || '';
+    renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+  });
+  document.getElementById('btnCalNextMonth')?.addEventListener('click', () => {
+    calCurrentDate.setMonth(calCurrentDate.getMonth() + 1);
+    const targetWorker = selectedUser || Object.keys(allUploadsData)[0] || '';
+    renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+  });
 }
 
 // FETCH STATUS REGISTRY
@@ -919,4 +959,106 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// WIN98 WORKER MONTHLY CALENDAR DIALOG
+let calCurrentDate = new Date();
+
+function openCalendarDialog() {
+  const modal = document.getElementById('win98CalendarModal');
+  if (!modal) return;
+
+  const targetWorker = selectedUser || Object.keys(allUploadsData)[0] || '';
+  let displayName = targetWorker;
+  const normKey = normName(targetWorker);
+  const matched = usersByName[normKey];
+  if (matched && matched.displayName) displayName = matched.displayName;
+
+  const workerLabel = document.getElementById('calWorkerName');
+  if (workerLabel) workerLabel.textContent = `Mitarbeiter (Dolgozó): ${displayName ? escapeHtml(displayName) : 'Alle'}`;
+
+  modal.classList.remove('hidden');
+  renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
+}
+
+function renderCalendar(userName, year, month) {
+  const container = document.getElementById('calGridContainer');
+  const monthLabel = document.getElementById('calMonthLabel');
+  if (!container) return;
+
+  const monthNamesDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  if (monthLabel) monthLabel.textContent = `${monthNamesDe[month]} ${year}`;
+
+  const userFiles = allUploadsData[userName] || [];
+  const monthPattern = `${month + 1}.`; // e.g. "8." for August
+
+  // Map files to days
+  const dayEvents = {};
+  userFiles.forEach(f => {
+    if (f.folder && f.folder.startsWith(monthPattern)) {
+      const dt = f.uploadedAt ? new Date(f.uploadedAt) : null;
+      const dayNum = dt ? dt.getDate() : null;
+      if (dayNum) {
+        if (!dayEvents[dayNum]) dayEvents[dayNum] = [];
+        dayEvents[dayNum].push(f);
+      } else {
+        if (!dayEvents[15]) dayEvents[15] = [];
+        dayEvents[15].push(f);
+      }
+    }
+  });
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const totalDays = lastDay.getDate();
+  let startingDay = firstDay.getDay() - 1; // 0 = Mon
+  if (startingDay === -1) startingDay = 6;
+
+  let html = `
+    <table class="win98-cal-table">
+      <thead>
+        <tr>
+          <th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+  `;
+
+  for (let i = 0; i < startingDay; i++) {
+    html += `<td class="empty-day"></td>`;
+  }
+
+  let currentCol = startingDay;
+  for (let d = 1; d <= totalDays; d++) {
+    if (currentCol === 7) {
+      html += `</tr><tr>`;
+      currentCol = 0;
+    }
+
+    const events = dayEvents[d] || [];
+    let eventHtml = '';
+    events.forEach(f => {
+      const isSick = /krank/i.test(f.name || '');
+      const cls = isSick ? 'cal-sick' : 'cal-uploaded';
+      const label = isSick ? '🟡 Krank' : '🟢 Stundenzettel';
+      eventHtml += `<span class="cal-event-badge ${cls}" title="${escapeHtml(f.name)}" onclick="event.stopPropagation(); openLightbox(${JSON.stringify(f).replace(/"/g, '&quot;')});">${label}</span>`;
+    });
+
+    html += `
+      <td>
+        <div class="cal-day-num">${d}</div>
+        ${eventHtml}
+      </td>
+    `;
+    currentCol++;
+  }
+
+  while (currentCol < 7) {
+    html += `<td class="empty-day"></td>`;
+    currentCol++;
+  }
+
+  html += `</tr></tbody></table>`;
+  container.innerHTML = html;
 }

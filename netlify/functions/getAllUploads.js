@@ -162,10 +162,8 @@ exports.handler = async (event) => {
       yearsToScan.push(prevYear);
     }
 
-    console.log('[DEBUG] Relevant months:', relevantMonths);
-    console.log('[DEBUG] Years to scan:', yearsToScan);
-
-    const showAllMonths = event?.queryStringParameters?.allMonths === '1';
+    const isFastMode = event?.queryStringParameters?.fast === '1';
+    const showAllMonths = event?.queryStringParameters?.allMonths === '1' || !isFastMode;
 
     const result = {};
 
@@ -173,8 +171,7 @@ exports.handler = async (event) => {
       const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
       const entries = await listFolderAll(dbx, basePath, true);
 
-      // 1) ELŐSZÖR: A Dropboxban lévő ÖSSZES (38+) munkatárs mappáját regisztráljuk,
-      // hogy a névsor hiánytalanul megjelenjen a felületen akkor is, ha 0 fájlja van ebben a hónapban!
+      // 1) ELŐSZÖR: A Dropboxban lévő ÖSSZES (38+) munkatárs mappáját regisztráljuk
       entries.forEach(f => {
         const pathToUse = f.path_display || f.path_lower || '';
         const parts = pathToUse.split('/').filter(Boolean);
@@ -187,7 +184,7 @@ exports.handler = async (event) => {
         }
       });
 
-      // 2) MÁSODSZOR: Fájlok hozzáadása AZ ÖSSZES HÓNAPBÓL (Januártól Decemberig)
+      // 2) MÁSODSZOR: Fájlok hozzáadása (Fast módban csak a releváns hónapokból)
       entries.forEach(f => {
         if (f['.tag'] !== 'file') return;
 
@@ -200,19 +197,39 @@ exports.handler = async (event) => {
         const userName = parts[2];
         const monthFolderName = parts[3];
 
-        if (!result[userName]) { result[userName] = []; }
+        const monthMatch = monthFolderName.match(/^(\d+)\./);
+        if (monthMatch) {
+          const folderMonth = parseInt(monthMatch[1], 10);
+          if (showAllMonths || relevantMonths.includes(folderMonth)) {
+            if (!result[userName]) { result[userName] = []; }
 
-        const uploadedAt = f.server_modified || f.client_modified || null;
-        result[userName].push({
-          folder: monthFolderName,
-          name: f.name,
-          path: pathToUse,
-          path_lower: f.path_lower,
-          path_display: f.path_display,
-          id: f.id,
-          uploadedAt,
-          uploadedAtDisplay: formatHu(uploadedAt)
-        });
+            const uploadedAt = f.server_modified || f.client_modified || null;
+            result[userName].push({
+              folder: monthFolderName,
+              name: f.name,
+              path: pathToUse,
+              path_lower: f.path_lower,
+              path_display: f.path_display,
+              id: f.id,
+              uploadedAt,
+              uploadedAtDisplay: formatHu(uploadedAt)
+            });
+          }
+        } else {
+          // Egyéb nem-hónap mappás fájlok (pl. gyökérben)
+          if (!result[userName]) { result[userName] = []; }
+          const uploadedAt = f.server_modified || f.client_modified || null;
+          result[userName].push({
+            folder: monthFolderName,
+            name: f.name,
+            path: pathToUse,
+            path_lower: f.path_lower,
+            path_display: f.path_display,
+            id: f.id,
+            uploadedAt,
+            uploadedAtDisplay: formatHu(uploadedAt)
+          });
+        }
       });
     }
 
