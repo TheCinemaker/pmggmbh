@@ -2,6 +2,7 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Betöltési Hiba Kijavítása (Fix `initMenuDropdowns is not defined`)**: Eltávolítva az elavult `initMenuDropdowns()` hívás az indítási sorból (`DOMContentLoaded`), ami korábban leállította a JS futását és "Lade Daten..." állapotban ragasztotta az oldalt. Az adatok mostantól azonnal, hibátlanul betöltenek!
 - **`Wochenbericht` Eltávolítása & `✨ Neue Uploads` (Legutóbbi Megtekintés Óta Érkezett Új Feltöltések) Modul**:
   - Eltávolítva a felesleges `Wochenbericht` gomb az eszköztárról.
   - Helyére beépítve az **új feltöltéseket nyomon követő Win98 modul** (`✨ Neue Uploads`).

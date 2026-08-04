@@ -41,7 +41,6 @@ function initThumbObserver() {
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initTitleControls();
-  initMenuDropdowns();
   initThumbObserver();
   loadThumbCache();
   fetchStatusRegistry();
