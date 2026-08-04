@@ -584,8 +584,11 @@ async function loadThumbnail(path, container, fileId) {
   container.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 }
 
+let currentLightboxFile = null;
+
 // OPEN LIGHTBOX DIALOG
 async function openLightbox(file) {
+  currentLightboxFile = file;
   const modal = document.getElementById('win98Modal');
   const body = document.getElementById('win98ModalBody');
   const title = document.getElementById('win98ModalTitle');
@@ -753,6 +756,9 @@ function setupEvents() {
   document.getElementById('win98ModalCloseBtn')?.addEventListener('click', () => {
     document.getElementById('win98Modal')?.classList.add('hidden');
   });
+
+  document.getElementById('win98ModalPrintBtn')?.addEventListener('click', printCurrentLightboxFile);
+  document.getElementById('win98ModalRenameBtn')?.addEventListener('click', handleRenameFile);
 
   document.getElementById('btnNewNote')?.addEventListener('click', openNoteDialog);
   document.getElementById('closeWin98NoteModal')?.addEventListener('click', () => {
@@ -923,11 +929,67 @@ function updateSelectAllLabel() {
   }
 }
 
+function printCurrentLightboxFile() {
+  if (!currentLightboxFile) {
+    alert('Nincs kiválasztva dokumentum a nyomtatáshoz.');
+    return;
+  }
+  printSelectedFiles([currentLightboxFile]);
+}
+
+async function handleRenameFile() {
+  if (!currentLightboxFile || !currentLightboxFile.path) {
+    alert('Nincs kiválasztva fájl az átnevezéshez.');
+    return;
+  }
+
+  const oldName = currentLightboxFile.name || '';
+  const newName = prompt(`Új fájlnév megadása (${oldName}):`, oldName);
+
+  if (!newName || newName.trim() === '' || newName.trim() === oldName) {
+    return;
+  }
+
+  const fromPath = currentLightboxFile.path;
+  const modalBody = document.getElementById('win98ModalBody');
+  if (modalBody) {
+    modalBody.innerHTML = `<div style="padding:20px; text-align:center; font-weight:bold;">⏳ Fájl átnevezése folyamatban a Dropboxban...<br/>("${escapeHtml(oldName)}" ➔ "${escapeHtml(newName.trim())}")</div>`;
+  }
+
+  try {
+    const res = await fetch('/.netlify/functions/renameFile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fromPath, newName: newName.trim() })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert(`✅ Fájl sikeresen átnevezve: "${newName.trim()}"`);
+      document.getElementById('win98Modal')?.classList.add('hidden');
+      sessionStorage.clear();
+      localStorage.removeItem('pmg_win98_uploads_cache_v3');
+      localStorage.removeItem('pmg_win98_uploads_cache_v4');
+      localStorage.removeItem('pmg_win98_uploads_cache_v5');
+      fetchUploadsData(false);
+    } else {
+      alert(`❌ Hiba az átnevezés során: ${data.message || 'Ismeretlen hiba'}`);
+      openLightbox(currentLightboxFile);
+    }
+  } catch (e) {
+    console.error('Rename error:', e);
+    alert(`❌ Hiba az átnevezés során: ${e.message}`);
+    openLightbox(currentLightboxFile);
+  }
+}
+
 // BATCH TIME SHEET PRINTING
-async function printSelectedFiles() {
+async function printSelectedFiles(overrideFilesList = null) {
   let filesToPrint = [];
 
-  if (selectedFiles.size > 0) {
+  if (overrideFilesList && Array.isArray(overrideFilesList) && overrideFilesList.length > 0) {
+    filesToPrint = overrideFilesList;
+  } else if (selectedFiles.size > 0) {
     Object.keys(allUploadsData).forEach(u => {
       (allUploadsData[u] || []).forEach(f => {
         if (selectedFiles.has(f.path)) {

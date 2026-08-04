@@ -1,7 +1,11 @@
 # Projekt Napló (Changelog)
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
-- **Szigorú Utolsó 2 Havi Szűrés a Főoldalon**: A főoldal mostantól **kizárólag az ehavi és az előző havi** dokumentumokat listázza (pl. `8. August` és `7. Juli`). A régebbi hónapok többé nem jelennek meg feleslegesen a főnézetben, de a fa-struktúrában bármikor megnyithatóak maradnak!
+- **Kártya Checkbox Pozicionálás Javítás**: Hozzáadva a `position: relative` szabály a `.win98-file-card`-ra, így **minden egyes képkártya bal felső sarkában** ott van a saját kijelölő checkboxa!
+- **Tömeges Kijelölés Nyomtatás**: A felületen tetszőlegesen kijelölt N darab képkártya (pl. 20 óralap) a `Drucken` gombra kattintva pontosan és hiánytalanul kinyomtatásra kerül.
+- **Egyes Kép Nyomtatása Lightboxból**: A kép megnyitásakor (Vorschau nézet) a felugró ablakban helyet kapott a `🖨️ Drucken` gomb, amellyel az adott 1 kép azonnal nyomtatható.
+- **Fájl Átnevezése Dropboxban (`renameFile.js`)**: Új Netlify funkció és `✏️ Umbenennen` gomb a Lightbox ablakban. Egy kattintással, élőben átnevezhető bármelyik fájl a Dropboxban!
+- **Szigorú Utolsó 2 Havi Szűrés a Főoldalon**: A főoldal mostantól **kizárólag az ehavi és az előző havi** dokumentumokat listázza.
 - **Lusta Betöltés (Lazy Loading - `IntersectionObserver`)**: A bélyegképek **csak akkor töltődnek le, amikor odagörgetsz hozzájuk**. Emiatt a felület lassú interneten és gyengébb gépen is azonnal megnyílik, nulla felesleges adatforgalommal!
 - **Kétszintű Beágyazott Csoportosítás (Dolgozó + Hónap)**: A jobb oldali fájllistában a dokumentumok **először Munkatárs Neve szerint** (`👤 BARACSKAI Istvan`), **másodszor pedig Hónapok szerint** (`📅 8. August 2026`) látványos kék fejlécekkel vannak elválasztva. Garantáltan nem folyik össze semmi!
 - **Cache Invalidation & Hard Refresh**: Kényszerített böngésző cache-busting (`v=20260804_v4`) és a Win98 `Aktualisieren` gomb felvértezése teljes `localStorage` és `sessionStorage` ürítéssel.
