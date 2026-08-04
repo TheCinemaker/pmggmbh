@@ -379,88 +379,111 @@ function renderFileGrid() {
     return;
   }
 
-  // Group files by month folder to prevent everything from flowing together
-  const groupedByMonth = {};
+  // 2-LEVEL NESTED GROUPING: Worker Name -> Month Folder
+  const groupedByWorker = {};
   filesToDisplay.forEach(f => {
-    const folderName = f.folder || 'Unkategorisiert';
-    if (!groupedByMonth[folderName]) groupedByMonth[folderName] = [];
-    groupedByMonth[folderName].push(f);
+    const uName = f.userName || 'Unkategorisiert';
+    if (!groupedByWorker[uName]) groupedByWorker[uName] = {};
+
+    const mFolder = f.folder || 'Sonstige';
+    if (!groupedByWorker[uName][mFolder]) groupedByWorker[uName][mFolder] = [];
+
+    groupedByWorker[uName][mFolder].push(f);
   });
 
-  Object.keys(groupedByMonth).forEach(mFolder => {
-    const mFiles = groupedByMonth[mFolder];
+  // Render Worker sections & Month sub-sections
+  Object.keys(groupedByWorker).forEach(uName => {
+    let resolvedWorkerName = uName;
+    const normKey = normName(uName);
+    const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
+      const uNorm = normName(u.displayName || u.id || '');
+      const cleanKey = normKey.replace(/\.+/g, '').trim();
+      return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
+    });
+    if (matchedUser && matchedUser.displayName) resolvedWorkerName = matchedUser.displayName;
 
-    const sectionHeader = document.createElement('div');
-    sectionHeader.className = 'grid-month-section';
-    sectionHeader.innerHTML = `
-      <div class="grid-month-header">
-        <span>📅 ${escapeHtml(mFolder)}</span>
-        <span style="font-size:11px; font-weight:normal;">(${mFiles.length} Dokumente)</span>
+    const workerMonths = groupedByWorker[uName];
+    let totalWorkerFiles = 0;
+    Object.values(workerMonths).forEach(arr => totalWorkerFiles += arr.length);
+
+    // 1) WORKER HEADER
+    const workerSectionHeader = document.createElement('div');
+    workerSectionHeader.className = 'grid-worker-section';
+    workerSectionHeader.innerHTML = `
+      <div class="grid-worker-header">
+        <span>👤 <b>${escapeHtml(resolvedWorkerName)}</b></span>
+        <span style="font-size:11px; font-weight:normal;">(${totalWorkerFiles} Dokumente total)</span>
       </div>
     `;
-    grid.appendChild(sectionHeader);
+    grid.appendChild(workerSectionHeader);
 
-    mFiles.forEach(f => {
-      let resolvedName = f.userName;
-      const normKey = normName(f.userName);
-      const matchedUser = usersByName[normKey] || Object.values(usersByName).find(u => {
-        const uNorm = normName(u.displayName || u.id || '');
-        const cleanKey = normKey.replace(/\.+/g, '').trim();
-        return cleanKey && (uNorm.startsWith(cleanKey) || cleanKey.startsWith(uNorm));
-      });
-      if (matchedUser && matchedUser.displayName) resolvedName = matchedUser.displayName;
+    // 2) MONTH SUB-HEADERS & FILE CARDS
+    Object.keys(workerMonths).forEach(mFolder => {
+      const mFiles = workerMonths[mFolder];
 
-      const fileName = (f.name || '').toLowerCase();
-      const isNote = fileName.startsWith('notes_') || fileName.endsWith('.txt');
-      const ext = fileName.split('.').pop();
-      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+      const monthSectionHeader = document.createElement('div');
+      monthSectionHeader.className = 'grid-month-section';
+      monthSectionHeader.innerHTML = `
+        <div class="grid-month-header">
+          <span>📅 ${escapeHtml(mFolder)}</span>
+          <span style="font-size:10px; font-weight:normal;">(${mFiles.length} Dokumente)</span>
+        </div>
+      `;
+      grid.appendChild(monthSectionHeader);
 
-      const card = document.createElement('div');
-      card.className = `win98-file-card ${isNote ? 'note-card' : ''}`;
+      mFiles.forEach(f => {
+        const fileName = (f.name || '').toLowerCase();
+        const isNote = fileName.startsWith('notes_') || fileName.endsWith('.txt');
+        const ext = fileName.split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
 
-      // Checkbox for multi-select / batch print
-      const cbWrap = document.createElement('div');
-      cbWrap.className = 'file-checkbox-wrap';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.className = 'file-checkbox';
-      cb.checked = selectedFiles.has(f.path);
-      cb.onclick = (e) => {
-        e.stopPropagation();
-        if (cb.checked) {
-          selectedFiles.add(f.path);
+        const card = document.createElement('div');
+        card.className = `win98-file-card ${isNote ? 'note-card' : ''}`;
+
+        // Checkbox for multi-select / batch print
+        const cbWrap = document.createElement('div');
+        cbWrap.className = 'file-checkbox-wrap';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'file-checkbox';
+        cb.checked = selectedFiles.has(f.path);
+        cb.onclick = (e) => {
+          e.stopPropagation();
+          if (cb.checked) {
+            selectedFiles.add(f.path);
+          } else {
+            selectedFiles.delete(f.path);
+          }
+          updateSelectAllLabel();
+        };
+        cbWrap.appendChild(cb);
+        card.appendChild(cbWrap);
+
+        const thumbBox = document.createElement('div');
+        thumbBox.className = 'win98-thumb-box';
+
+        if (isNote) {
+          thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
+        } else if (isImage) {
+          thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
+          loadThumbnail(f.path, thumbBox, f.id);
+        } else if (ext === 'pdf') {
+          thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
         } else {
-          selectedFiles.delete(f.path);
+          thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
         }
-        updateSelectAllLabel();
-      };
-      cbWrap.appendChild(cb);
-      card.appendChild(cbWrap);
 
-      const thumbBox = document.createElement('div');
-      thumbBox.className = 'win98-thumb-box';
+        const title = document.createElement('div');
+        title.className = 'win98-file-title';
+        title.innerHTML = `<b>${escapeHtml(resolvedWorkerName)}</b><br/><span style="font-size:10px; color:#555;">${isNote ? '📝 Notiz: ' : ''}${escapeHtml(f.name || '')}</span>`;
 
-      if (isNote) {
-        thumbBox.innerHTML = `<div style="font-size:28px;">📝</div>`;
-      } else if (isImage) {
-        thumbBox.innerHTML = `<div style="font-size:10px; color:#808080;">Lade…</div>`;
-        loadThumbnail(f.path, thumbBox, f.id);
-      } else if (ext === 'pdf') {
-        thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-      } else {
-        thumbBox.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000080" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
-      }
+        card.appendChild(thumbBox);
+        card.appendChild(title);
 
-      const title = document.createElement('div');
-      title.className = 'win98-file-title';
-      title.innerHTML = `<b>${escapeHtml(resolvedName)}</b><br/><span style="font-size:10px; color:#555;">${isNote ? '📝 Notiz: ' : ''}${escapeHtml(f.name || '')}</span>`;
+        card.onclick = () => openLightbox({ ...f, resolvedName: resolvedWorkerName });
 
-      card.appendChild(thumbBox);
-      card.appendChild(title);
-
-      card.onclick = () => openLightbox({ ...f, resolvedName });
-
-      grid.appendChild(card);
+        grid.appendChild(card);
+      });
     });
   });
 }
