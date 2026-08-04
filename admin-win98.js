@@ -1220,6 +1220,172 @@ async function handleSaveNoteSubmit() {
   }
 }
 
+// ========================================================
+// GENERAL FILE UPLOAD DIALOG (WIN98 UPLOAD MODAL)
+// ========================================================
+function openUploadModal() {
+  console.log('[Upload] Opening win98UploadModal...');
+  const modal = document.getElementById('win98UploadModal');
+  const workerSelect = document.getElementById('uploadWorkerSelect');
+  const monthSelect = document.getElementById('uploadMonthSelect');
+  const targetLabel = document.getElementById('uploadTargetLabel');
+  const nameInput = document.getElementById('uploadCustomNameInput');
+  const fileInput = document.getElementById('uploadFileInputs');
+  const statusMsg = document.getElementById('uploadStatusMsg');
+
+  if (!modal) {
+    console.error('[Upload] Error: win98UploadModal not found in DOM');
+    return;
+  }
+
+  modal.style.zIndex = '100000';
+  modal.classList.remove('hidden');
+
+  if (nameInput) nameInput.value = '';
+  if (fileInput) fileInput.value = '';
+  if (statusMsg) {
+    statusMsg.style.color = '#000080';
+    statusMsg.textContent = '';
+  }
+
+  // Populate workers dropdown
+  if (workerSelect) {
+    workerSelect.innerHTML = '';
+    const validUsers = Object.keys(allUploadsData || {}).filter(u => {
+      const low = String(u || '').toLowerCase();
+      return !low.includes('ausgeschieden') && !low.includes('system');
+    });
+
+    validUsers.forEach(u => {
+      let dispName = u;
+      const matched = usersByName[normName(u)];
+      if (matched && matched.displayName) dispName = matched.displayName;
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = dispName;
+      if (u === selectedUser) opt.selected = true;
+      workerSelect.appendChild(opt);
+    });
+  }
+
+  populateUploadMonths();
+  workerSelect?.addEventListener('change', populateUploadMonths);
+
+  function populateUploadMonths() {
+    if (!monthSelect) return;
+    monthSelect.innerHTML = '';
+    const userKey = workerSelect?.value || selectedUser || '';
+    const userFiles = allUploadsData[userKey] || [];
+    const monthsSet = new Set(['8. August']);
+    userFiles.forEach(f => {
+      if (f.folder) monthsSet.add(f.folder);
+    });
+
+    const monthNamesDe = ['1. Januar', '2. Februar', '3. März', '4. April', '5. Mai', '6. Juni', '7. Juli', '8. August', '9. September', '10. Oktober', '11. November', '12. Dezember'];
+    monthNamesDe.forEach(m => monthsSet.add(m));
+
+    Array.from(monthsSet).forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === selectedMonth) opt.selected = true;
+      monthSelect.appendChild(opt);
+    });
+  }
+
+  if (targetLabel) {
+    targetLabel.textContent = `Ziel: Stundenzettel 2026 / ${workerSelect?.value || selectedUser || '-'} / ${monthSelect?.value || selectedMonth || '-'}`;
+  }
+}
+
+async function handleUploadSubmit() {
+  const workerSelect = document.getElementById('uploadWorkerSelect');
+  const monthSelect = document.getElementById('uploadMonthSelect');
+  const docTypeSelect = document.getElementById('uploadDocTypeSelect');
+  const customNameInput = document.getElementById('uploadCustomNameInput');
+  const fileInput = document.getElementById('uploadFileInputs');
+  const statusMsg = document.getElementById('uploadStatusMsg');
+  const submitBtn = document.getElementById('btnSubmitUpload');
+
+  const employeeName = workerSelect?.value || '';
+  const selectedMonth = monthSelect?.value || '';
+  const docType = docTypeSelect?.value || 'stunden';
+  const customName = (customNameInput?.value || '').trim();
+  const files = fileInput?.files || [];
+
+  if (!employeeName || !selectedMonth) {
+    if (statusMsg) {
+      statusMsg.style.color = 'red';
+      statusMsg.textContent = '❌ Bitte Mitarbeiter und Monat auswählen!';
+    }
+    return;
+  }
+
+  if (!files || files.length === 0) {
+    if (statusMsg) {
+      statusMsg.style.color = 'red';
+      statusMsg.textContent = '❌ Bitte mindestens eine Datei auswählen!';
+    }
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = true;
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (statusMsg) {
+      statusMsg.style.color = '#000080';
+      statusMsg.textContent = `⏳ Lade Datei ${i + 1} von ${files.length} hoch: "${file.name}"...`;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('employeeName', employeeName);
+      formData.append('selectedMonth', selectedMonth);
+      formData.append('docType', docType);
+      if (customName) formData.append('customName', customName);
+      formData.append('file', file);
+
+      const resp = await fetch('/.netlify/functions/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && (data.success || data.message)) {
+        successCount++;
+      } else {
+        failCount++;
+        console.warn('Upload failed:', data);
+      }
+    } catch (e) {
+      failCount++;
+      console.error('Upload error:', e);
+    }
+  }
+
+  if (submitBtn) submitBtn.disabled = false;
+
+  if (successCount > 0) {
+    if (statusMsg) {
+      statusMsg.style.color = 'green';
+      statusMsg.textContent = `✅ ${successCount} Datei(en) erfolgreich hochgeladen!`;
+    }
+    setTimeout(() => {
+      document.getElementById('win98UploadModal')?.classList.add('hidden');
+      fetchUploadsData(false);
+    }, 1200);
+  } else {
+    if (statusMsg) {
+      statusMsg.style.color = 'red';
+      statusMsg.textContent = `❌ Fehler beim Hochladen (${failCount} Datei(en) fehlgeschlagen).`;
+    }
+  }
+}
+
 // TOGGLE SELECT ALL / DESELECT ALL
 function toggleSelectAllDisplayed() {
   const searchInput = document.getElementById('win98Search');
