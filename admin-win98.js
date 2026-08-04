@@ -820,6 +820,21 @@ function setupEvents() {
     const targetWorker = selectedUser || Object.keys(allUploadsData)[0] || '';
     renderCalendar(targetWorker, calCurrentDate.getFullYear(), calCurrentDate.getMonth());
   });
+
+  // WORKER MANAGEMENT EVENT LISTENERS
+  document.getElementById('btnManageUsers')?.addEventListener('click', openUsersManagerModal);
+  document.getElementById('closeWin98UsersModal')?.addEventListener('click', () => {
+    document.getElementById('win98UsersModal')?.classList.add('hidden');
+  });
+  document.getElementById('closeUsersModalBtn')?.addEventListener('click', () => {
+    document.getElementById('win98UsersModal')?.classList.add('hidden');
+  });
+  document.getElementById('userMgrSearch')?.addEventListener('input', (e) => {
+    renderUserMgrList(e.target.value);
+  });
+  document.getElementById('btnNewUserForm')?.addEventListener('click', resetUserEditForm);
+  document.getElementById('btnSaveUserSubmit')?.addEventListener('click', () => handleSaveUserSubmit(false));
+  document.getElementById('btnMarkInactiveUser')?.addEventListener('click', () => handleSaveUserSubmit(true));
 }
 
 // FETCH STATUS REGISTRY
@@ -1259,4 +1274,212 @@ function renderCalendar(userName, year, month) {
 
   html += `</tr></tbody></table>`;
   container.innerHTML = html;
+}
+
+// ==========================================
+// WORKER MANAGEMENT MODAL & GOOGLE SHEET SYNC
+// ==========================================
+let editingWorker = null; // null if creating new, or worker object if editing
+
+function openUsersManagerModal() {
+  const modal = document.getElementById('win98UsersModal');
+  if (!modal) return;
+
+  modal.style.zIndex = '100000';
+  modal.classList.remove('hidden');
+
+  renderUserMgrList();
+  resetUserEditForm();
+}
+
+function renderUserMgrList(filterQuery = '') {
+  const container = document.getElementById('userMgrList');
+  const searchInput = document.getElementById('userMgrSearch');
+  if (!container) return;
+
+  const query = (filterQuery || searchInput?.value || '').toLowerCase().trim();
+
+  let sortedUsers = [...allUsersMeta];
+  if (sortedUsers.length === 0) {
+    sortedUsers = Object.keys(allUploadsData).map(u => ({ id: u, displayName: u }));
+  }
+
+  sortedUsers.sort((a, b) => (a.displayName || a.id || '').localeCompare(b.displayName || b.id || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+  if (query) {
+    sortedUsers = sortedUsers.filter(u => {
+      const name = (u.displayName || u.id || '').toLowerCase();
+      const comp = (u.company || '').toLowerCase();
+      const phone = (u.phone || '').toLowerCase();
+      return name.includes(query) || comp.includes(query) || phone.includes(query);
+    });
+  }
+
+  if (sortedUsers.length === 0) {
+    container.innerHTML = `<div style="padding:10px; color:#808080; text-align:center;">Keine Mitarbeiter gefunden.</div>`;
+    return;
+  }
+
+  let html = '';
+  sortedUsers.forEach(u => {
+    const isInactive = (u.company || '').toLowerCase().includes('ausgeschieden');
+    const badge = isInactive ? `<span style="color:#a00; font-weight:bold; font-size:10px;"> [Ausgeschieden]</span>` : '';
+    const compStr = u.company ? `<div style="font-size:10px; color:#666;">Firma: ${escapeHtml(u.company)}</div>` : '';
+    const isSelected = editingWorker && (editingWorker.id === u.id || editingWorker.displayName === u.displayName);
+    const activeStyle = isSelected ? 'background:#000080; color:#fff;' : '';
+
+    html += `
+      <div class="user-mgr-item" data-id="${escapeHtml(u.id)}" style="padding:4px 6px; border-bottom:1px solid #e0e0e0; cursor:pointer; ${activeStyle}" onclick="selectWorkerForEdit('${escapeHtml(u.id)}')">
+        <div style="font-weight:bold;">👤 ${escapeHtml(u.displayName || u.id)}${badge}</div>
+        ${compStr}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function selectWorkerForEdit(workerId) {
+  const worker = allUsersMeta.find(u => u.id === workerId || u.displayName === workerId) || { id: workerId, displayName: workerId };
+  editingWorker = worker;
+
+  const titleEl = document.getElementById('userFormTitle');
+  if (titleEl) titleEl.textContent = `Mitarbeiter bearbeiten: ${worker.displayName || worker.id}`;
+
+  const editIdEl = document.getElementById('editUserId');
+  if (editIdEl) editIdEl.value = worker.id || worker.displayName || '';
+
+  const editPinEl = document.getElementById('editUserPin');
+  if (editPinEl) editPinEl.value = worker.pin || '';
+
+  const editCompEl = document.getElementById('editUserCompany');
+  if (editCompEl) editCompEl.value = worker.company || '';
+
+  const editPhoneEl = document.getElementById('editUserPhone');
+  if (editPhoneEl) editPhoneEl.value = worker.phone || '';
+
+  const editEmailEl = document.getElementById('editUserEmail');
+  if (editEmailEl) editEmailEl.value = worker.email || '';
+
+  const editRoleEl = document.getElementById('editUserRole');
+  if (editRoleEl) editRoleEl.value = worker.userRole || 'user';
+
+  const editTypeEl = document.getElementById('editUserType');
+  if (editTypeEl) editTypeEl.value = worker.userType || 'oralapos';
+
+  const editLangEl = document.getElementById('editUserLang');
+  if (editLangEl) editLangEl.value = worker.userLang || 'hu';
+
+  const editMunkEl = document.getElementById('editUserMunkarend');
+  if (editMunkEl) editMunkEl.value = worker.munkarend || '';
+
+  const editBauEl = document.getElementById('editUserBaustelle');
+  if (editBauEl) editBauEl.value = worker.baustelle || '';
+
+  const msg = document.getElementById('userMgrStatusMsg');
+  if (msg) msg.textContent = '';
+
+  renderUserMgrList();
+}
+
+function resetUserEditForm() {
+  editingWorker = null;
+  const titleEl = document.getElementById('userFormTitle');
+  if (titleEl) titleEl.textContent = '➕ Neuen Mitarbeiter erstellen';
+  
+  const form = document.getElementById('userEditForm');
+  if (form) form.reset();
+
+  const msg = document.getElementById('userMgrStatusMsg');
+  if (msg) msg.textContent = '';
+
+  renderUserMgrList();
+}
+
+async function handleSaveUserSubmit(isInactiveAction = false) {
+  const msg = document.getElementById('userMgrStatusMsg');
+  const saveBtn = document.getElementById('btnSaveUserSubmit');
+  const inactiveBtn = document.getElementById('btnMarkInactiveUser');
+
+  const id = editingWorker ? editingWorker.id : '';
+  const newId = (document.getElementById('editUserId')?.value || '').trim();
+  const pin = (document.getElementById('editUserPin')?.value || '').trim();
+  const company = (document.getElementById('editUserCompany')?.value || '').trim();
+  const phone = (document.getElementById('editUserPhone')?.value || '').trim();
+  const email = (document.getElementById('editUserEmail')?.value || '').trim();
+  const userRole = document.getElementById('editUserRole')?.value || 'user';
+  const userType = document.getElementById('editUserType')?.value || 'oralapos';
+  const userLang = document.getElementById('editUserLang')?.value || 'hu';
+  const munkarend = (document.getElementById('editUserMunkarend')?.value || '').trim();
+  const baustelle = (document.getElementById('editUserBaustelle')?.value || '').trim();
+
+  let action = editingWorker ? 'update' : 'add';
+
+  if (isInactiveAction) {
+    action = 'set_inactive';
+    if (!id && !newId) {
+      if (msg) msg.textContent = '❌ Bitte wählen Sie einen Mitarbeiter aus!';
+      return;
+    }
+    if (!confirm(`Möchten Sie "${newId || id}" wirklich als "Ausgeschieden" markieren?`)) {
+      return;
+    }
+  } else {
+    if (!newId) {
+      if (msg) msg.textContent = '❌ Név_ID (Mitarbeiter Name) ist erforderlich!';
+      return;
+    }
+  }
+
+  if (msg) msg.style.color = '#000080';
+  if (msg) msg.textContent = '⏳ Mitarbeiterdaten werden in Google Sheets gespeichert...';
+  if (saveBtn) saveBtn.disabled = true;
+  if (inactiveBtn) inactiveBtn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/saveUser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action,
+        id: id || newId,
+        newId,
+        pin,
+        userType,
+        userLang,
+        userRole,
+        phone,
+        email,
+        company,
+        munkarend,
+        baustelle
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (msg) msg.style.color = '#008000';
+      if (msg) msg.textContent = `✅ ${data.message || 'Erfolgreich gespeichert!'}`;
+      
+      // Refresh Users metadata
+      await fetchUsersMeta();
+      renderUserMgrList();
+      renderTree(allUploadsData);
+      renderFileGrid();
+
+      if (action === 'add') {
+        resetUserEditForm();
+      }
+    } else {
+      if (msg) msg.style.color = '#a00';
+      if (msg) msg.textContent = `❌ Fehler: ${data.message || 'Speichern fehlgeschlagen'}`;
+    }
+  } catch (e) {
+    console.error('Save user error:', e);
+    if (msg) msg.style.color = '#a00';
+    if (msg) msg.textContent = `❌ Fehler: ${e.message}`;
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+    if (inactiveBtn) inactiveBtn.disabled = false;
+  }
 }

@@ -2,6 +2,10 @@
 
 ## [2026-08-04] - Dropbox OAuth Scope & Refresh Token Frissítés
 - **Nyomtatási Konténer Képernyő Elrejtése & Tisztítása**: A nyomtatásra előkészített képek konténere mostantól kényszerítve rejtve van a sima képernyős nézetben (`#printContainer { display: none; }`), és **kizárólag a nyomtatási párbeszédablakban** jelenik meg. A nyomtatás végeztével a kód automatikusan kitörli a háttérből a képeket, így sosem jelenik meg nagy kép a weblap mögött!
+- **Munkatárs Szerkesztés és Inaktiválás (Google Sheets Írás v4 API)**: Létrehozva a `👥 Mitarbeiter` (Munkatársak Kezelése) Win98 modul és a `netlify/functions/saveUser.js` szerveroldali megbízható Netlify funkció. Mostantól az adminisztrátor közvetlenül a Win98 appból:
+  - Módosítani tudja a dolgozók adatait (`Név_ID`, `PIN`, `ceg` / Firma átsorolás, `Phone`, `Email`, `Szerepkör`, `Típus`, `Nyelv`, `munkarend`, `baustelle`).
+  - Új dolgozót tud hozzáadni a Google Sheet táblázathoz.
+  - Inaktívvá (`Ausgeschieden`) tudja tenni a dolgozókat egy kattintással (`🚫 Als Ausgeschieden markieren`), ami azonnal frissíti a Google Sheet `ceg` oszlopát `Ausgeschieden`-re.
 - **Képnézegető z-index Halmozás Javítása (Lightbox a Naptár Felett)**: A nagyító/előnézeti ablak (`win98Modal`) mostantól emelt rétegen (`z-index: 100050`) nyílik meg a naptár (`z-index: 100000`) felett, így a naptárból megnyitott képek garantáltan legfelül jelennek meg!
 - **100% Német Nyelvű Felület (Zero Hungarian Text)**: Az alkalmazás összes gombja, címe, gombja, üzenete, felugró ablakai, visszajelzései és naptár jelmagyarázatai **kivétel nélkül 100%-ban német nyelvűek** lettek!
 - **Modal HTML Struktúra Beágyazódás Javítása (Naptár Nyitás)**: Kijavítva a hiányzó záró `</div>` tagek az `admin-win98.html`-ben.

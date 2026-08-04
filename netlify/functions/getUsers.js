@@ -43,8 +43,8 @@ exports.handler = async (event) => {
     });
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // --- MÓDOSÍTÁS 1: A tartomány kiterjesztése a H oszlopra ---
-    const range = `${SHEET_NAME}!A:H`; 
+    // --- Tartomány kiterjesztése az J oszlopra (A:J) ---
+    const range = `${SHEET_NAME}!A:J`; 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range
@@ -52,10 +52,10 @@ exports.handler = async (event) => {
 
     let rows = response.data.values || [];
 
-    // Fejléc-sor eldobása (heurisztika) - kibővítve a 'ceg' szóval
+    // Fejléc-sor eldobása (heurisztika)
     if (rows.length) {
       const head = rows[0].join(' ').toLowerCase();
-      if (/(pin|lang|role|phone|email|type|ceg)/.test(head)) { // <-- Bővítés itt
+      if (/(pin|lang|role|phone|email|type|ceg|munkarend|baustelle)/.test(head)) {
         rows = rows.slice(1);
       }
     }
@@ -67,25 +67,29 @@ exports.handler = async (event) => {
     const users = rows
       .filter(r => r && r[0]) // legyen id / displayName
       .map(r => {
-        const id       = (r[0] || '').trim();
-        const userType = (r[2] || 'oralapos').trim().toLowerCase();
-        const userLang = (r[3] || 'hu').trim().toLowerCase();
-        const userRole = (r[4] || 'user').trim().toLowerCase();
-        const phone    = normalizePhoneLoose(r[5] || '');
-        const email    = (r[6] || '').trim();
-        
-        // --- MÓDOSÍTÁS 2: A cég adat beolvasása a H oszlopból (index: 7) ---
-        const company  = (r[7] || '').trim() || null; // Ha üres, legyen null
+        const id        = (r[0] || '').trim();
+        const pin       = (r[1] || '').trim();
+        const userType  = (r[2] || 'oralapos').trim().toLowerCase();
+        const userLang  = (r[3] || 'hu').trim().toLowerCase();
+        const userRole  = (r[4] || 'user').trim().toLowerCase();
+        const phone     = normalizePhoneLoose(r[5] || '');
+        const email     = (r[6] || '').trim();
+        const company   = (r[7] || '').trim() || null;
+        const munkarend = (r[8] || '').trim();
+        const baustelle = (r[9] || '').trim();
 
         return {
           id,
           displayName: id,
+          pin,
           userType,
           userLang,
           userRole,
           phone,
           email,
-          company // <-- ÚJ MEZŐ
+          company,
+          munkarend,
+          baustelle
         };
       });
 
