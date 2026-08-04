@@ -1,7 +1,7 @@
 {
   "name": "pmg-stundenzettel-manager-98",
-  "version": "1.0.0",
-  "description": "PMG Stundenzettel Manager 98 - Windows Desktop App",
+  "version": "2.0.0",
+  "description": "PMG Stundenzettel Manager 98 v2.0 - Windows Desktop App",
   "author": "PMG GmbH",
   "main": "desktop-main.js",
   "scripts": {

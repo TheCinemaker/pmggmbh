@@ -12,7 +12,7 @@ function createWindow() {
     minHeight: 600,
     icon: path.join(__dirname, 'icons', 'icon-512x512.png'),
     frame: true, // Native Windows 98 frame window
-    title: 'PMG Stundenzettel Manager 98',
+    title: 'PMG Stundenzettel Manager 98 v2.0',
     backgroundColor: '#008080',
     webPreferences: {
       nodeIntegration: false,
