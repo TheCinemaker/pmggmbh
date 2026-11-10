@@ -6,7 +6,7 @@ const HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const STATE_DIR  = '/PMG Mindenes - PMG ALLES/Stundenzettel 2025/SYSTEM';
+const STATE_DIR  = '/Stundenzettel 2025/SYSTEM';
 const STATE_PATH = `${STATE_DIR}/admin-last-seen.json`;
 
 function createDbxClient() {

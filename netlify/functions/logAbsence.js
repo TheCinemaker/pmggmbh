@@ -39,7 +39,7 @@ exports.handler = async (event) => {
         const fileContent = `Abwesenheit gemeldet:\nTyp: ${absenceType}\nVon: ${startDate}\nBis: ${endDate || startDate}`;
         
         const currentYear = start.getFullYear();
-        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
+        const dropboxPath = `/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
 
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
 

@@ -56,7 +56,7 @@ exports.handler = async (event) => {
 
     const year = new Date().getFullYear();
     // Fontos: NFC normalizáció a speciális karakterek (ä, á, ő) miatt!
-    const folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}/${userId}/${selectedMonth}`.normalize('NFC');
+    const folderPath = `/Stundenzettel ${year}/${userId}/${selectedMonth}`.normalize('NFC');
 
     console.log(`[getFiles] Listing folder: "${folderPath}"`);
 

@@ -20,7 +20,7 @@ function describeDbxError(e) {
   return `${status}${body || e.message || 'Unknown error'}`;
 }
 
-const STATE_FILE_PATH = '/PMG Mindenes - PMG ALLES/Stundenzettel 2026/SYSTEM/status_registry.json';
+const STATE_FILE_PATH = '/Stundenzettel 2026/SYSTEM/status_registry.json';
 
 exports.handler = async (event) => {
   const origin = event?.headers?.origin || event?.headers?.Origin || ALLOWED_ORIGIN;

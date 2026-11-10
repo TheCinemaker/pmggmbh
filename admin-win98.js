@@ -1206,11 +1206,11 @@ async function handleSaveNoteSubmit() {
     return;
   }
 
-  let folderPath = '/PMG Mindenes - PMG ALLES/Stundenzettel 2026';
+  let folderPath = '/Stundenzettel 2026';
   if (selectedUser && selectedMonth) {
-    folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel 2026/${selectedUser}/${selectedMonth}`;
+    folderPath = `/Stundenzettel 2026/${selectedUser}/${selectedMonth}`;
   } else if (selectedUser) {
-    folderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel 2026/${selectedUser}`;
+    folderPath = `/Stundenzettel 2026/${selectedUser}`;
   }
 
   let customFileName = '';
@@ -1415,7 +1415,7 @@ async function handleUploadSubmit() {
       finalFileName += '.' + fileExtension;
     }
 
-    const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${finalFileName}`;
+    const dropboxPath = `/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${finalFileName}`;
 
     if (statusMsg) {
       statusMsg.style.color = '#000080';

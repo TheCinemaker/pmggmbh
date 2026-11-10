@@ -155,7 +155,7 @@ exports.handler = async (event) => {
 
     // 2) Dropbox
     const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
-    const rootPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${weekYear}`;
+    const rootPath = `/Stundenzettel ${weekYear}`;
     const allEntries = await listAllEntries(dbx, rootPath);
     const allFiles = allEntries.filter(e => e['.tag'] === 'file');
 

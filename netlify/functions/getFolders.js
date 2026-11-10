@@ -16,7 +16,7 @@ exports.handler = async (event) => {
         if (!userId) { throw new Error('Hiányzó felhasználói azonosító.'); }
 
         const currentYear = new Date().getFullYear();
-        const userFolderPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}`;
+        const userFolderPath = `/Stundenzettel ${currentYear}/${userId}`;
 
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
 

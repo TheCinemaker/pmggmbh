@@ -72,7 +72,7 @@ exports.handler = async (event) => {
         const newFileName = `KRANK_${dateRange}.${fileExtension}`;
 
         const currentYear = new Date(startDate).getFullYear(); // Az évszámot is a megadott dátumból vesszük!
-        const dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
+        const dropboxPath = `/Stundenzettel ${currentYear}/${userId}/${selectedMonth}/${newFileName}`;
 
         const dbx = new Dropbox({ refreshToken: REFRESH_TOKEN, clientId: APP_KEY, clientSecret: APP_SECRET });
 

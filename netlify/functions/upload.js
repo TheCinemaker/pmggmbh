@@ -80,7 +80,7 @@ exports.handler = async (event) => {
       const cleanFolder = folderPath.replace(/\/+$/, '');
       dropboxPath = cleanFolder.startsWith('/') ? `${cleanFolder}/${finalFileName}` : `/${cleanFolder}/${finalFileName}`;
     } else if (employeeName && selectedMonth) {
-      dropboxPath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${finalFileName}`;
+      dropboxPath = `/Stundenzettel ${currentYear}/${employeeName}/${selectedMonth}/${finalFileName}`;
     } else {
       throw new Error('Mitarbeiter és hónap vagy folderPath megadása kötelező.');
     }

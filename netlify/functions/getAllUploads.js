@@ -168,16 +168,16 @@ exports.handler = async (event) => {
     const result = {};
 
     for (const year of yearsToScan) {
-      const basePath = `/PMG Mindenes - PMG ALLES/Stundenzettel ${year}`;
+      const basePath = `/Stundenzettel ${year}`;
       const entries = await listFolderAll(dbx, basePath, true);
 
       // 1) ELŐSZÖR: A Dropboxban lévő ÖSSZES (38+) munkatárs mappáját regisztráljuk
       entries.forEach(f => {
         const pathToUse = f.path_display || f.path_lower || '';
         const parts = pathToUse.split('/').filter(Boolean);
-        // Szerkezet: ["PMG Mindenes - PMG ALLES", "Stundenzettel 2026", "Munkatárs Neve", ...]
-        if (parts.length >= 3) {
-          const userName = parts[2];
+        // Szerkezet: ["Stundenzettel 2026", "Munkatárs Neve", ...]
+        if (parts.length >= 2) {
+          const userName = parts[1];
           if (userName && userName !== 'SYSTEM' && !result[userName]) {
             result[userName] = [];
           }
@@ -191,11 +191,11 @@ exports.handler = async (event) => {
         const pathToUse = f.path_display || f.path_lower || '';
         const parts = pathToUse.split('/').filter(Boolean);
 
-        // Szerkezet: ["PMG Mindenes - PMG ALLES", "Stundenzettel 2026", "Munkatárs Neve", "Hónap Mappa", "Fájlnév"]
-        if (parts.length < 5) return;
+        // Szerkezet: ["Stundenzettel 2026", "Munkatárs Neve", "Hónap Mappa", "Fájlnév"]
+        if (parts.length < 4) return;
 
-        const userName = parts[2];
-        const monthFolderName = parts[3];
+        const userName = parts[1];
+        const monthFolderName = parts[2];
 
         const monthMatch = monthFolderName.match(/^(\d+)\./);
         if (monthMatch) {
